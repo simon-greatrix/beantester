@@ -1,10 +1,10 @@
 package org.meanbean.test;
 
-import com.github.meanbeanlib.mirror.SerializableLambdas.SerializableFunction1;
 import org.meanbean.bean.info.BeanInformationFactory;
 import org.meanbean.factories.FactoryCollection;
 import org.meanbean.factories.util.FactoryLookupStrategy;
 import org.meanbean.lang.Factory;
+import org.meanbean.mirror.SerializableLambdas.SerializableFunction1;
 import org.meanbean.util.RandomValueGenerator;
 
 /**
@@ -14,81 +14,81 @@ import org.meanbean.util.RandomValueGenerator;
  */
 public interface VerifierSettings {
 
-	RandomValueGenerator getRandomValueGenerator();
+  /**
+   * Add a property that is insignificant for EqualsMethodTester
+   */
+  <T, S> VerifierSettings addEqualsInsignificantProperty(String propertyName);
 
-	VerifierSettings setRandomValueGenerator(RandomValueGenerator randomValueGenerator);
+  /**
+   * Add a property that is insignificant for EqualsMethodTester
+   *
+   * <pre>
+   *     addEqualsInsignificantProperty(MyBean::getPropertyValue);
+   * </pre>
+   */
+  <T, S> VerifierSettings addEqualsInsignificantProperty(SerializableFunction1<T, S> beanGetter);
 
-	FactoryCollection getFactoryCollection();
+  /**
+   * Mark the specified property as one to be disregarded/ignored during testing.
+   * <pre>
+   *     addIgnoredProperty(MyBean::getPropertyValue);
+   * </pre>
+   */
+  <T, S> VerifierSettings addIgnoredProperty(SerializableFunction1<T, S> beanGetter) throws IllegalArgumentException;
 
-	VerifierSettings setFactoryCollection(FactoryCollection factoryCollection);
+  /**
+   * Mark the specified property as one to be disregarded/ignored during testing.
+   */
+  VerifierSettings addIgnoredPropertyName(String property) throws IllegalArgumentException;
 
-	FactoryLookupStrategy getFactoryLookupStrategy();
+  /**
+   * Register the specified Factory as an override Factory for the specified property. This means that the specified
+   * Factory will be used over the standard Factory for the property.
+   */
+  <T> VerifierSettings addOverrideFactory(String property, Factory<T> factory) throws IllegalArgumentException;
 
-	VerifierSettings setFactoryLookupStrategy(FactoryLookupStrategy factoryLookupStrategy);
+  /**
+   * Register the specified Factory as an override Factory for the specified property. This means that the specified
+   * Factory will be used over the standard Factory for the property.
+   * <pre>
+   *     addOverridePropertyFactory(MyBean::getPropertyValue, () -&gt; createPropertyValue());
+   * </pre>
+   */
+  <T, S> VerifierSettings addOverridePropertyFactory(SerializableFunction1<T, S> beanGetter, Factory<S> factory);
 
-	BeanInformationFactory getBeanInformationFactory();
+  BeanInformationFactory getBeanInformationFactory();
 
-	VerifierSettings setBeanInformationFactory(BeanInformationFactory beanInformationFactory);
+  int getDefaultIterations();
 
-	/**
-	 * Register a custom factory for given class
-	 */
-	<T> VerifierSettings registerFactory(Class<T> clazz, Factory<? extends T> factory);
+  FactoryCollection getFactoryCollection();
 
-	/**
-	 * Register factory for an inheritance type hierarchy
-	 */
-	<T> VerifierSettings registerTypeHierarchyFactory(Class<T> baseType, Factory<T> factory);
+  FactoryLookupStrategy getFactoryLookupStrategy();
 
-	int getDefaultIterations();
+  RandomValueGenerator getRandomValueGenerator();
 
-	/**
-	 * Set the number of times a type should be tested by default
-	 */
-	VerifierSettings setDefaultIterations(int iterations);
+  /**
+   * Register a custom factory for given class
+   */
+  <T> VerifierSettings registerFactory(Class<T> clazz, Factory<? extends T> factory);
 
-    VerifierSettingsEditor suppressWarning(Warning warning);
+  /**
+   * Register factory for an inheritance type hierarchy
+   */
+  <T> VerifierSettings registerTypeHierarchyFactory(Class<T> baseType, Factory<T> factory);
 
-    /**
-     * Mark the specified property as one to be disregarded/ignored during testing.
-     */
-    VerifierSettings addIgnoredPropertyName(String property) throws IllegalArgumentException;
+  VerifierSettings setBeanInformationFactory(BeanInformationFactory beanInformationFactory);
 
-	/**
-	 * Mark the specified property as one to be disregarded/ignored during testing.
-	 * <pre>
-	 *     addIgnoredProperty(MyBean::getPropertyValue);
-	 * </pre>
-	 */
-	<T, S> VerifierSettings addIgnoredProperty(SerializableFunction1<T, S> beanGetter) throws IllegalArgumentException;
+  /**
+   * Set the number of times a type should be tested by default
+   */
+  VerifierSettings setDefaultIterations(int iterations);
 
-	/**
-	 * Register the specified Factory as an override Factory for the specified property. This means that the specified
-	 * Factory will be used over the standard Factory for the property.
-	 */
-	<T> VerifierSettings addOverrideFactory(String property, Factory<T> factory) throws IllegalArgumentException;
+  VerifierSettings setFactoryCollection(FactoryCollection factoryCollection);
 
-	/**
-	 * Register the specified Factory as an override Factory for the specified property. This means that the specified
-	 * Factory will be used over the standard Factory for the property.
-	 * <pre>
-	 *     addOverridePropertyFactory(MyBean::getPropertyValue, () -&gt; createPropertyValue());
-	 * </pre>		
-	 */
-	<T, S> VerifierSettings addOverridePropertyFactory(SerializableFunction1<T, S> beanGetter, Factory<S> factory);
+  VerifierSettings setFactoryLookupStrategy(FactoryLookupStrategy factoryLookupStrategy);
 
-	/**
-	 * Add a property that is insignificant for EqualsMethodTester
-	 */
-	<T, S> VerifierSettings addEqualsInsignificantProperty(String propertyName);
+  VerifierSettings setRandomValueGenerator(RandomValueGenerator randomValueGenerator);
 
-	/**
-	 * Add a property that is insignificant for EqualsMethodTester
-	 * 
-	 * <pre>
-	 *     addEqualsInsignificantProperty(MyBean::getPropertyValue);
-	 * </pre>		
-	 */
-	<T, S> VerifierSettings addEqualsInsignificantProperty(SerializableFunction1<T, S> beanGetter);
+  VerifierSettingsEditor suppressWarning(Warning warning);
 
 }

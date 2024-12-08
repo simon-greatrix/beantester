@@ -33,11 +33,6 @@ public abstract class ReflectionAccessor {
   // the singleton instance, use getInstance() to obtain
   private static final ReflectionAccessor instance = JavaVersion.getMajorJavaVersion() < 9 ? new PreJava9ReflectionAccessor() : new UnsafeReflectionAccessor();
 
-  /**
-   * Does the same as {@code ao.setAccessible(true)}, but never throws
-   * java.lang.reflect.InaccessibleObjectException
-   */
-  public abstract void makeAccessible(AccessibleObject ao);
 
   /**
    * Obtains a {@link ReflectionAccessor} instance suitable for the current Java version.
@@ -49,4 +44,12 @@ public abstract class ReflectionAccessor {
   public static ReflectionAccessor getInstance() {
     return instance;
   }
+
+
+  /**
+   * Does the same as {@code ao.setAccessible(true)}, but never throws
+   * java.lang.reflect.InaccessibleObjectException
+   */
+  public abstract void makeAccessible(AccessibleObject ao);
+
 }

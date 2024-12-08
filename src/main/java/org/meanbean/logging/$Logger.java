@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,24 +24,25 @@ package org.meanbean.logging;
  * Internal facade around well-known logging facades
  */
 public interface $Logger {
-	public boolean isTraceEnabled();
 
-	public void trace(String format, Object... arguments);
+  void debug(String format, Object... arguments);
 
-	public boolean isDebugEnabled();
+  void error(String format, Object... arguments);
 
-	public void debug(String format, Object... arguments);
+  void info(String format, Object... arguments);
 
-	public boolean isInfoEnabled();
+  boolean isDebugEnabled();
 
-	public void info(String format, Object... arguments);
+  boolean isErrorEnabled();
 
-	public boolean isWarnEnabled();
+  boolean isInfoEnabled();
 
-	public void warn(String format, Object... arguments);
+  boolean isTraceEnabled();
 
-	public boolean isErrorEnabled();
+  boolean isWarnEnabled();
 
-	public void error(String format, Object... arguments);
+  void trace(String format, Object... arguments);
+
+  void warn(String format, Object... arguments);
 
 }

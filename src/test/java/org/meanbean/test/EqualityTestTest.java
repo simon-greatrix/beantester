@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,33 +30,38 @@ import org.meanbean.test.internal.EqualityTest;
 
 public class EqualityTestTest {
 
-	private static final BeanFactory beanFactory = new BeanFactory();
+  private static final BeanFactory beanFactory = new BeanFactory();
 
-	@Test
-	public void absoluteShouldReturnTrueForSameInstance() throws Exception {
-		Bean x = beanFactory.create();
-		assertThat("Incorrect EqualityTest result.", EqualityTest.ABSOLUTE.test(x, x), is(true));
-	}
 
-	@Test
-	public void absoluteShouldReturnFalseForDifferentInstances() throws Exception {
-		Bean x = beanFactory.create();
-		Bean y = beanFactory.create();
-		assertThat("Incorrect EqualityTest result.", EqualityTest.ABSOLUTE.test(x, y), is(false));
-	}
+  @Test
+  public void absoluteShouldReturnFalseForDifferentInstances() throws Exception {
+    Bean x = beanFactory.create();
+    Bean y = beanFactory.create();
+    assertThat("Incorrect EqualityTest result.", EqualityTest.ABSOLUTE.test(x, y), is(false));
+  }
 
-	@Test
-	public void logicalShouldReturnTrueForLogicallyEquivalentObjects() throws Exception {
-		Bean x = beanFactory.create();
-		Bean y = beanFactory.create();
-		assertThat("Incorrect EqualityTest result.", EqualityTest.LOGICAL.test(x, y), is(true));
-	}
 
-	@Test
-	public void logicalShouldReturnFalseForNonLogicallyEquivalentObjects() throws Exception {
-		Bean x = beanFactory.create();
-		Bean y = beanFactory.create();
-		y.setName(y.getName() + "_DIFFERENT");
-		assertThat("Incorrect EqualityTest result.", EqualityTest.LOGICAL.test(x, y), is(false));
-	}
+  @Test
+  public void absoluteShouldReturnTrueForSameInstance() throws Exception {
+    Bean x = beanFactory.create();
+    assertThat("Incorrect EqualityTest result.", EqualityTest.ABSOLUTE.test(x, x), is(true));
+  }
+
+
+  @Test
+  public void logicalShouldReturnFalseForNonLogicallyEquivalentObjects() throws Exception {
+    Bean x = beanFactory.create();
+    Bean y = beanFactory.create();
+    y.setName(y.getName() + "_DIFFERENT");
+    assertThat("Incorrect EqualityTest result.", EqualityTest.LOGICAL.test(x, y), is(false));
+  }
+
+
+  @Test
+  public void logicalShouldReturnTrueForLogicallyEquivalentObjects() throws Exception {
+    Bean x = beanFactory.create();
+    Bean y = beanFactory.create();
+    assertThat("Incorrect EqualityTest result.", EqualityTest.LOGICAL.test(x, y), is(true));
+  }
+
 }

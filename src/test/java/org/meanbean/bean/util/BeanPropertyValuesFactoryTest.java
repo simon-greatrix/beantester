@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,17 @@
  */
 
 package org.meanbean.bean.util;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doThrow;
+
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Test;
@@ -40,105 +51,105 @@ import org.meanbean.util.RandomValueGenerator;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doThrow;
-
 @RunWith(MockitoJUnitRunner.class)
 public class BeanPropertyValuesFactoryTest {
 
-	@Mock
-	private BeanInformation beanInformationMock;
+  private final BeanInformationFactory beanInformationFactoryReal = new JavaBeanInformationFactory();
 
-	@Mock
-	private FactoryLookupStrategy factoryLookupStrategyMock;
+  private final BeanTester beanTesterReal = new BeanTester();
 
-	private final BeanTester beanTesterReal = new BeanTester();
+  private final BeanInformation complexBeanInformationReal = beanInformationFactoryReal.create(ComplexBean.class);
 
-	private final FactoryLookupStrategy factoryLookupStrategyReal = new BasicFactoryLookupStrategy(
-	        beanTesterReal.getFactoryCollection(), beanTesterReal.getRandomValueGenerator());
+  private final FactoryLookupStrategy factoryLookupStrategyReal = new BasicFactoryLookupStrategy(
+      beanTesterReal.getFactoryCollection(), beanTesterReal.getRandomValueGenerator());
 
-	private final BeanInformationFactory beanInformationFactoryReal = new JavaBeanInformationFactory();
+  @Mock
+  private BeanInformation beanInformationMock;
 
-	private final BeanInformation complexBeanInformationReal = beanInformationFactoryReal.create(ComplexBean.class);
+  @Mock
+  private FactoryLookupStrategy factoryLookupStrategyMock;
 
-	@Mock
-	private Factory<Long> longFactoryMock;
+  @Mock
+  private Factory<Long> longFactoryMock;
 
-	@After
-	public void after() {
-		beanTesterReal.getFactoryCollection().addFactory(long.class, new LongFactory(RandomValueGenerator.getInstance()));
-	}
-	
-	@Test(expected = IllegalArgumentException.class)
-	public void constructorShouldPreventNullBeanInformation() throws Exception {
-		new BeanPropertyValuesFactory(null, factoryLookupStrategyMock, newConfiguration());
-	}
 
-    private Configuration newConfiguration() {
-        return new ConfigurationBuilder().build();
-    }
+  @After
+  public void after() {
+    beanTesterReal.getFactoryCollection().addFactory(long.class, new LongFactory(RandomValueGenerator.getInstance()));
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void constructorShouldPreventNullFactoryLookupStrategy() throws Exception {
-		new BeanPropertyValuesFactory(beanInformationMock, null, newConfiguration());
-	}
 
-	@Test
-	public void constructorShouldPermitNonNullParameters() throws Exception {
-		new BeanPropertyValuesFactory(beanInformationMock, factoryLookupStrategyMock, newConfiguration());
-	}
+  @Test
+  public void constructorShouldPermitNonNullParameters() throws Exception {
+    new BeanPropertyValuesFactory(beanInformationMock, factoryLookupStrategyMock, newConfiguration());
+  }
 
-	@Test
-	public void createShouldReturnMapContainingValuesForWritableProperties() throws Exception {
-		BeanPropertyValuesFactory beanPropertyValuesFactory =
-		        new BeanPropertyValuesFactory(complexBeanInformationReal, factoryLookupStrategyReal, newConfiguration());
-		Map<String, Object> values = beanPropertyValuesFactory.create();
-		assertTrue(values.containsKey("id"));
-		assertTrue(values.containsKey("firstName"));
-		assertTrue(values.containsKey("lastName"));
-		assertTrue(values.containsKey("favouriteNumber"));
-		assertTrue(values.containsKey("dateOfBirth"));
-		assertFalse(values.containsKey("asString"));
-		assertThat(values.get("id"), is(not(nullValue())));
-		assertThat(values.get("firstName"), is(not(nullValue())));
-		assertThat(values.get("lastName"), is(not(nullValue())));
-		assertThat(values.get("favouriteNumber"), is(not(nullValue())));
-		assertThat(values.get("dateOfBirth"), is(not(nullValue())));
-		assertThat(values.size(), is(5));
-	}
 
-	@Test
-	public void createShouldReturnEmptyMapWhenObjectHasNoWritableProperties() throws Exception {
-		NonBean bean = new NonBean("TEST");
-		BeanInformation beanInformation = beanInformationFactoryReal.create(bean.getClass());
-		BeanPropertyValuesFactory beanPropertyValuesFactory =
-		        new BeanPropertyValuesFactory(beanInformation, factoryLookupStrategyReal, newConfiguration());
-		Map<String, Object> values = beanPropertyValuesFactory.create();
-		assertTrue(values.isEmpty());
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void constructorShouldPreventNullBeanInformation() throws Exception {
+    new BeanPropertyValuesFactory(null, factoryLookupStrategyMock, newConfiguration());
+  }
 
-	@Test
-	public void createShouldReturnNewMapEachInvocation() throws Exception {
-		BeanPropertyValuesFactory beanPropertyValuesFactory =
-		        new BeanPropertyValuesFactory(complexBeanInformationReal, factoryLookupStrategyReal, newConfiguration());
-		assertThat("Should be different instances.", beanPropertyValuesFactory.create(),
-		        is(not(sameInstance(beanPropertyValuesFactory.create()))));
-	}
 
-	@Test(expected = ObjectCreationException.class)
-	public void createShouldWrapExceptionsInObjectCreationException() throws Exception {
-		doThrow(new RuntimeException("TEST EXCEPTION")).when(longFactoryMock).create();
-		beanTesterReal.getFactoryCollection().addFactory(long.class, longFactoryMock);
-		BeanPropertyValuesFactory beanPropertyValuesFactory =
-		        new BeanPropertyValuesFactory(complexBeanInformationReal, factoryLookupStrategyReal, newConfiguration());
-		beanPropertyValuesFactory.create();
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void constructorShouldPreventNullFactoryLookupStrategy() throws Exception {
+    new BeanPropertyValuesFactory(beanInformationMock, null, newConfiguration());
+  }
+
+
+  @Test
+  public void createShouldReturnEmptyMapWhenObjectHasNoWritableProperties() throws Exception {
+    NonBean bean = new NonBean("TEST");
+    BeanInformation beanInformation = beanInformationFactoryReal.create(bean.getClass());
+    BeanPropertyValuesFactory beanPropertyValuesFactory =
+        new BeanPropertyValuesFactory(beanInformation, factoryLookupStrategyReal, newConfiguration());
+    Map<String, Object> values = beanPropertyValuesFactory.create();
+    assertTrue(values.isEmpty());
+  }
+
+
+  @Test
+  public void createShouldReturnMapContainingValuesForWritableProperties() throws Exception {
+    BeanPropertyValuesFactory beanPropertyValuesFactory =
+        new BeanPropertyValuesFactory(complexBeanInformationReal, factoryLookupStrategyReal, newConfiguration());
+    Map<String, Object> values = beanPropertyValuesFactory.create();
+    assertTrue(values.containsKey("id"));
+    assertTrue(values.containsKey("firstName"));
+    assertTrue(values.containsKey("lastName"));
+    assertTrue(values.containsKey("favouriteNumber"));
+    assertTrue(values.containsKey("dateOfBirth"));
+    assertFalse(values.containsKey("asString"));
+    assertThat(values.get("id"), is(not(nullValue())));
+    assertThat(values.get("firstName"), is(not(nullValue())));
+    assertThat(values.get("lastName"), is(not(nullValue())));
+    assertThat(values.get("favouriteNumber"), is(not(nullValue())));
+    assertThat(values.get("dateOfBirth"), is(not(nullValue())));
+    assertThat(values.size(), is(5));
+  }
+
+
+  @Test
+  public void createShouldReturnNewMapEachInvocation() throws Exception {
+    BeanPropertyValuesFactory beanPropertyValuesFactory =
+        new BeanPropertyValuesFactory(complexBeanInformationReal, factoryLookupStrategyReal, newConfiguration());
+    assertThat("Should be different instances.", beanPropertyValuesFactory.create(),
+        is(not(sameInstance(beanPropertyValuesFactory.create())))
+    );
+  }
+
+
+  @Test(expected = ObjectCreationException.class)
+  public void createShouldWrapExceptionsInObjectCreationException() throws Exception {
+    doThrow(new RuntimeException("TEST EXCEPTION")).when(longFactoryMock).create();
+    beanTesterReal.getFactoryCollection().addFactory(long.class, longFactoryMock);
+    BeanPropertyValuesFactory beanPropertyValuesFactory =
+        new BeanPropertyValuesFactory(complexBeanInformationReal, factoryLookupStrategyReal, newConfiguration());
+    beanPropertyValuesFactory.create();
+  }
+
+
+  private Configuration newConfiguration() {
+    return new ConfigurationBuilder().build();
+  }
+
 }

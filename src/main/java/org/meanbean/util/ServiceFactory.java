@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,147 +36,177 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ServiceFactory<T> {
 
-	private static final ServiceContextMap serviceContextMap = new ServiceContextMap();
+  private static final ServiceContextMap serviceContextMap = new ServiceContextMap();
 
-	private final List<T> services;
 
-	@SuppressWarnings("unchecked")
-	static synchronized <T> ServiceFactory<T> getInstance(ServiceDefinition<T> definition) {
-		String inprogressKey = "Load of " + definition.getServiceType().getName() + " already in progress";
 
-		Map<String, Object> contextMap = serviceContextMap.getContextMap();
-		if (contextMap.containsKey(inprogressKey)) {
-			throw new IllegalStateException(inprogressKey);
-		}
+  private static class ServiceContextMap {
 
-		contextMap.put(inprogressKey, inprogressKey);
-		try {
-			return (ServiceFactory<T>) contextMap.computeIfAbsent(
-					definition.getServiceType().getName(),
-					key -> ServiceFactory.create(definition));
-		} finally {
-			contextMap.remove(inprogressKey);
-		}
-	}
-	
-	public static Void createContext(Object key) {
-		serviceContextMap.createContext(key);
-		return null;
-	}
+    private static final ThreadLocal<WeakReference<Object>> currentKey = new ThreadLocal<>();
 
-	public static Void createContextIfNeeded(Object key) {
-		serviceContextMap.createContextIfNeeded(key);
-		return null;
-	}
-	
-	public static boolean hasContext() {
-		return serviceContextMap.hasContext();
-		//ServiceContextMap.currentKey.get() != null;
-	}
-	
-	public static void clear() {
-		serviceContextMap.clear();
-	}
+    private final Map<Object, Map<String, Object>> contextMapByKeys = new WeakHashMap<>();
 
-	static <T> ServiceFactory<T> create(ServiceDefinition<T> definition) {
-		List<T> services = ServiceFactory.doLoad(definition);
-		return new ServiceFactory<>(services, definition);
-	}
+    private final Set<Class<?>> keyTypes = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-	private ServiceFactory(List<T> services, ServiceDefinition<T> definition) {
-		if (services.isEmpty()) {
-			throw new IllegalArgumentException("cannot find services for " + definition.getServiceType());
-		}
-		this.services = Collections.unmodifiableList(services);
-	}
 
-	public T getFirst() {
-		return getAll().get(0);
-	}
+    public synchronized void clear() {
+      contextMapByKeys.clear();
+      keyTypes.clear();
+      currentKey.remove();
+    }
 
-	public List<T> getAll() {
-		return services;
-	}
 
-	private static synchronized <T> List<T> doLoad(ServiceDefinition<T> serviceDefinition) {
-		ServiceLoader<T> loader = new ServiceLoader<>(serviceDefinition.getServiceType(),
-				serviceDefinition.getConstructorTypes());
-		List<T> services = loader.createAll(serviceDefinition.getConstructorArgs());
-		Collections.sort(services, getComparator());
-		return services;
-	}
+    public void createContext(Object key) {
+      verifyIdentityEquals(key);
+      currentKey.set(new WeakReference<>(key));
+    }
 
-	public static <T> Comparator<T> getComparator() {
-		return Comparator.comparingInt(ServiceFactory::getOrder);
-	}
 
-	private static <T> int getOrder(T obj) {
-		Order order = obj.getClass().getAnnotation(Order.class);
-		if (order == null) {
-			return Order.LOWEST_PRECEDENCE;
-		}
-		return order.value();
-	}
+    public void createContextIfNeeded(Object key) {
+      if (!hasContext()) {
+        createContext(key);
+      }
+    }
 
-	private static class ServiceContextMap {
 
-		private static final ThreadLocal<WeakReference<Object>> currentKey = new ThreadLocal<>();
-		
-		private final Map<Object, Map<String, Object>> contextMapByKeys = new WeakHashMap<>();
-		
-		private final Set<Class<?>> keyTypes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    public synchronized Map<String, Object> getContextMap() {
+      WeakReference<Object> ref = currentKey.get();
+      Objects.requireNonNull(ref, "context key not set");
 
-		public synchronized Map<String, Object> getContextMap() {
-			WeakReference<Object> ref = currentKey.get();
-			Objects.requireNonNull(ref, "context key not set");
+      Object key = ref.get();
+      Objects.requireNonNull(key, "context key not available");
+      return contextMapByKeys.computeIfAbsent(key, any -> new ConcurrentHashMap<>());
+    }
 
-			Object key = ref.get();
-			Objects.requireNonNull(key, "context key not available");
-			return contextMapByKeys.computeIfAbsent(key, any -> new ConcurrentHashMap<>());
-		}
 
-		public boolean hasContext() {
-			WeakReference<Object> ref = currentKey.get();
-			return ref != null && ref.get() != null;
-		}
+    public boolean hasContext() {
+      WeakReference<Object> ref = currentKey.get();
+      return ref != null && ref.get() != null;
+    }
 
-		public synchronized void clear() {
-			contextMapByKeys.clear();
-			keyTypes.clear();
-			currentKey.remove();
-		}
 
-		public void createContext(Object key) {
-			verifyIdentityEquals(key);
-			currentKey.set(new WeakReference<>(key));
-		}
+    private void verifyIdentityEquals(Object obj) {
+      if (keyTypes.contains(obj.getClass())) {
+        return;
+      }
 
-		public void createContextIfNeeded(Object key) {
-			if (!hasContext()) {
-				createContext(key);
-			}
-		}
+      if (!obj.getClass().equals(Object.class)) {
+        try {
+          Method method = obj.getClass().getMethod("equals", Object.class);
+          ValidationHelper.ensure(
+              method.getDeclaringClass().equals(Object.class),
+              "unexpected declaration class for " + method
+          );
 
-		private void verifyIdentityEquals(Object obj) {
-			if (keyTypes.contains(obj.getClass())) {
-				return;
-			}
+          method = obj.getClass().getMethod("hashCode");
+          ValidationHelper.ensure(
+              method.getDeclaringClass().equals(Object.class),
+              "unexpected declaration class for " + method
+          );
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
 
-			if (!obj.getClass().equals(Object.class)) {
-				try {
-					Method method = obj.getClass().getMethod("equals", Object.class);
-					ValidationHelper.ensure(method.getDeclaringClass().equals(Object.class),
-							"unexpected declaration class for " + method);
+      keyTypes.add(obj.getClass());
+    }
 
-					method = obj.getClass().getMethod("hashCode");
-					ValidationHelper.ensure(method.getDeclaringClass().equals(Object.class),
-							"unexpected declaration class for " + method);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
+  }
 
-			keyTypes.add(obj.getClass());
-		}
-	}
+
+  public static void clear() {
+    serviceContextMap.clear();
+  }
+
+
+  static <T> ServiceFactory<T> create(ServiceDefinition<T> definition) {
+    List<T> services = ServiceFactory.doLoad(definition);
+    return new ServiceFactory<>(services, definition);
+  }
+
+
+  public static Void createContext(Object key) {
+    serviceContextMap.createContext(key);
+    return null;
+  }
+
+
+  public static Void createContextIfNeeded(Object key) {
+    serviceContextMap.createContextIfNeeded(key);
+    return null;
+  }
+
+
+  private static synchronized <T> List<T> doLoad(ServiceDefinition<T> serviceDefinition) {
+    ServiceLoader<T> loader = new ServiceLoader<>(
+        serviceDefinition.getServiceType(),
+        serviceDefinition.getConstructorTypes()
+    );
+    List<T> services = loader.createAll(serviceDefinition.getConstructorArgs());
+    Collections.sort(services, getComparator());
+    return services;
+  }
+
+
+  public static <T> Comparator<T> getComparator() {
+    return Comparator.comparingInt(ServiceFactory::getOrder);
+  }
+
+
+  @SuppressWarnings("unchecked")
+  static synchronized <T> ServiceFactory<T> getInstance(ServiceDefinition<T> definition) {
+    String inprogressKey = "Load of " + definition.getServiceType().getName() + " already in progress";
+
+    Map<String, Object> contextMap = serviceContextMap.getContextMap();
+    if (contextMap.containsKey(inprogressKey)) {
+      throw new IllegalStateException(inprogressKey);
+    }
+
+    contextMap.put(inprogressKey, inprogressKey);
+    try {
+      return (ServiceFactory<T>) contextMap.computeIfAbsent(
+          definition.getServiceType().getName(),
+          key -> ServiceFactory.create(definition)
+      );
+    } finally {
+      contextMap.remove(inprogressKey);
+    }
+  }
+
+
+  private static <T> int getOrder(T obj) {
+    Order order = obj.getClass().getAnnotation(Order.class);
+    if (order == null) {
+      return Order.LOWEST_PRECEDENCE;
+    }
+    return order.value();
+  }
+
+
+  public static boolean hasContext() {
+    return serviceContextMap.hasContext();
+    //ServiceContextMap.currentKey.get() != null;
+  }
+
+
+  private final List<T> services;
+
+
+  private ServiceFactory(List<T> services, ServiceDefinition<T> definition) {
+    if (services.isEmpty()) {
+      throw new IllegalArgumentException("cannot find services for " + definition.getServiceType());
+    }
+    this.services = Collections.unmodifiableList(services);
+  }
+
+
+  public List<T> getAll() {
+    return services;
+  }
+
+
+  public T getFirst() {
+    return getAll().get(0);
+  }
+
 }

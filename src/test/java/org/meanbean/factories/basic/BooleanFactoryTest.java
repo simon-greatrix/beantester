@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,25 +29,31 @@ import org.meanbean.util.RandomValueGenerator;
 
 public class BooleanFactoryTest extends BasicFactoryTestBase<Boolean> {
 
-	private static final Boolean RANDOM_BOOLEAN_1 = false;
+  private static final Boolean RANDOM_BOOLEAN_1 = false;
 
-	private static final Boolean RANDOM_BOOLEAN_2 = true;
+  private static final Boolean RANDOM_BOOLEAN_2 = true;
 
-	@Override
-	protected Factory<Boolean> createFactory(RandomValueGenerator randomValueGenerator) {
-		return new BooleanFactory(randomValueGenerator);
-	}
 
-	@Override
-	protected RandomValueGenerator createRandomNumberGenerator() {
-		return new ArrayBasedRandomValueGenerator(null, null, null, null, null, new boolean[] { RANDOM_BOOLEAN_1,
-		        RANDOM_BOOLEAN_2 });
-	}
+  @Override
+  protected Factory<Boolean> createFactory(RandomValueGenerator randomValueGenerator) {
+    return new BooleanFactory(randomValueGenerator);
+  }
 
-	@Test
-	public void createShouldReturnExpectedBooleans() throws Exception {
-		Factory<Boolean> factory = createFactory(createRandomNumberGenerator());
-		assertThat("Incorrect random Boolean.", factory.create(), is(RANDOM_BOOLEAN_1));
-		assertThat("Incorrect random Boolean.", factory.create(), is(RANDOM_BOOLEAN_2));
-	}
+
+  @Override
+  protected RandomValueGenerator createRandomNumberGenerator() {
+    return new ArrayBasedRandomValueGenerator(null, null, null, null, null, new boolean[]{
+        RANDOM_BOOLEAN_1,
+        RANDOM_BOOLEAN_2
+    });
+  }
+
+
+  @Test
+  public void createShouldReturnExpectedBooleans() throws Exception {
+    Factory<Boolean> factory = createFactory(createRandomNumberGenerator());
+    assertThat("Incorrect random Boolean.", factory.create(), is(RANDOM_BOOLEAN_1));
+    assertThat("Incorrect random Boolean.", factory.create(), is(RANDOM_BOOLEAN_2));
+  }
+
 }

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,33 +34,38 @@ import org.meanbean.test.beans.PrivateConstructorObject;
 
 public class BasicNewObjectInstanceFactoryTest {
 
-	@Test(expected = IllegalArgumentException.class)
-	public void constructorShouldPreventNullRandomNumberGenerator() throws Exception {
-		new BasicNewObjectInstanceFactory(null);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void constructorShouldPreventNullRandomNumberGenerator() throws Exception {
+    new BasicNewObjectInstanceFactory(null);
+  }
 
-	@Test
-	public void createShouldReturnNewObjectEachInvocation() throws Exception {
-		BasicNewObjectInstanceFactory factory = new BasicNewObjectInstanceFactory(Bean.class);
-		Object createdObject1 = factory.create();
-		Object createdObject2 = factory.create();
-		assertThat("Factory does not create new objects.", createdObject1, is(not(sameInstance(createdObject2))));
-	}
 
-	@Test(expected = ObjectCreationException.class)
-	public void createWillThrowObjectCreationExceptionWhenClassDoesNotHaveNoArgConstructor() throws Exception {
-		new BasicNewObjectInstanceFactory(NonBean.class).create();
-	}
+  @Test
+  public void createShouldReturnNewObjectEachInvocation() throws Exception {
+    BasicNewObjectInstanceFactory factory = new BasicNewObjectInstanceFactory(Bean.class);
+    Object createdObject1 = factory.create();
+    Object createdObject2 = factory.create();
+    assertThat("Factory does not create new objects.", createdObject1, is(not(sameInstance(createdObject2))));
+  }
 
-	@Test
-	public void createShouldReturnNewObjectEvenWhenClassHasPrivateConstructor() throws Exception {
-		Object createdObject = new BasicNewObjectInstanceFactory(PrivateConstructorObject.class).create();
-		assertThat("Factory failed to create non-null object.", createdObject, is(not(nullValue())));
-	}
 
-	@Test
-	public void createShouldReturnNewObjectEvenWhenClassHasPackagePrivateConstructor() throws Exception {
-		Object createdObject = new BasicNewObjectInstanceFactory(PackagePrivateConstructorObject.class).create();
-		assertThat("Factory failed to create non-null object.", createdObject, is(not(nullValue())));
-	}
+  @Test
+  public void createShouldReturnNewObjectEvenWhenClassHasPackagePrivateConstructor() throws Exception {
+    Object createdObject = new BasicNewObjectInstanceFactory(PackagePrivateConstructorObject.class).create();
+    assertThat("Factory failed to create non-null object.", createdObject, is(not(nullValue())));
+  }
+
+
+  @Test
+  public void createShouldReturnNewObjectEvenWhenClassHasPrivateConstructor() throws Exception {
+    Object createdObject = new BasicNewObjectInstanceFactory(PrivateConstructorObject.class).create();
+    assertThat("Factory failed to create non-null object.", createdObject, is(not(nullValue())));
+  }
+
+
+  @Test(expected = ObjectCreationException.class)
+  public void createWillThrowObjectCreationExceptionWhenClassDoesNotHaveNoArgConstructor() throws Exception {
+    new BasicNewObjectInstanceFactory(NonBean.class).create();
+  }
+
 }

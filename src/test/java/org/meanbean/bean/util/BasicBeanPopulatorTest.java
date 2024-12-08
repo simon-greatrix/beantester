@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,103 +47,113 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BasicBeanPopulatorTest {
 
-	private final BeanPopulator beanPopulator = new BasicBeanPopulator();
+  private final BeanPopulator beanPopulator = new BasicBeanPopulator();
 
-	@Mock
-	private ComplexBean beanMock;
+  @Mock
+  private BeanInformation beanInformationMock;
 
-	private BeanInformation beanInformationReal;
+  private BeanInformation beanInformationReal;
 
-	@Mock
-	private PropertyInformation propertyInformationMock;
+  @Mock
+  private ComplexBean beanMock;
 
-	@Mock
-	private BeanInformation beanInformationMock;
+  @Mock
+  private PropertyInformation propertyInformationMock;
 
-	private Map<String, Object> valuesReal;
+  @Mock
+  private Map<String, Object> valuesMock;
 
-	@Mock
-	private Map<String, Object> valuesMock;
+  private Map<String, Object> valuesReal;
 
-	@Before
-	public void setup() {
-		beanInformationReal = new JavaBeanInformationFactory().create(ComplexBean.class);
-		valuesReal = new HashMap<String, Object>();
-		valuesReal.put("id", 1L);
-		valuesReal.put("firstName", "MY_FIRST_NAME");
-		valuesReal.put("dateOfBirth", new Date());
-		valuesReal.put("favouriteNumber", 7L);
-		valuesReal.put("asString", "SHOULD_NOT_BE_USED");
-		valuesReal.put("nonExistentProperty", "SHOULD_NOT_BE_USED");
-	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void populateShouldPreventNullBeanArgument() throws Exception {
-		beanPopulator.populate(null, beanInformationMock, valuesMock);
-	}
+  @Test
+  public void populateShouldNotSetAnyPropertiesIfThereAreNoOnlyThosePropertiesThatExistInValuesMapMockTest()
+      throws Exception {
+    BeanInformation beanInformation = new JavaBeanInformationFactory().create(ComplexBean.class);
+    Map<String, Object> values = new HashMap<String, Object>();
+    values.put("asString", "SHOULD_NOT_BE_USED");
+    values.put("nonExistentProperty", "SHOULD_NOT_BE_USED");
+    beanPopulator.populate(beanMock, beanInformation, values);
+    verifyZeroInteractions(beanMock);
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void populateShouldPreventNullBeanInformationArgument() throws Exception {
-		beanPopulator.populate(beanMock, null, valuesMock);
-	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void populateShouldPreventNullValuesArgument() throws Exception {
-		beanPopulator.populate(beanMock, beanInformationMock, null);
-	}
+  @Test
+  public void populateShouldNotSetAnyPropertiesIfValuesMapIsEmptyMockTest() throws Exception {
+    BeanInformation beanInformation = new JavaBeanInformationFactory().create(ComplexBean.class);
+    beanPopulator.populate(beanMock, beanInformation, new HashMap<String, Object>());
+    verifyZeroInteractions(beanMock);
+  }
 
-	@Test
-	public void populateShouldSetPropertiesToValuesInValuesMap() throws Exception {
-		// Input
-		ComplexBean bean = new ComplexBean();
-		Map<String, Object> values = new HashMap<String, Object>(valuesReal);
-		values.put("lastName", "MY_LAST_NAME");
-		// System under test
-		beanPopulator.populate(bean, beanInformationReal, values);
-		// Post-conditions
-		assertThat(bean.getFirstName(), is((String) values.get("firstName")));
-		assertThat(bean.getLastName(), is((String) values.get("lastName")));
-		assertThat(bean.getDateOfBirth(), is((Date) values.get("dateOfBirth")));
-		assertThat(bean.getFavouriteNumber(), is((Long) values.get("favouriteNumber")));
-	}
 
-	@Test
-	public void populateShouldSetOnlyThosePropertiesThatExistInValuesMapMockTest() throws Exception {
-		beanPopulator.populate(beanMock, beanInformationReal, valuesReal);
-		verify(beanMock).setFirstName((String) valuesReal.get("firstName"));
-		verify(beanMock).setDateOfBirth((Date) valuesReal.get("dateOfBirth"));
-		verify(beanMock).setFavouriteNumber((Long) valuesReal.get("favouriteNumber"));
-		verify(beanMock, never()).setLastName((String) valuesReal.get("lastName"));
-		verify(beanMock).setId((Long) valuesReal.get("id"));
-		verifyNoMoreInteractions(beanMock);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void populateShouldPreventNullBeanArgument() throws Exception {
+    beanPopulator.populate(null, beanInformationMock, valuesMock);
+  }
 
-	@Test
-	public void populateShouldNotSetAnyPropertiesIfThereAreNoOnlyThosePropertiesThatExistInValuesMapMockTest()
-	        throws Exception {
-		BeanInformation beanInformation = new JavaBeanInformationFactory().create(ComplexBean.class);
-		Map<String, Object> values = new HashMap<String, Object>();
-		values.put("asString", "SHOULD_NOT_BE_USED");
-		values.put("nonExistentProperty", "SHOULD_NOT_BE_USED");
-		beanPopulator.populate(beanMock, beanInformation, values);
-		verifyZeroInteractions(beanMock);
-	}
 
-	@Test
-	public void populateShouldNotSetAnyPropertiesIfValuesMapIsEmptyMockTest() throws Exception {
-		BeanInformation beanInformation = new JavaBeanInformationFactory().create(ComplexBean.class);
-		beanPopulator.populate(beanMock, beanInformation, new HashMap<String, Object>());
-		verifyZeroInteractions(beanMock);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void populateShouldPreventNullBeanInformationArgument() throws Exception {
+    beanPopulator.populate(beanMock, null, valuesMock);
+  }
 
-	@Test(expected = BeanPopulationException.class)
-	public void populateShouldWrapExceptionsInBeanPopulationExceptions() throws Exception {
-		Collection<PropertyInformation> properties = new ArrayList<PropertyInformation>();
-		when(propertyInformationMock.isWritable()).thenReturn(true);
-		when(propertyInformationMock.getName()).thenReturn("id");
-		when(propertyInformationMock.getWriteMethod()).thenReturn(null);
-		properties.add(propertyInformationMock);
-		when(beanInformationMock.getProperties()).thenReturn(properties);
-		beanPopulator.populate(beanMock, beanInformationMock, valuesReal);
-	}
+
+  @Test(expected = IllegalArgumentException.class)
+  public void populateShouldPreventNullValuesArgument() throws Exception {
+    beanPopulator.populate(beanMock, beanInformationMock, null);
+  }
+
+
+  @Test
+  public void populateShouldSetOnlyThosePropertiesThatExistInValuesMapMockTest() throws Exception {
+    beanPopulator.populate(beanMock, beanInformationReal, valuesReal);
+    verify(beanMock).setFirstName((String) valuesReal.get("firstName"));
+    verify(beanMock).setDateOfBirth((Date) valuesReal.get("dateOfBirth"));
+    verify(beanMock).setFavouriteNumber((Long) valuesReal.get("favouriteNumber"));
+    verify(beanMock, never()).setLastName((String) valuesReal.get("lastName"));
+    verify(beanMock).setId((Long) valuesReal.get("id"));
+    verifyNoMoreInteractions(beanMock);
+  }
+
+
+  @Test
+  public void populateShouldSetPropertiesToValuesInValuesMap() throws Exception {
+    // Input
+    ComplexBean bean = new ComplexBean();
+    Map<String, Object> values = new HashMap<String, Object>(valuesReal);
+    values.put("lastName", "MY_LAST_NAME");
+    // System under test
+    beanPopulator.populate(bean, beanInformationReal, values);
+    // Post-conditions
+    assertThat(bean.getFirstName(), is((String) values.get("firstName")));
+    assertThat(bean.getLastName(), is((String) values.get("lastName")));
+    assertThat(bean.getDateOfBirth(), is((Date) values.get("dateOfBirth")));
+    assertThat(bean.getFavouriteNumber(), is((Long) values.get("favouriteNumber")));
+  }
+
+
+  @Test(expected = BeanPopulationException.class)
+  public void populateShouldWrapExceptionsInBeanPopulationExceptions() throws Exception {
+    Collection<PropertyInformation> properties = new ArrayList<PropertyInformation>();
+    when(propertyInformationMock.isWritable()).thenReturn(true);
+    when(propertyInformationMock.getName()).thenReturn("id");
+    when(propertyInformationMock.getWriteMethod()).thenReturn(null);
+    properties.add(propertyInformationMock);
+    when(beanInformationMock.getProperties()).thenReturn(properties);
+    beanPopulator.populate(beanMock, beanInformationMock, valuesReal);
+  }
+
+
+  @Before
+  public void setup() {
+    beanInformationReal = new JavaBeanInformationFactory().create(ComplexBean.class);
+    valuesReal = new HashMap<String, Object>();
+    valuesReal.put("id", 1L);
+    valuesReal.put("firstName", "MY_FIRST_NAME");
+    valuesReal.put("dateOfBirth", new Date());
+    valuesReal.put("favouriteNumber", 7L);
+    valuesReal.put("asString", "SHOULD_NOT_BE_USED");
+    valuesReal.put("nonExistentProperty", "SHOULD_NOT_BE_USED");
+  }
+
 }

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,11 +20,7 @@
 
 package org.meanbean.factories;
 
-import org.kohsuke.MetaInfServices;
-import org.meanbean.lang.Factory;
-import org.meanbean.util.Order;
-import org.meanbean.util.RandomValueGenerator;
-import org.meanbean.util.Types;
+import static org.meanbean.util.Types.getRawType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -55,7 +51,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 
-import static org.meanbean.util.Types.getRawType;
+import org.kohsuke.MetaInfServices;
+import org.meanbean.lang.Factory;
+import org.meanbean.util.Order;
+import org.meanbean.util.RandomValueGenerator;
+import org.meanbean.util.Types;
 
 /**
  * FactoryCollection for java.util.Collection types
@@ -64,165 +64,178 @@ import static org.meanbean.util.Types.getRawType;
 @MetaInfServices
 public class CollectionFactoryLookup implements FactoryLookup {
 
-	private final RandomValueGenerator randomValueGenerator = RandomValueGenerator.getInstance();
+  private static Map<Class<?>, Factory<?>> buildDefaultCollectionFactories() {
+    Map<Class<?>, Factory<?>> collectionFactories = new ConcurrentHashMap<>();
 
-	private Map<Class<?>, Factory<?>> collectionFactories = buildDefaultCollectionFactories();
-	private int maxSize = 8;
+    // Lists
+    collectionFactories.put(List.class, ArrayList::new);
 
-	public int getMaxSize() {
-		return maxSize;
-	}
+    // Maps
+    collectionFactories.put(Map.class, HashMap::new);
+    collectionFactories.put(ConcurrentMap.class, ConcurrentHashMap::new);
+    collectionFactories.put(SortedMap.class, TreeMap::new);
+    collectionFactories.put(NavigableMap.class, TreeMap::new);
 
-	public void setMaxSize(int maxArrayLength) {
-		this.maxSize = maxArrayLength;
-	}
+    // Sets
+    collectionFactories.put(Set.class, HashSet::new);
+    collectionFactories.put(SortedSet.class, TreeSet::new);
+    collectionFactories.put(NavigableSet.class, TreeSet::new);
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> Factory<T> getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
-		return (Factory<T>) createCollectionPopulatingFactory(typeToken);
-	}
+    // Other
+    collectionFactories.put(Collection.class, ArrayList::new);
+    collectionFactories.put(Queue.class, LinkedList::new);
+    collectionFactories.put(Deque.class, LinkedList::new);
+    collectionFactories.put(BlockingQueue.class, LinkedBlockingQueue::new);
+    collectionFactories.put(BlockingDeque.class, LinkedBlockingDeque::new);
+    collectionFactories.put(TransferQueue.class, LinkedTransferQueue::new);
+    return collectionFactories;
+  }
 
-	private Factory<?> findItemFactory(Type itemType) {
-		FactoryCollection factoryCollection = FactoryCollection.getInstance();
-		try {
-			return factoryCollection.getFactory(itemType);
-		} catch (NoSuchFactoryException e) {
-			return factoryCollection.getFactory(void.class);
-		}
-	}
+  private final Map<Class<?>, Factory<?>> collectionFactories = buildDefaultCollectionFactories();
 
-	@Override
-	public boolean hasFactory(Type type) {
-		Class<?> clazz = Types.getRawType(type);
-		return !clazz.equals(void.class) && (Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz));
-	}
+  private final RandomValueGenerator randomValueGenerator = RandomValueGenerator.getInstance();
 
-	private Type findElementType(Type type, int index) {
-		if (type instanceof ParameterizedType) {
-			return ((ParameterizedType) type).getActualTypeArguments()[index];
-		}
-		return String.class;
-	}
+  private int maxSize = 8;
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Factory<?> createCollectionPopulatingFactory(Type typeToken) {
-		Class<?> rawType = getRawType(typeToken);
-		Factory<Object> instanceFactory = findCollectionInstanceFactory(typeToken, rawType);
 
-		Type itemType = findElementType(typeToken, 0);
-		Factory<?> itemFactory = findItemFactory(itemType);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private Factory<?> createCollectionPopulatingFactory(Type typeToken) {
+    Class<?> rawType = getRawType(typeToken);
+    Factory<Object> instanceFactory = findCollectionInstanceFactory(typeToken, rawType);
 
-		if (Map.class.isAssignableFrom(rawType)) {
-			return createMapPopulatingFactory(typeToken, instanceFactory, itemFactory);
+    Type itemType = findElementType(typeToken, 0);
+    Factory<?> itemFactory = findItemFactory(itemType);
 
-		} else {
-			Factory<Object> populatingFactory = () -> {
-				Collection collection = (Collection) instanceFactory.create();
+    if (Map.class.isAssignableFrom(rawType)) {
+      return createMapPopulatingFactory(typeToken, instanceFactory, itemFactory);
 
-				int size = randomValueGenerator.nextInt(maxSize);
-				for (int idx = 0; idx < size; idx++) {
-					collection.add(itemFactory.create());
-				}
-				return collection;
-			};
+    } else {
+      Factory<Object> populatingFactory = () -> {
+        Collection collection = (Collection) instanceFactory.create();
 
-			return populatingFactory;
-		}
-	}
+        int size = randomValueGenerator.nextInt(maxSize);
+        for (int idx = 0; idx < size; idx++) {
+          collection.add(itemFactory.create());
+        }
+        return collection;
+      };
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Factory<?> createMapPopulatingFactory(Type typeToken, Factory<Object> instanceFactory, Factory<?> itemFactory) {
-		Type valueType = findElementType(typeToken, 1);
-		Factory<?> valueFactory = findItemFactory(valueType);
+      return populatingFactory;
+    }
+  }
 
-		Factory<Object> populatingFactory = () -> {
-			Map map = (Map) instanceFactory.create();
 
-			int size = randomValueGenerator.nextInt(maxSize);
-			for (int idx = 0; idx < size; idx++) {
-				map.put(itemFactory.create(), valueFactory.create());
-			}
-			return map;
-		};
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private Factory<?> createMapPopulatingFactory(Type typeToken, Factory<Object> instanceFactory, Factory<?> itemFactory) {
+    Type valueType = findElementType(typeToken, 1);
+    Factory<?> valueFactory = findItemFactory(valueType);
 
-		return populatingFactory;
-	}
+    Factory<Object> populatingFactory = () -> {
+      Map map = (Map) instanceFactory.create();
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private <T> Factory<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
-		if (isEnumMap(type, rawType)) {
-			Type keyType = findElementType(type, 0);
-			return () -> (T) new EnumMap((Class) keyType);
-		}
+      int size = randomValueGenerator.nextInt(maxSize);
+      for (int idx = 0; idx < size; idx++) {
+        map.put(itemFactory.create(), valueFactory.create());
+      }
+      return map;
+    };
 
-		if (isEnumSet(type, rawType)) {
-			Type keyType = findElementType(type, 0);
-			return () -> (T) EnumSet.noneOf((Class) keyType);
-		}
+    return populatingFactory;
+  }
 
-		Factory<?> factory = collectionFactories.get(rawType);
-		if (factory == null) {
-			factory = () -> {
-				try {
-					return rawType.getConstructor().newInstance();
-				} catch (Exception e) {
-					throw new IllegalStateException("cannot create instance for " + rawType, e);
-				}
-			};
-			collectionFactories.put(rawType, factory);
-		}
-		return (Factory<T>) factory;
-	}
 
-	@SuppressWarnings("rawtypes")
-	private boolean isEnumSet(Type type, Class<?> rawType) {
-		if (rawType.equals(EnumSet.class)) {
-			return true;
-		}
-		Type keyType = findElementType(type, 0);
-		if (rawType.equals(Set.class) && keyType instanceof Class) {
-			return ((Class) keyType).isEnum();
-		}
-		return false;
-	}
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private <T> Factory<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
+    if (isEnumMap(type, rawType)) {
+      Type keyType = findElementType(type, 0);
+      return () -> (T) new EnumMap((Class) keyType);
+    }
 
-	@SuppressWarnings("rawtypes")
-	private boolean isEnumMap(Type type, Class<?> rawType) {
-		if (rawType.equals(EnumMap.class)) {
-			return true;
-		}
-		Type keyType = findElementType(type, 0);
-		if (rawType.equals(Map.class) && keyType instanceof Class) {
-			return ((Class) keyType).isEnum();
-		}
-		return false;
-	}
+    if (isEnumSet(type, rawType)) {
+      Type keyType = findElementType(type, 0);
+      return () -> (T) EnumSet.noneOf((Class) keyType);
+    }
 
-	private static Map<Class<?>, Factory<?>> buildDefaultCollectionFactories() {
-		Map<Class<?>, Factory<?>> collectionFactories = new ConcurrentHashMap<>();
+    Factory<?> factory = collectionFactories.get(rawType);
+    if (factory == null) {
+      factory = () -> {
+        try {
+          return rawType.getConstructor().newInstance();
+        } catch (Exception e) {
+          throw new IllegalStateException("cannot create instance for " + rawType, e);
+        }
+      };
+      collectionFactories.put(rawType, factory);
+    }
+    return (Factory<T>) factory;
+  }
 
-		// Lists
-		collectionFactories.put(List.class, ArrayList::new);
 
-		// Maps
-		collectionFactories.put(Map.class, HashMap::new);
-		collectionFactories.put(ConcurrentMap.class, ConcurrentHashMap::new);
-		collectionFactories.put(SortedMap.class, TreeMap::new);
-		collectionFactories.put(NavigableMap.class, TreeMap::new);
+  private Type findElementType(Type type, int index) {
+    if (type instanceof ParameterizedType) {
+      return ((ParameterizedType) type).getActualTypeArguments()[index];
+    }
+    return String.class;
+  }
 
-		// Sets
-		collectionFactories.put(Set.class, HashSet::new);
-		collectionFactories.put(SortedSet.class, TreeSet::new);
-		collectionFactories.put(NavigableSet.class, TreeSet::new);
 
-		// Other
-		collectionFactories.put(Collection.class, ArrayList::new);
-		collectionFactories.put(Queue.class, LinkedList::new);
-		collectionFactories.put(Deque.class, LinkedList::new);
-		collectionFactories.put(BlockingQueue.class, LinkedBlockingQueue::new);
-		collectionFactories.put(BlockingDeque.class, LinkedBlockingDeque::new);
-		collectionFactories.put(TransferQueue.class, LinkedTransferQueue::new);
-		return collectionFactories;
-	}
+  private Factory<?> findItemFactory(Type itemType) {
+    FactoryCollection factoryCollection = FactoryCollection.getInstance();
+    try {
+      return factoryCollection.getFactory(itemType);
+    } catch (NoSuchFactoryException e) {
+      return factoryCollection.getFactory(void.class);
+    }
+  }
+
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> Factory<T> getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
+    return (Factory<T>) createCollectionPopulatingFactory(typeToken);
+  }
+
+
+  public int getMaxSize() {
+    return maxSize;
+  }
+
+
+  @Override
+  public boolean hasFactory(Type type) {
+    Class<?> clazz = Types.getRawType(type);
+    return !clazz.equals(void.class) && (Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz));
+  }
+
+
+  @SuppressWarnings("rawtypes")
+  private boolean isEnumMap(Type type, Class<?> rawType) {
+    if (rawType.equals(EnumMap.class)) {
+      return true;
+    }
+    Type keyType = findElementType(type, 0);
+    if (rawType.equals(Map.class) && keyType instanceof Class) {
+      return ((Class) keyType).isEnum();
+    }
+    return false;
+  }
+
+
+  @SuppressWarnings("rawtypes")
+  private boolean isEnumSet(Type type, Class<?> rawType) {
+    if (rawType.equals(EnumSet.class)) {
+      return true;
+    }
+    Type keyType = findElementType(type, 0);
+    if (rawType.equals(Set.class) && keyType instanceof Class) {
+      return ((Class) keyType).isEnum();
+    }
+    return false;
+  }
+
+
+  public void setMaxSize(int maxArrayLength) {
+    this.maxSize = maxArrayLength;
+  }
+
 }

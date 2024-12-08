@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,7 @@
 
 package org.meanbean.factories.time;
 
-import org.junit.Test;
-import org.meanbean.util.SimpleRandomValueGenerator;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -31,43 +30,51 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.Test;
+import org.meanbean.util.SimpleRandomValueGenerator;
 
 public class RandomClockTest {
 
-	private int count = 10;
-	private RandomClock randomClock = new RandomClock(new SimpleRandomValueGenerator());
+  private final int count = 10;
 
-	@Test
-	public void testGetZone() {
-		List<ZoneId> zones = nUniqueCopies(randomClock::getZone);
+  private final RandomClock randomClock = new RandomClock(new SimpleRandomValueGenerator());
 
-		assertThat(zones)
-				.allMatch(this::isValidZone)
-				.hasSizeGreaterThan(5);
-	}
 
-	@Test
-	public void testGetInstant() {
-		List<Instant> instants = nUniqueCopies(randomClock::instant);
+  private boolean isValidZone(ZoneId zoneId) {
+    return ZoneId.getAvailableZoneIds().contains(zoneId.getId());
+  }
 
-		assertThat(instants)
-				.hasSize(10);
-	}
 
-	@Test(expected = UnsupportedOperationException.class)
-	public void testWithZone() {
-		randomClock.withZone(ZoneOffset.UTC);
-	}
+  private <T> List<T> nUniqueCopies(Supplier<T> supplier) {
+    return IntStream.range(0, count)
+        .mapToObj(num -> supplier.get())
+        .distinct()
+        .collect(Collectors.toList());
+  }
 
-	private <T> List<T> nUniqueCopies(Supplier<T> supplier) {
-		return IntStream.range(0, count)
-				.mapToObj(num -> supplier.get())
-				.distinct()
-				.collect(Collectors.toList());
-	}
 
-	private boolean isValidZone(ZoneId zoneId) {
-		return ZoneId.getAvailableZoneIds().contains(zoneId.getId());
-	}
+  @Test
+  public void testGetInstant() {
+    List<Instant> instants = nUniqueCopies(randomClock::instant);
+
+    assertThat(instants)
+        .hasSize(10);
+  }
+
+
+  @Test
+  public void testGetZone() {
+    List<ZoneId> zones = nUniqueCopies(randomClock::getZone);
+
+    assertThat(zones)
+        .allMatch(this::isValidZone)
+        .hasSizeGreaterThan(5);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testWithZone() {
+    randomClock.withZone(ZoneOffset.UTC);
+  }
+
 }

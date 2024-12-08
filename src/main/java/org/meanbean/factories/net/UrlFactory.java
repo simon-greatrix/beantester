@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,10 +20,6 @@
 
 package org.meanbean.factories.net;
 
-import org.meanbean.factories.basic.RandomFactoryBase;
-import org.meanbean.util.RandomValueGenerator;
-import org.meanbean.util.RandomValueSampler;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -32,38 +28,47 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.meanbean.factories.basic.RandomFactoryBase;
+import org.meanbean.util.RandomValueGenerator;
+import org.meanbean.util.RandomValueSampler;
+
 public class UrlFactory extends RandomFactoryBase<URL> {
 
-	private RandomValueSampler sampler;
+  private final List<String> paths = Arrays.asList("", "/foo", "/foo/bar/", "/foo/bar/index?a=b");
 
-	private List<String> schemes = Arrays.asList("http://", "https://", "ftp://");
-	private List<String> tlds = Arrays.asList(".example", ".invalid", ".test");
-	private List<String> paths = Arrays.asList("", "/foo", "/foo/bar/", "/foo/bar/index?a=b");
+  private final RandomValueSampler sampler;
 
-	public UrlFactory(RandomValueGenerator randomValueGenerator) {
-		super(randomValueGenerator);
-		this.sampler = new RandomValueSampler(randomValueGenerator);
-	}
+  private final List<String> schemes = Arrays.asList("http://", "https://", "ftp://");
 
-	@Override
-	public URL create() {
-		String scheme = sampler.getFrom(schemes);
-		String domain = getRandomDomain();
-		String tld = sampler.getFrom(tlds);
-		String path = sampler.getFrom(paths);
-		String url = String.join("", scheme, domain, tld, path);
-		try {
-			return new URL(url);
-		} catch (MalformedURLException e) {
-			throw new IllegalStateException(url, e);
-		}
-	}
+  private final List<String> tlds = Arrays.asList(".example", ".invalid", ".test");
 
-	protected String getRandomDomain() {
-		int subdomainCount = getRandomValueGenerator().nextInt(1) + 1;
-		return IntStream.range(0, subdomainCount)
-				.mapToObj(num -> UUID.randomUUID().toString())
-				.collect(Collectors.joining("."));
-	}
+
+  public UrlFactory(RandomValueGenerator randomValueGenerator) {
+    super(randomValueGenerator);
+    this.sampler = new RandomValueSampler(randomValueGenerator);
+  }
+
+
+  @Override
+  public URL create() {
+    String scheme = sampler.getFrom(schemes);
+    String domain = getRandomDomain();
+    String tld = sampler.getFrom(tlds);
+    String path = sampler.getFrom(paths);
+    String url = String.join("", scheme, domain, tld, path);
+    try {
+      return new URL(url);
+    } catch (MalformedURLException e) {
+      throw new IllegalStateException(url, e);
+    }
+  }
+
+
+  protected String getRandomDomain() {
+    int subdomainCount = getRandomValueGenerator().nextInt(1) + 1;
+    return IntStream.range(0, subdomainCount)
+        .mapToObj(num -> UUID.randomUUID().toString())
+        .collect(Collectors.joining("."));
+  }
 
 }

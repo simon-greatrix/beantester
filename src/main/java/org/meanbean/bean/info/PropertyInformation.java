@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,83 +20,92 @@
 
 package org.meanbean.bean.info;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+
+import org.meanbean.util.ReadMethod;
+import org.meanbean.util.WriteMethod;
 
 /**
  * Defines an object that provides information about a JavaBean property.
- * 
+ *
  * @author Graham Williamson
  */
 public interface PropertyInformation {
 
-	/**
-	 * Get the name of the property.
-	 * 
-	 * @return The name of the property.
-	 */
-	String getName();
+  /**
+   * Get the name of the property.
+   *
+   * @return The name of the property.
+   */
+  String getName();
 
-	/**
-	 * Is the property publicly readable?
-	 * 
-	 * That is, does the property have a public getter method?
-	 * 
-	 * @return <code>true</code> if the property is publicly readable; <code>false</code> otherwise.
-	 */
-	boolean isReadable();
+  /**
+   * Get the public read method of the property; its getter method.
+   *
+   * @return The public read method of the property. If the property is not publicly readable, <code>null</code> is
+   *     returned.
+   */
+  ReadMethod getReadMethod();
 
-	/**
-	 * Is the property publicly writable?
-	 * 
-	 * That is, does the property have a public setter method?
-	 * 
-	 * @return <code>true</code> if the property is publicly writable; <code>false</code> otherwise.
-	 */
-	boolean isWritable();
+  /**
+   * Get the return type of the read method (getter method) of the property.
+   *
+   * @return The return type of the read method. If the property does not have a read method, returns
+   *     <code>null</code>
+   */
+  Type getReadMethodReturnType();
 
-	/**
-	 * Is the property both publicly readable and writable?
-	 * 
-	 * That is, does the property have both a public getter and public setter method?
-	 * 
-	 * @return <code>true</code> if the property is publicly readable and publicly writable; <code>false</code>
-	 *         otherwise.
-	 */
-	boolean isReadableWritable();
+  /**
+   * Get the public write method of the property; its setter method.
+   *
+   * @return The public write method of the property. If the property is not publicly writable, <code>null</code> is
+   *     returned.
+   */
+  WriteMethod getWriteMethod();
 
-	/**
-	 * Get the public read method of the property; its getter method.
-	 * 
-	 * @return The public read method of the property. If the property is not publicly readable, <code>null</code> is
-	 *         returned.
-	 */
-	Method getReadMethod();
+  /**
+   * Get the parameter type of the write method (setter method) of the property.
+   *
+   * @return The type of the write method parameter. If the property does not have a write method, returns
+   *     <code>null</code>
+   *
+   * @throws IllegalArgumentException If the write method takes more than one parameter, or zero parameters.
+   */
+  Type getWriteMethodParameterType() throws IllegalArgumentException;
 
-	/**
-	 * Get the public write method of the property; its setter method.
-	 * 
-	 * @return The public write method of the property. If the property is not publicly writable, <code>null</code> is
-	 *         returned.
-	 */
-	Method getWriteMethod();
+  /**
+   * Can the property be set to null?
+   *
+   * @return <code>true</code> if the property can be set to null; <code>false</code> otherwise.
+   */
+  boolean isNullable();
 
-	/**
-	 * Get the return type of the read method (getter method) of the property.
-	 * 
-	 * @return The return type of the read method. If the property does not have a read method, returns
-	 *         <code>null</code>
-	 */
-	Type getReadMethodReturnType();
+  /**
+   * Is the property publicly readable?
+   * <p>
+   * That is, does the property have a public getter method?
+   *
+   * @return <code>true</code> if the property is publicly readable; <code>false</code> otherwise.
+   */
+  boolean isReadable();
 
-	/**
-	 * Get the parameter type of the write method (setter method) of the property.
-	 * 
-	 * @return The type of the write method parameter. If the property does not have a write method, returns
-	 *         <code>null</code>
-	 * 
-	 * @throws IllegalArgumentException
-	 *             If the write method takes more than one parameter, or zero parameters.
-	 */
-	Type getWriteMethodParameterType() throws IllegalArgumentException;
+  /**
+   * Is the property both publicly readable and writable?
+   * <p>
+   * That is, does the property have both a public getter and public setter method?
+   *
+   * @return <code>true</code> if the property is publicly readable and publicly writable; <code>false</code>
+   *     otherwise.
+   */
+  boolean isReadableWritable();
+
+  /**
+   * Is the property publicly writable?
+   * <p>
+   * That is, does the property have a public setter method?
+   *
+   * @return <code>true</code> if the property is publicly writable; <code>false</code> otherwise.
+   */
+  boolean isWritable();
+
 }

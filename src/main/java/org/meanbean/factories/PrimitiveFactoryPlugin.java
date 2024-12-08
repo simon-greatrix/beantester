@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,22 +33,23 @@ import org.meanbean.util.RandomValueGenerator;
 
 /**
  * Concrete FactoryCollectionPlugin that registers Factories that create Java primitives.
- * 
+ *
  * @author Graham Williamson
  */
 @MetaInfServices
 public class PrimitiveFactoryPlugin implements FactoryCollectionPlugin {
 
-	@Override
-	public void initialize(FactoryCollection factoryCollection, RandomValueGenerator randomValueGenerator) {
-		factoryCollection.addFactory(boolean.class, new BooleanFactory(randomValueGenerator));
-		factoryCollection.addFactory(byte.class, new ByteFactory(randomValueGenerator));
-		factoryCollection.addFactory(short.class, new ShortFactory(randomValueGenerator));
-		factoryCollection.addFactory(int.class, new IntegerFactory(randomValueGenerator));
-		factoryCollection.addFactory(long.class, new LongFactory(randomValueGenerator));
-		factoryCollection.addFactory(float.class, new FloatFactory(randomValueGenerator));
-		factoryCollection.addFactory(double.class, new DoubleFactory(randomValueGenerator));
-		factoryCollection.addFactory(char.class, new CharacterFactory(randomValueGenerator));
-		factoryCollection.addFactory(void.class, () -> null);
-	}
+  @Override
+  public void initialize(FactoryCollection factoryCollection, RandomValueGenerator randomValueGenerator) {
+    factoryCollection.addFactory(boolean.class, new BooleanFactory(randomValueGenerator));
+    factoryCollection.addFactory(byte.class, new ByteFactory(randomValueGenerator));
+    factoryCollection.addFactory(short.class, new ShortFactory(randomValueGenerator));
+    factoryCollection.addFactory(int.class, new IntegerFactory(randomValueGenerator));
+    factoryCollection.addFactory(long.class, new LongFactory(randomValueGenerator));
+    factoryCollection.addFactory(float.class, new FloatFactory(randomValueGenerator));
+    factoryCollection.addFactory(double.class, new DoubleFactory(randomValueGenerator));
+    factoryCollection.addFactory(char.class, new CharacterFactory(randomValueGenerator));
+    factoryCollection.addFactory(void.class, () -> null);
+  }
+
 }

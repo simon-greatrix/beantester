@@ -30,4 +30,5 @@ final class PreJava9ReflectionAccessor extends ReflectionAccessor {
   public void makeAccessible(AccessibleObject ao) {
     ao.setAccessible(true);
   }
+
 }

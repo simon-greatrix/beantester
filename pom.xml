@@ -4,10 +4,10 @@
 	<artifactId>meanbean</artifactId>
 	<version>3.0.0-M10-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	
+
 	<name>meanbean</name>
 	<description>
-		Mean Bean is an open source Java test library that tests equals and hashCode contract compliance, as well as 
+		Mean Bean is an open source Java test library that tests equals and hashCode contract compliance, as well as
 		JavaBean/POJO getter and setter methods.
 	</description>
 	<url>http://github.com/meanbeanlib/meanbean/</url>
@@ -30,7 +30,7 @@
 			<comments>A business-friendly OSS license</comments>
 		</license>
 	</licenses>
-	
+
 	<scm>
 		<connection>scm:git:git://github.com/meanbeanlib/meanbean.git</connection>
 		<developerConnection>scm:git:https://github.com/meanbeanlib/meanbean.git</developerConnection>
@@ -159,16 +159,12 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.github.meanbeanlib</groupId>
-			<artifactId>meanmirror</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.25</version>
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
@@ -191,24 +187,28 @@
 			<version>4.13.1</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.hamcrest</groupId>
 			<artifactId>hamcrest-all</artifactId>
 			<version>1.3</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
 			<version>1.8.5</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
 			<version>3.16.1</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>

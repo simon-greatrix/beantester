@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,194 +36,228 @@ import org.junit.Test;
 
 public class JavaBeanInformationTest {
 
-	static class BeanWithNoProperties {
-		// Nothing
-	}
+  private static final List<String> EXPECTED_PROPERTIES = Arrays
+      .asList("age", "dateOfBirth", "firstName", "id", "lastName");
 
-	static class BeanWithProperties {
 
-		private static long nextId = 1;
 
-		private final long id; // readable
+  static class BeanWithNoProperties {
+    // Nothing
+  }
 
-		private String firstName; // readable-writable
 
-		private String lastName; // readable-writable
 
-		private Date dateOfBirth; // writable
+  static class BeanWithProperties {
 
-		private String favouriteColour;
+    private static long nextId = 1;
 
-		private String firstPet;
+    private final long id; // readable
 
-		public BeanWithProperties() {
-			id = nextId++;
-		}
+    private Date dateOfBirth; // writable
 
-		public String getFirstName() {
-			return firstName;
-		}
+    private String favouriteColour;
 
-		public void setFirstName(String firstName) {
-			this.firstName = firstName;
-		}
+    private String firstName; // readable-writable
 
-		public String getLastName() {
-			return lastName;
-		}
+    private String firstPet;
 
-		public void setLastName(String lastName) {
-			this.lastName = lastName;
-		}
+    private String lastName; // readable-writable
 
-		public long getId() {
-			return id;
-		}
 
-		public void setDateOfBirth(Date dateOfBirth) {
-			this.dateOfBirth = dateOfBirth;
-		}
+    public BeanWithProperties() {
+      id = nextId++;
+    }
 
-		public int getAge() {
-			Calendar calendar = Calendar.getInstance();
-			int currentYear = calendar.get(Calendar.YEAR);
-			calendar.setTime(dateOfBirth);
-			int birthYear = calendar.get(Calendar.YEAR);
-			return currentYear - birthYear;
-		}
 
-		protected void setFavouriteColour(String favouriteColour) {
-			this.favouriteColour = favouriteColour;
-		}
+    public int getAge() {
+      Calendar calendar = Calendar.getInstance();
+      int currentYear = calendar.get(Calendar.YEAR);
+      calendar.setTime(dateOfBirth);
+      int birthYear = calendar.get(Calendar.YEAR);
+      return currentYear - birthYear;
+    }
 
-		protected String getFavouriteColour() {
-			return favouriteColour;
-		}
 
-		void setFirstPet(String firstPet) {
-			this.firstPet = firstPet;
-		}
+    protected String getFavouriteColour() {
+      return favouriteColour;
+    }
 
-		String getFirstPet() {
-			return firstPet;
-		}
-	}
 
-	private static List<String> EXPECTED_PROPERTIES = Arrays
-	        .asList("age", "dateOfBirth", "firstName", "id", "lastName");
+    public String getFirstName() {
+      return firstName;
+    }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void shouldPreventIllegalBeanClass() throws Exception {
-		new JavaBeanInformation(null);
-	}
 
-	@Test
-	public void shouldHaveSameBeanClassAsClassPassedToConstructor() throws Exception {
-		Class<BeanWithProperties> beanClass = BeanWithProperties.class;
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(beanClass);
-		assertEquals("Incorrect beanClass.", javaBeanInformation.getBeanClass(), beanClass);
-	}
+    String getFirstPet() {
+      return firstPet;
+    }
 
-	@Test
-	public void shouldHavePropertyNamesOfClassPassedToConstructor() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		assertThat("Incorrect number of propertyNames.", javaBeanInformation.getPropertyNames().size(),
-		        is(EXPECTED_PROPERTIES.size()));
-		assertThat("Incorrect propertyNames.", EXPECTED_PROPERTIES.containsAll(javaBeanInformation.getPropertyNames()),
-		        is(true));
-	}
 
-	@Test
-	public void shouldHaveNoPropertyNamesWhenConstructorPassedBeanWithNoProperties() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithNoProperties.class);
-		assertThat("Incorrect propertyNames.", javaBeanInformation.getPropertyNames().isEmpty(), is(true));
-	}
+    public long getId() {
+      return id;
+    }
 
-	@Test
-	public void shouldHaveSameNumberOfPropertyInformationObjectsAsNumberOfPropertiesInClassPassedToConstructor()
-	        throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		assertThat("Incorrect number of properties.", javaBeanInformation.getProperties().size(),
-		        is(EXPECTED_PROPERTIES.size()));
-	}
 
-	@Test
-	public void shouldHaveNoPropertyInformationWhenConstructorPassedBeanWithNoProperties() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithNoProperties.class);
-		assertThat("Incorrect properties.", javaBeanInformation.getProperties().isEmpty(), is(true));
-	}
+    public String getLastName() {
+      return lastName;
+    }
 
-	@Test
-	public void shouldHaveIdPropertyInformationOfClassPassedToConstructor() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		Map<String, PropertyInformation> propertyMap =
-		        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
-		PropertyInformation property = propertyMap.get("id");
-		assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getId"));
-		assertThat("Incorrect property write method.", property.getWriteMethod(), is(nullValue()));
-		assertThat("Incorrect property readability.", property.isReadable(), is(true));
-		assertThat("Incorrect property writability.", property.isWritable(), is(false));
-		assertThat("Incorrect property writability.", property.isReadableWritable(), is(false));
-	}
 
-	@Test
-	public void shouldHaveFirstNamePropertyInformationOfClassPassedToConstructor() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		Map<String, PropertyInformation> propertyMap =
-		        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
-		PropertyInformation property = propertyMap.get("firstName");
-		assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getFirstName"));
-		assertThat("Incorrect property write method.", property.getWriteMethod().getName(), is("setFirstName"));
-		assertThat("Incorrect property readability.", property.isReadable(), is(true));
-		assertThat("Incorrect property writability.", property.isWritable(), is(true));
-		assertThat("Incorrect property writability.", property.isReadableWritable(), is(true));
-	}
+    public void setDateOfBirth(Date dateOfBirth) {
+      this.dateOfBirth = dateOfBirth;
+    }
 
-	@Test
-	public void shouldHaveLastNamePropertyInformationOfClassPassedToConstructor() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		Map<String, PropertyInformation> propertyMap =
-		        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
-		PropertyInformation property = propertyMap.get("lastName");
-		assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getLastName"));
-		assertThat("Incorrect property write method.", property.getWriteMethod().getName(), is("setLastName"));
-		assertThat("Incorrect property readability.", property.isReadable(), is(true));
-		assertThat("Incorrect property writability.", property.isWritable(), is(true));
-		assertThat("Incorrect property writability.", property.isReadableWritable(), is(true));
-	}
 
-	@Test
-	public void shouldHaveDateOfBirthPropertyInformationOfClassPassedToConstructor() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		Map<String, PropertyInformation> propertyMap =
-		        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
-		PropertyInformation property = propertyMap.get("dateOfBirth");
-		assertThat("Incorrect property read method.", property.getReadMethod(), is(nullValue()));
-		assertThat("Incorrect property write method.", property.getWriteMethod().getName(), is("setDateOfBirth"));
-		assertThat("Incorrect property readability.", property.isReadable(), is(false));
-		assertThat("Incorrect property writability.", property.isWritable(), is(true));
-		assertThat("Incorrect property writability.", property.isReadableWritable(), is(false));
-	}
+    protected void setFavouriteColour(String favouriteColour) {
+      this.favouriteColour = favouriteColour;
+    }
 
-	@Test
-	public void shouldHaveAgePropertyInformationOfClassPassedToConstructor() throws Exception {
-		JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
-		Map<String, PropertyInformation> propertyMap =
-		        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
-		PropertyInformation property = propertyMap.get("age");
-		assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getAge"));
-		assertThat("Incorrect property write method.", property.getWriteMethod(), is(nullValue()));
-		assertThat("Incorrect property readability.", property.isReadable(), is(true));
-		assertThat("Incorrect property writability.", property.isWritable(), is(false));
-		assertThat("Incorrect property writability.", property.isReadableWritable(), is(false));
-	}
 
-	private Map<String, PropertyInformation> convertToMapOfPropertyNamesToPropertyInformation(
-	        JavaBeanInformation javaBeanInformation) {
-		Map<String, PropertyInformation> propertyMap = new HashMap<String, PropertyInformation>();
-		for (PropertyInformation property : javaBeanInformation.getProperties()) {
-			propertyMap.put(property.getName(), property);
-		}
-		return propertyMap;
-	}
+    public void setFirstName(String firstName) {
+      this.firstName = firstName;
+    }
+
+
+    void setFirstPet(String firstPet) {
+      this.firstPet = firstPet;
+    }
+
+
+    public void setLastName(String lastName) {
+      this.lastName = lastName;
+    }
+
+  }
+
+
+  private Map<String, PropertyInformation> convertToMapOfPropertyNamesToPropertyInformation(
+      JavaBeanInformation javaBeanInformation
+  ) {
+    Map<String, PropertyInformation> propertyMap = new HashMap<String, PropertyInformation>();
+    for (PropertyInformation property : javaBeanInformation.getProperties()) {
+      propertyMap.put(property.getName(), property);
+    }
+    return propertyMap;
+  }
+
+
+  @Test
+  public void shouldHaveAgePropertyInformationOfClassPassedToConstructor() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    Map<String, PropertyInformation> propertyMap =
+        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
+    PropertyInformation property = propertyMap.get("age");
+    assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getAge"));
+    assertThat("Incorrect property write method.", property.getWriteMethod(), is(nullValue()));
+    assertThat("Incorrect property readability.", property.isReadable(), is(true));
+    assertThat("Incorrect property writability.", property.isWritable(), is(false));
+    assertThat("Incorrect property writability.", property.isReadableWritable(), is(false));
+  }
+
+
+  @Test
+  public void shouldHaveDateOfBirthPropertyInformationOfClassPassedToConstructor() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    Map<String, PropertyInformation> propertyMap =
+        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
+    PropertyInformation property = propertyMap.get("dateOfBirth");
+    assertThat("Incorrect property read method.", property.getReadMethod(), is(nullValue()));
+    assertThat("Incorrect property write method.", property.getWriteMethod().getName(), is("setDateOfBirth"));
+    assertThat("Incorrect property readability.", property.isReadable(), is(false));
+    assertThat("Incorrect property writability.", property.isWritable(), is(true));
+    assertThat("Incorrect property writability.", property.isReadableWritable(), is(false));
+  }
+
+
+  @Test
+  public void shouldHaveFirstNamePropertyInformationOfClassPassedToConstructor() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    Map<String, PropertyInformation> propertyMap =
+        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
+    PropertyInformation property = propertyMap.get("firstName");
+    assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getFirstName"));
+    assertThat("Incorrect property write method.", property.getWriteMethod().getName(), is("setFirstName"));
+    assertThat("Incorrect property readability.", property.isReadable(), is(true));
+    assertThat("Incorrect property writability.", property.isWritable(), is(true));
+    assertThat("Incorrect property writability.", property.isReadableWritable(), is(true));
+  }
+
+
+  @Test
+  public void shouldHaveIdPropertyInformationOfClassPassedToConstructor() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    Map<String, PropertyInformation> propertyMap =
+        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
+    PropertyInformation property = propertyMap.get("id");
+    assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getId"));
+    assertThat("Incorrect property write method.", property.getWriteMethod(), is(nullValue()));
+    assertThat("Incorrect property readability.", property.isReadable(), is(true));
+    assertThat("Incorrect property writability.", property.isWritable(), is(false));
+    assertThat("Incorrect property writability.", property.isReadableWritable(), is(false));
+  }
+
+
+  @Test
+  public void shouldHaveLastNamePropertyInformationOfClassPassedToConstructor() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    Map<String, PropertyInformation> propertyMap =
+        convertToMapOfPropertyNamesToPropertyInformation(javaBeanInformation);
+    PropertyInformation property = propertyMap.get("lastName");
+    assertThat("Incorrect property read method.", property.getReadMethod().getName(), is("getLastName"));
+    assertThat("Incorrect property write method.", property.getWriteMethod().getName(), is("setLastName"));
+    assertThat("Incorrect property readability.", property.isReadable(), is(true));
+    assertThat("Incorrect property writability.", property.isWritable(), is(true));
+    assertThat("Incorrect property writability.", property.isReadableWritable(), is(true));
+  }
+
+
+  @Test
+  public void shouldHaveNoPropertyInformationWhenConstructorPassedBeanWithNoProperties() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithNoProperties.class);
+    assertThat("Incorrect properties.", javaBeanInformation.getProperties().isEmpty(), is(true));
+  }
+
+
+  @Test
+  public void shouldHaveNoPropertyNamesWhenConstructorPassedBeanWithNoProperties() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithNoProperties.class);
+    assertThat("Incorrect propertyNames.", javaBeanInformation.getPropertyNames().isEmpty(), is(true));
+  }
+
+
+  @Test
+  public void shouldHavePropertyNamesOfClassPassedToConstructor() throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    assertThat("Incorrect number of propertyNames.", javaBeanInformation.getPropertyNames().size(),
+        is(EXPECTED_PROPERTIES.size())
+    );
+    assertThat("Incorrect propertyNames.", EXPECTED_PROPERTIES.containsAll(javaBeanInformation.getPropertyNames()),
+        is(true)
+    );
+  }
+
+
+  @Test
+  public void shouldHaveSameBeanClassAsClassPassedToConstructor() throws Exception {
+    Class<BeanWithProperties> beanClass = BeanWithProperties.class;
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(beanClass);
+    assertEquals("Incorrect beanClass.", javaBeanInformation.getBeanClass(), beanClass);
+  }
+
+
+  @Test
+  public void shouldHaveSameNumberOfPropertyInformationObjectsAsNumberOfPropertiesInClassPassedToConstructor()
+      throws Exception {
+    JavaBeanInformation javaBeanInformation = new JavaBeanInformation(BeanWithProperties.class);
+    assertThat("Incorrect number of properties.", javaBeanInformation.getProperties().size(),
+        is(EXPECTED_PROPERTIES.size())
+    );
+  }
+
+
+  @Test(expected = IllegalArgumentException.class)
+  public void shouldPreventIllegalBeanClass() throws Exception {
+    new JavaBeanInformation(null);
+  }
+
 }
