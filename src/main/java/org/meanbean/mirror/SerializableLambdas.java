@@ -21,10 +21,13 @@
 package org.meanbean.mirror;
 
 import java.io.Serializable;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 public class SerializableLambdas {
 
@@ -133,7 +136,7 @@ public class SerializableLambdas {
    *
    * @return The lambda
    */
-  public <X extends SerializableLambda> X createLambda(Class<X> lambdaType, Class<?> clazz, String methodName) {
+  public static <X extends SerializableLambda> X createLambda(Class<X> lambdaType, Class<?> clazz, String methodName) {
     try {
       return createLambda(lambdaType, clazz.getMethod(methodName));
     } catch (NoSuchMethodException e) {
@@ -151,7 +154,7 @@ public class SerializableLambdas {
    *
    * @return The lambda
    */
-  public <X extends SerializableLambda> X createLambda(Class<X> lambdaType, Method method) {
+  public static <X extends SerializableLambda> X createLambda(Class<X> lambdaType, Method method) {
     try {
       MethodHandle handle = MethodHandles.lookup().unreflect(method);
       return createLambda(lambdaType, handle);
@@ -170,8 +173,34 @@ public class SerializableLambdas {
    *
    * @return The lambda
    */
-  public <X extends SerializableLambda> X createLambda(Class<X> lambdaType, MethodHandle handle) {
-    return MethodHandleProxies.asInterfaceInstance(lambdaType, handle);
+  public static <X extends SerializableLambda> X createLambda(Class<X> lambdaType, MethodHandle handle) {
+    MethodType lambdaMethodType = null;
+    for (Method m : lambdaType.getMethods()) {
+      if (m.getName().equals("exec")) {
+        lambdaMethodType = MethodType.methodType(m.getReturnType(), m.getParameterTypes());
+        break;
+      }
+    }
+    Objects.requireNonNull(lambdaMethodType, "No exec method found in lambda type");
+
+    try {
+      CallSite site = LambdaMetafactory.altMetafactory(
+          MethodHandles.lookup(),
+          "exec",
+          MethodType.methodType(lambdaType),
+          lambdaMethodType,
+          handle,
+          handle.type(),
+          LambdaMetafactory.FLAG_SERIALIZABLE
+      );
+
+      @SuppressWarnings("unchecked") X lambda = (X) site.getTarget().invoke();
+      return lambda;
+    } catch (Error error) {
+      throw error;
+    } catch (Throwable exception) {
+      throw new AssertionError("Internal error", exception);
+    }
   }
 
 }
