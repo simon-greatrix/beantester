@@ -153,7 +153,8 @@ public class BasicFactoryLookupStrategy implements FactoryLookupStrategy {
 
 
   private Factory<?> doGetFactory(
-      BeanInformation beanInformation, PropertyInformation propertyInformation,
+      BeanInformation beanInformation,
+      PropertyInformation propertyInformation,
       Configuration configuration
   ) {
 

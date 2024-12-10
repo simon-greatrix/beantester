@@ -36,6 +36,7 @@ import org.meanbean.test.internal.NoopSideEffectDetector;
 import org.meanbean.test.internal.SideEffectDetector;
 import org.meanbean.util.RandomValueGenerator;
 import org.meanbean.util.ServiceFactory;
+import org.meanbean.util.ServiceFactory.ContextId;
 import org.meanbean.util.ServiceLoader;
 import org.meanbean.util.ValidationHelper;
 
@@ -143,12 +144,13 @@ public class BeanTester {
   /** Random number generator used by factories to randomly generate values. */
   private final RandomValueGenerator randomValueGenerator;
 
+  private final ContextId contextId;
 
   /**
    * Prefer {@link BeanVerifier} or {@link BeanTesterBuilder#newBeanTester()}
    */
   public BeanTester() {
-    ServiceFactory.createContext(this);
+    this.contextId = ServiceFactory.createContext();
     this.randomValueGenerator = RandomValueGenerator.getInstance();
     this.factoryCollection = FactoryCollection.getInstance();
     this.factoryLookupStrategy = FactoryLookupStrategy.getInstance();
@@ -163,7 +165,7 @@ public class BeanTester {
       FactoryLookupStrategy factoryLookupStrategy, BeanInformationFactory beanInformationFactory,
       BeanPropertyTester beanPropertyTester, Function<Class<?>, Configuration> configurationProvider
   ) {
-    ServiceFactory.createContextIfNeeded(this);
+    this.contextId = ServiceFactory.createContextIfNeeded();
     this.randomValueGenerator = randomValueGenerator;
     this.factoryCollection = factoryCollection;
     this.factoryLookupStrategy = factoryLookupStrategy;

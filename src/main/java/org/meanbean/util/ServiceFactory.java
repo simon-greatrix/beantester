@@ -39,76 +39,63 @@ public class ServiceFactory<T> {
   private static final ServiceContextMap serviceContextMap = new ServiceContextMap();
 
 
+  /** The context key for the current thread. When this is garbage-collected, the context is cleared. */
+  public static class ContextId {
+    private ContextId() {
+      // only created here
+    }
+  }
+
 
   private static class ServiceContextMap {
 
-    private static final ThreadLocal<WeakReference<Object>> currentKey = new ThreadLocal<>();
+    private static final ThreadLocal<WeakReference<ContextId>> currentKey = new ThreadLocal<>();
 
-    private final Map<Object, Map<String, Object>> contextMapByKeys = new WeakHashMap<>();
-
-    private final Set<Class<?>> keyTypes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final WeakHashMap<ContextId, Map<String, Object>> contextMapByKeys = new WeakHashMap<>();
 
 
     public synchronized void clear() {
       contextMapByKeys.clear();
-      keyTypes.clear();
       currentKey.remove();
     }
 
+    private synchronized ContextId createContext(boolean overwrite) {
+      WeakReference<ContextId> keyRef = currentKey.get();
+      ContextId key = keyRef != null ? keyRef.get() : null;
+      if (key == null) {
+        key = new ContextId();
+        currentKey.set(new WeakReference<>(key));
+      } else if( overwrite ) {
+        contextMapByKeys.remove(key);
+        key = new ContextId();
+        currentKey.set(new WeakReference<>(key));
+      }
+      return key;
+    }
 
-    public void createContext(Object key) {
-      verifyIdentityEquals(key);
-      currentKey.set(new WeakReference<>(key));
+    public synchronized ContextId createContext() {
+      return createContext(true);
     }
 
 
-    public void createContextIfNeeded(Object key) {
-      if (!hasContext()) {
-        createContext(key);
-      }
+    public ContextId createContextIfNeeded() {
+      return createContext(false);
     }
 
 
     public synchronized Map<String, Object> getContextMap() {
-      WeakReference<Object> ref = currentKey.get();
+      WeakReference<ContextId> ref = currentKey.get();
       Objects.requireNonNull(ref, "context key not set");
 
-      Object key = ref.get();
+      ContextId key = ref.get();
       Objects.requireNonNull(key, "context key not available");
       return contextMapByKeys.computeIfAbsent(key, any -> new ConcurrentHashMap<>());
     }
 
 
     public boolean hasContext() {
-      WeakReference<Object> ref = currentKey.get();
+      WeakReference<ContextId> ref = currentKey.get();
       return ref != null && ref.get() != null;
-    }
-
-
-    private void verifyIdentityEquals(Object obj) {
-      if (keyTypes.contains(obj.getClass())) {
-        return;
-      }
-
-      if (!obj.getClass().equals(Object.class)) {
-        try {
-          Method method = obj.getClass().getMethod("equals", Object.class);
-          ValidationHelper.ensure(
-              method.getDeclaringClass().equals(Object.class),
-              "unexpected declaration class for " + method
-          );
-
-          method = obj.getClass().getMethod("hashCode");
-          ValidationHelper.ensure(
-              method.getDeclaringClass().equals(Object.class),
-              "unexpected declaration class for " + method
-          );
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }
-
-      keyTypes.add(obj.getClass());
     }
 
   }
@@ -125,15 +112,13 @@ public class ServiceFactory<T> {
   }
 
 
-  public static Void createContext(Object key) {
-    serviceContextMap.createContext(key);
-    return null;
+  public static ContextId createContext() {
+    return serviceContextMap.createContext();
   }
 
 
-  public static Void createContextIfNeeded(Object key) {
-    serviceContextMap.createContextIfNeeded(key);
-    return null;
+  public static ContextId createContextIfNeeded() {
+    return serviceContextMap.createContextIfNeeded();
   }
 
 

@@ -137,7 +137,7 @@ public class BasicFactoryLookupStrategyTest {
   @Test
   public void getFactoryShouldReturnFactoryInConfigurationRatherThanDynamicBeanFactory() throws Exception {
     Configuration configuration = new ConfigurationBuilder()
-        .overrideFactory(PROPERTY_NAME, new NullFactory())
+        .factory(PROPERTY_NAME, new NullFactory())
         .build();
     PropertyInformationBean propertyInformationBean = new PropertyInformationBean();
     propertyInformationBean.setName(PROPERTY_NAME);
@@ -150,7 +150,7 @@ public class BasicFactoryLookupStrategyTest {
   @Test
   public void getFactoryShouldReturnFactoryInConfigurationRatherThanEnumFactory() throws Exception {
     Configuration configuration = new ConfigurationBuilder()
-        .overrideFactory(PROPERTY_NAME, new NullFactory())
+        .factory(PROPERTY_NAME, new NullFactory())
         .build();
     PropertyInformationBean propertyInformationBean = new PropertyInformationBean();
     propertyInformationBean.setName(PROPERTY_NAME);
@@ -163,7 +163,7 @@ public class BasicFactoryLookupStrategyTest {
   @Test
   public void getFactoryShouldReturnFactoryInConfigurationRatherThanRegisteredFactory() throws Exception {
     Configuration configuration = new ConfigurationBuilder()
-        .overrideFactory(PROPERTY_NAME, new NullFactory())
+        .factory(PROPERTY_NAME, new NullFactory())
         .build();
     PropertyInformationBean propertyInformationBean = new PropertyInformationBean();
     propertyInformationBean.setName(PROPERTY_NAME);

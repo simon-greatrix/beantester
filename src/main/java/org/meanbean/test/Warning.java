@@ -7,7 +7,7 @@ public enum Warning {
 
   /**
    * Disables the check and do not fail for setter methods that have side-effect other properties. For example,
-   * a setter method that sets prroperty fields.
+   * a setter method that sets property fields.
    */
   SETTER_SIDE_EFFECT,
 

@@ -45,8 +45,8 @@ public class ConfigurationBuilderTest {
 
 
   @Test(expected = IllegalArgumentException.class)
-  public void ignorePropertyShouldPreventNullProperty() {
-    new ConfigurationBuilder().ignoreProperty(null);
+  public void ignorePropertyShouldPreventNull() {
+    new ConfigurationBuilder().ignore(null);
   }
 
 
@@ -70,7 +70,7 @@ public class ConfigurationBuilderTest {
   public void ignorePropertyShouldReturnTrueForPropertiesToIgnore() {
     ConfigurationBuilder configurationBuilder = ConfigurationBuilderFactory.create();
     final String testProperty = "AN_ADDITIONAL_TEST_PROPERTY";
-    configurationBuilder.ignoreProperty(testProperty);
+    configurationBuilder.ignore(testProperty);
     Configuration configuration = configurationBuilder.build();
     assertThat("Property should be ignored.", configuration.isIgnoredProperty(IGNORE_PROPERTY_1), is(true));
     assertThat("Property should be ignored.", configuration.isIgnoredProperty(IGNORE_PROPERTY_2), is(true));
@@ -113,19 +113,19 @@ public class ConfigurationBuilderTest {
 
 
   @Test(expected = IllegalArgumentException.class)
-  public void overrideFactoryShouldPreventNullFactory() throws Exception {
-    new ConfigurationBuilder().overrideFactory(OVERRIDE_PROPERTY_1, null);
+  public void factory() throws Exception {
+    new ConfigurationBuilder().factory(OVERRIDE_PROPERTY_1, null);
   }
 
 
   @Test(expected = IllegalArgumentException.class)
-  public void overrideFactoryShouldPreventNullProperty() throws Exception {
-    new ConfigurationBuilder().overrideFactory(null, OVERRIDE_FACTORY_1);
+  public void factoryShouldPreventNullProperty() throws Exception {
+    new ConfigurationBuilder().factory(null, OVERRIDE_FACTORY_1);
   }
 
 
   @Test
-  public void overrideFactoryShouldSetOverrideFactoryInConfiguration() throws Exception {
+  public void overrideFactoryShouldSetFactoryInConfiguration() throws Exception {
     ConfigurationBuilder configurationBuilder = ConfigurationBuilderFactory.create();
     Configuration configuration = configurationBuilder.build();
     assertThat("Override Factory not set.", (LongFactory) configuration.getOverrideFactory(OVERRIDE_PROPERTY_1),

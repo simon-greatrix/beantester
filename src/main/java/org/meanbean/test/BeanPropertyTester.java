@@ -97,19 +97,23 @@ public class BeanPropertyTester {
     ValidationHelper.ensureExists("property", "test property", property);
     ValidationHelper.ensureExists("testValue", "test property", testValue);
     ValidationHelper.ensureExists("equalityTest", "test property", equalityTest);
+
     String propertyName = property.getName();
+
     if (!property.isReadableWritable()) {
       throw new IllegalArgumentException("Cannot test property [" + propertyName
           + "] - property must be readable and writable.");
     }
+
     if (!typesAreCompatible(testValue.getClass(), property.getWriteMethodParameterType())) {
       String msg = String.format("Cannot test property [%s] - testValue must be same type as property. Expected %s but found %s",
           propertyName, testValue.getClass(), property.getWriteMethodParameterType()
       );
       throw new IllegalArgumentException(msg);
     }
+
     try {
-      property.getWriteMethod().invoke(bean, testValue);
+      bean = property.getWriteMethod().invoke(bean, testValue);
       Object readMethodOutput = property.getReadMethod().invoke(bean);
 
       UrlEqualityTestWarning.ifNeeded(equalityTest, bean, propertyName, testValue);

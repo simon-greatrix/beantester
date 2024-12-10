@@ -86,7 +86,7 @@ public class EqualsMethodTesterTest {
 
   @Test
   public void testEqualsMethodByClassShouldIgnoreProperties() throws Exception {
-    Configuration configuration = new ConfigurationBuilder().ignoreProperty("lastName").build();
+    Configuration configuration = new ConfigurationBuilder().ignore("lastName").build();
     equalsTester.testEqualsMethod(MultiPropertyBean.class, configuration, "lastName");
   }
 
@@ -149,7 +149,7 @@ public class EqualsMethodTesterTest {
   public void testEqualsMethodByClassShouldTestPropertySignificanceConfigurationIterationsTimes() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).iterations(5).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).iterations(5).build();
     equalsTester.testEqualsMethod(Bean.class, configuration);
     assertThat("global iterations was not used", factory.getInvocationCount(), is(configuration.getIterations()));
   }
@@ -159,7 +159,7 @@ public class EqualsMethodTesterTest {
   public void testEqualsMethodByClassShouldTestPropertySignificanceGlobalIterationsTimes() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).build();
     equalsTester.testEqualsMethod(Bean.class, configuration);
     assertThat("global iterations was not used", factory.getInvocationCount(),
         is(BeanTester.TEST_ITERATIONS_PER_BEAN)
@@ -201,7 +201,7 @@ public class EqualsMethodTesterTest {
   public void testEqualsMethodByClassShouldUseOverrideFactory() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).build();
     equalsTester.testEqualsMethod(Bean.class, configuration);
     assertThat("custom factory was not used", factory.getInvocationCount(),
         is(BeanTester.TEST_ITERATIONS_PER_BEAN)
@@ -223,7 +223,7 @@ public class EqualsMethodTesterTest {
 
   @Test
   public void testEqualsMethodShouldIgnoreProperties() throws Exception {
-    Configuration configuration = new ConfigurationBuilder().ignoreProperty("lastName").build();
+    Configuration configuration = new ConfigurationBuilder().ignore("lastName").build();
     equalsTester.testEqualsMethod(new MultiPropertyBeanFactory(), configuration, "lastName");
   }
 
@@ -354,7 +354,7 @@ public class EqualsMethodTesterTest {
   public void testEqualsMethodShouldUseOverrideFactory() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).build();
     equalsTester.testEqualsMethod(new BeanFactory(), configuration);
     assertThat("custom factory was not used", factory.getInvocationCount(),
         is(BeanTester.TEST_ITERATIONS_PER_BEAN)
@@ -449,7 +449,7 @@ public class EqualsMethodTesterTest {
   public void testEqualsShouldTestPropertySignificanceConfigurationIterationsTimes() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).iterations(5).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).iterations(5).build();
     equalsTester.testEqualsMethod(new BeanFactory(), configuration);
     assertThat("global iterations was not used", factory.getInvocationCount(), is(configuration.getIterations()));
   }
@@ -459,7 +459,7 @@ public class EqualsMethodTesterTest {
   public void testEqualsShouldTestPropertySignificanceGlobalIterationsTimes() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).build();
     equalsTester.testEqualsMethod(new BeanFactory(), configuration);
     assertThat("global iterations was not used", factory.getInvocationCount(),
         is(BeanTester.TEST_ITERATIONS_PER_BEAN)

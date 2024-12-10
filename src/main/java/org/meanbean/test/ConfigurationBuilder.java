@@ -45,6 +45,9 @@ public class ConfigurationBuilder {
   /** Any properties of a type that should not be tested. Contains property names. */
   private final Set<String> ignoredProperties = ConcurrentHashMap.newKeySet();
 
+  /** Map showing which properties are explicitly not null (false) or nullable (true). */
+  private final Map<String, Boolean> nullableProperties = new ConcurrentHashMap<>();
+
   /**
    * Factories that should be used for specific properties, overriding standard Factory selection. Keyed by property
    * name.
@@ -55,6 +58,9 @@ public class ConfigurationBuilder {
 
   /** The number of times a type should be tested. */
   private Integer iterations;
+
+  /** If a property can be set in a builder and via a direct setter, which do you use? */
+  private boolean preferBuilder = false;
 
 
   /**
@@ -77,6 +83,25 @@ public class ConfigurationBuilder {
 
 
   /**
+   * Register the specified Factory as an override Factory for the specified property. This means that the specified
+   * Factory will be used over the standard Factory for the property.
+   *
+   * @param property The name of the property.
+   * @param factory  The Factory to use to override standard Factory selection for the specified property.
+   *
+   * @return A Configuration Builder.
+   *
+   * @throws IllegalArgumentException If either the property or factory parameter is deemed illegal. For example, if either is null.
+   */
+  public ConfigurationBuilder factory(String property, Factory<?> factory) throws IllegalArgumentException {
+    ValidationHelper.ensureExists("property", "add override Factory", property);
+    ValidationHelper.ensureExists("factory", "add override Factory", factory);
+    overrideFactories.put(property, factory);
+    return this;
+  }
+
+
+  /**
    * Mark the specified property as one to be disregarded/ignored during testing.
    *
    * @param property The name of the property.
@@ -85,7 +110,7 @@ public class ConfigurationBuilder {
    *
    * @throws IllegalArgumentException If the property parameter is deemed illegal. For example, if it is null.
    */
-  public ConfigurationBuilder ignoreProperty(String property) throws IllegalArgumentException {
+  public ConfigurationBuilder ignore(String property) throws IllegalArgumentException {
     ValidationHelper.ensureExists("property", "add property to ignored properties collection", property);
     ignoredProperties.add(property);
     return this;
@@ -110,21 +135,22 @@ public class ConfigurationBuilder {
   }
 
 
-  /**
-   * Register the specified Factory as an override Factory for the specified property. This means that the specified
-   * Factory will be used over the standard Factory for the property.
-   *
-   * @param property The name of the property.
-   * @param factory  The Factory to use to override standard Factory selection for the specified property.
-   *
-   * @return A Configuration Builder.
-   *
-   * @throws IllegalArgumentException If either the property or factory parameter is deemed illegal. For example, if either is null.
-   */
-  public ConfigurationBuilder overrideFactory(String property, Factory<?> factory) throws IllegalArgumentException {
-    ValidationHelper.ensureExists("property", "add override Factory", property);
-    ValidationHelper.ensureExists("factory", "add override Factory", factory);
-    overrideFactories.put(property, factory);
+  public ConfigurationBuilder notNull(String property) {
+    ValidationHelper.ensureExists("property", "add property to not-null properties collection", property);
+    nullableProperties.put(property, false);
+    return this;
+  }
+
+
+  public ConfigurationBuilder nullable(String property) {
+    ValidationHelper.ensureExists("property", "add property to nullable properties collection", property);
+    nullableProperties.put(property, true);
+    return this;
+  }
+
+
+  public ConfigurationBuilder preferBuilder(boolean preferBuilder) {
+    this.preferBuilder = preferBuilder;
     return this;
   }
 
@@ -138,8 +164,10 @@ public class ConfigurationBuilder {
   public String toString() {
     String str = "ConfigurationBuilder["
         + "iterations=" + iterations + ","
-        + "ignoredProperties=" + new TreeSet<String>(this.ignoredProperties) + ","
-        + "overrideFactories=" + new TreeMap<String, Factory<?>>(this.overrideFactories)
+        + "preferBuilder=" + preferBuilder + ","
+        + "ignored=" + new TreeSet<>(this.ignoredProperties) + ","
+        + "nullable=" + new TreeMap<>(this.nullableProperties) + ","
+        + "override=" + new TreeMap<>(this.overrideFactories)
         + "]";
     return str;
   }

@@ -1,4 +1,4 @@
-package org.meanbean.bean.info;
+package org.meanbean.example;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -7,12 +7,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
-/** The proposed outcome of a transfer. */
+/** An example of a bean with a builder. The original was created by Lombok. */
 public class BuildableBean {
 
 
-  public static class ApproverTransferBuilder {
+  public static class BuildableBeanBuilder {
 
     private BigDecimal amount;
 
@@ -35,17 +34,17 @@ public class BuildableBean {
     private String type;
 
 
-    ApproverTransferBuilder() {
+    BuildableBeanBuilder() {
     }
 
 
-    public ApproverTransferBuilder amount(BigDecimal amount) {
+    public BuildableBeanBuilder amount(BigDecimal amount) {
       this.amount = amount;
       return this;
     }
 
 
-    public ApproverTransferBuilder assetId(String assetId) {
+    public BuildableBeanBuilder assetId(String assetId) {
       this.assetId = assetId;
       return this;
     }
@@ -71,7 +70,7 @@ public class BuildableBean {
     }
 
 
-    public ApproverTransferBuilder clearLinks() {
+    public BuildableBeanBuilder clearLinks() {
       if (this.links != null) {
         this.links.clear();
       }
@@ -79,25 +78,25 @@ public class BuildableBean {
     }
 
 
-    public ApproverTransferBuilder correlationId(String correlationId) {
+    public BuildableBeanBuilder correlationId(String correlationId) {
       this.correlationId = correlationId;
       return this;
     }
 
 
-    public ApproverTransferBuilder from(String from) {
+    public BuildableBeanBuilder from(String from) {
       this.from = from;
       return this;
     }
 
 
-    public ApproverTransferBuilder index(int index) {
+    public BuildableBeanBuilder index(int index) {
       this.index = index;
       return this;
     }
 
 
-    public ApproverTransferBuilder link(String link) {
+    public BuildableBeanBuilder link(String link) {
       if (this.links == null) {
         this.links = new ArrayList<String>();
       }
@@ -106,7 +105,7 @@ public class BuildableBean {
     }
 
 
-    public ApproverTransferBuilder links(Collection<String> links) {
+    public BuildableBeanBuilder links(Collection<String> links) {
       if (links == null) {
         throw new NullPointerException("links cannot be null");
       }
@@ -118,14 +117,14 @@ public class BuildableBean {
     }
 
 
-    public ApproverTransferBuilder tags(Set<String> tags) {
+    public BuildableBeanBuilder tags(Set<String> tags) {
       this.tags$value = tags;
       this.tags$set = true;
       return this;
     }
 
 
-    public ApproverTransferBuilder to(String to) {
+    public BuildableBeanBuilder to(String to) {
       this.to = to;
       return this;
     }
@@ -138,7 +137,7 @@ public class BuildableBean {
     }
 
 
-    public ApproverTransferBuilder type(String type) {
+    public BuildableBeanBuilder type(String type) {
       this.type = type;
       return this;
     }
@@ -151,8 +150,8 @@ public class BuildableBean {
   }
 
 
-  public static ApproverTransferBuilder builder() {
-    return new ApproverTransferBuilder();
+  public static BuildableBeanBuilder builder() {
+    return new BuildableBeanBuilder();
   }
 
 
@@ -188,7 +187,7 @@ public class BuildableBean {
   private Set<String> tags = new HashSet<>();
 
 
-  BuildableBean(
+  public BuildableBean(
       @NotNull BigDecimal amount,
       @NotNull String assetId,
       String correlationId,
@@ -365,7 +364,7 @@ public class BuildableBean {
 
 
   public String toString() {
-    return "ApproverTransfer(amount=" + this.getAmount() + ", assetId=" + this.getAssetId() + ", correlationId=" + this.getCorrelationId() + ", from="
+    return "BuildableBean(amount=" + this.getAmount() + ", assetId=" + this.getAssetId() + ", correlationId=" + this.getCorrelationId() + ", from="
         + this.getFrom() + ", index=" + this.getIndex() + ", links=" + this.getLinks() + ", to=" + this.getTo() + ", type=" + this.getType() + ", tags="
         + this.getTags() + ")";
   }

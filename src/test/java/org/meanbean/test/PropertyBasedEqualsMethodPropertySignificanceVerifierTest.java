@@ -129,7 +129,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
 
   @Test
   public void verifyEqualsMethodShouldIgnoreProperties() throws Exception {
-    Configuration configuration = new ConfigurationBuilder().ignoreProperty("lastName").build();
+    Configuration configuration = new ConfigurationBuilder().ignore("lastName").build();
     verifier.verifyEqualsMethod(new MultiPropertyBeanFactory(), configuration, "lastName");
   }
 
@@ -277,7 +277,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   public void verifyEqualsMethodShouldUseOverrideFactory() throws Exception {
     Factory<String> stringFactory = factoryCollection.getFactory(String.class);
     InvocationCountingFactoryWrapper<String> factory = new InvocationCountingFactoryWrapper<String>(stringFactory);
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", factory).build();
+    Configuration configuration = new ConfigurationBuilder().factory("name", factory).build();
     verifier.verifyEqualsMethod(new BeanFactory(), configuration);
     assertThat("custom factory was not used", factory.getInvocationCount(), is(1));
   }
@@ -325,7 +325,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   public void verifyEqualsShouldNotThrowAssertionErrorWhenValuesDifferAndObjectsEqualForInsignificantProperty()
       throws Exception {
     verifier.verifyEqualsMethod(new FieldDrivenEqualsBeanFactory(true),
-        new ConfigurationBuilder().overrideFactory("name", new IncrementalStringFactory()).build(), "name"
+        new ConfigurationBuilder().factory("name", new IncrementalStringFactory()).build(), "name"
     );
   }
 
@@ -335,7 +335,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
       throws Exception {
     verifier.verifyEqualsMethod(
         new BeanFactory(),
-        new ConfigurationBuilder().overrideFactory("name", new IncrementalStringFactory()).build()
+        new ConfigurationBuilder().factory("name", new IncrementalStringFactory()).build()
     );
   }
 
@@ -343,7 +343,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   @Test
   public void verifyEqualsShouldNotThrowAssertionErrorWhenValuesSameAndObjectsEqualForInsignificantProperty()
       throws Exception {
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", new Factory<String>() {
+    Configuration configuration = new ConfigurationBuilder().factory("name", new Factory<String>() {
       @Override
       public String create() {
         return BeanFactory.NAME;
@@ -356,7 +356,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   @Test
   public void verifyEqualsShouldNotThrowAssertionErrorWhenValuesSameAndObjectsEqualForSignificantProperty()
       throws Exception {
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", new Factory<String>() {
+    Configuration configuration = new ConfigurationBuilder().factory("name", new Factory<String>() {
       @Override
       public String create() {
         return BeanFactory.NAME;
@@ -370,7 +370,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   public void verifyEqualsShouldThrowAssertionErrorWhenValuesDifferAndObjectsNotEqualForInsignificantProperty()
       throws Exception {
     verifier.verifyEqualsMethod(new BeanFactory(),
-        new ConfigurationBuilder().overrideFactory("name", new IncrementalStringFactory()).build(), "name"
+        new ConfigurationBuilder().factory("name", new IncrementalStringFactory()).build(), "name"
     );
   }
 
@@ -380,7 +380,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
       throws Exception {
     verifier.verifyEqualsMethod(
         new FieldDrivenEqualsBeanFactory(true),
-        new ConfigurationBuilder().overrideFactory("name", new IncrementalStringFactory()).build()
+        new ConfigurationBuilder().factory("name", new IncrementalStringFactory()).build()
     );
   }
 
@@ -388,7 +388,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   @Test(expected = AssertionError.class)
   public void verifyEqualsShouldThrowAssertionErrorWhenValuesSameButObjectsNotEqualForInsignificantProperty()
       throws Exception {
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", new Factory<String>() {
+    Configuration configuration = new ConfigurationBuilder().factory("name", new Factory<String>() {
       @Override
       public String create() {
         return CounterDrivenEqualsBeanFactory.NAME;
@@ -401,7 +401,7 @@ public class PropertyBasedEqualsMethodPropertySignificanceVerifierTest {
   @Test(expected = AssertionError.class)
   public void verifyEqualsShouldThrowAssertionErrorWhenValuesSameButObjectsNotEqualForSignificantProperty()
       throws Exception {
-    Configuration configuration = new ConfigurationBuilder().overrideFactory("name", new Factory<String>() {
+    Configuration configuration = new ConfigurationBuilder().factory("name", new Factory<String>() {
       @Override
       public String create() {
         return CounterDrivenEqualsBeanFactory.NAME;

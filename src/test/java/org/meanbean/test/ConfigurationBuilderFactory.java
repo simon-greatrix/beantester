@@ -66,10 +66,10 @@ public class ConfigurationBuilderFactory {
     ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
     configurationBuilder.iterations(iterations);
     for (String property : ignoreProperties) {
-      configurationBuilder.ignoreProperty(property);
+      configurationBuilder.ignore(property);
     }
     for (Map.Entry<String, Factory<?>> override : overrideFactories.entrySet()) {
-      configurationBuilder.overrideFactory(override.getKey(), override.getValue());
+      configurationBuilder.factory(override.getKey(), override.getValue());
     }
     return configurationBuilder;
   }

@@ -120,7 +120,7 @@ public class BeanTesterTest {
 
   @Test
   public void testBeanThatTakesBeanClassAndConfigurationShouldIgnoreBadPropertyWhenToldTo() throws Exception {
-    beanTester.testBean(BadComplexBean.class, new ConfigurationBuilder().ignoreProperty("lastName").build());
+    beanTester.testBean(BadComplexBean.class, new ConfigurationBuilder().ignore("lastName").build());
   }
 
 
@@ -128,8 +128,8 @@ public class BeanTesterTest {
   public void testBeanThatTakesBeanClassAndConfigurationShouldNotThrowAssertionErrorWhenGettersAndSettersFunctionCorrectly()
       throws Exception {
     ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-    configurationBuilder.overrideFactory("lastName", () -> "LastName" + System.currentTimeMillis());
-    configurationBuilder.overrideFactory("dateOfBirth", Date::new);
+    configurationBuilder.factory("lastName", () -> "LastName" + System.currentTimeMillis());
+    configurationBuilder.factory("dateOfBirth", Date::new);
     beanTester.testBean(ComplexBean.class, configurationBuilder.build());
   }
 

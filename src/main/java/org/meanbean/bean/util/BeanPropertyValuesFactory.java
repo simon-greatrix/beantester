@@ -63,7 +63,8 @@ public class BeanPropertyValuesFactory implements Factory<Map<String, Object>> {
    *                                  is <code>null</code>.
    */
   public BeanPropertyValuesFactory(
-      BeanInformation beanInformation, FactoryLookupStrategy factoryLookupStrategy,
+      BeanInformation beanInformation,
+      FactoryLookupStrategy factoryLookupStrategy,
       Configuration configuration
   ) {
     ValidationHelper.ensureExists("beanInformation", "populate bean", beanInformation);

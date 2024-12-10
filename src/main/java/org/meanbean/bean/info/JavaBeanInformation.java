@@ -38,7 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.meanbean.bean.info.PropertyDescriptorPropertyInformation.WriteMethodAdapter;
 import org.meanbean.util.ValidationHelper;
-import org.meanbean.util.reflect.ReflectionAccessor;
 
 /**
  * Concrete BeanInformation that gathers and contains information about a JavaBean by using java.beans.BeanInfo.
@@ -47,15 +46,63 @@ import org.meanbean.util.reflect.ReflectionAccessor;
  */
 class JavaBeanInformation implements BeanInformation {
 
-  // based on spring 5
-  private static boolean isCandidateWriteMethod(Method method) {
-    String methodName = method.getName();
-    int nParams = method.getParameterCount();
-    return methodName.length() > 3 && methodName.startsWith("set") && Modifier.isPublic(method.getModifiers()) &&
-        !void.class.isAssignableFrom(method.getReturnType()) &&
-        nParams == 1;
+  /**
+   * Find all candidate write methods for the specified method descriptors.
+   *
+   * @param methodDescriptors The method descriptors to search for candidate write methods.
+   *
+   * @return A list of candidate write methods.
+   */
+  private static List<Method> findCandidateWriteMethods(MethodDescriptor... methodDescriptors) {
+    List<Method> matches = new ArrayList<>();
+    for (MethodDescriptor methodDescriptor : methodDescriptors) {
+      Method method = methodDescriptor.getMethod();
+      if (isCandidateWriteMethod(method)) {
+        matches.add(method);
+      }
+    }
+
+    return matches;
   }
 
+
+  /**
+   * Find the potential setter methods in the bean that do not return void and are therefore missed by regular Bean Introspection.
+   *
+   * @param beanInfo the bean info
+   *
+   * @return the additional setter methods
+   */
+  private static Map<String, Method> findFluentWriteMethods(BeanInfo beanInfo) {
+    List<Method> methods = findCandidateWriteMethods(beanInfo.getMethodDescriptors());
+    Map<String, Method> fluentMethods = new HashMap<>();
+    for (Method method : methods) {
+      String propertyName = method.getName().substring(3);
+      propertyName = toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
+      fluentMethods.put(propertyName, method);
+    }
+    return fluentMethods;
+  }
+
+
+  /**
+   * Determine if the specified method is a candidate write method. The Java Bean design pattern requires that a setter returns void, but it is common for
+   * the setter to return "this" to allow method chaining or the old value of the property. This method tests if the candidate is called
+   * "set[Something]" and has a non-void return type.
+   *
+   * @param method the method to test
+   *
+   * @return true if the method is a candidate write method
+   */
+  private static boolean isCandidateWriteMethod(Method method) {
+    String methodName = method.getName();
+    return methodName.length() > 3
+        && methodName.startsWith("set")
+        && Character.isUpperCase(methodName.charAt(3))
+        && Modifier.isPublic(method.getModifiers())
+        && !void.class.isAssignableFrom(method.getReturnType())
+        && method.getParameterCount() == 1;
+  }
 
   /** The type of object this object contains information about. */
   private final Class<?> beanClass;
@@ -85,36 +132,6 @@ class JavaBeanInformation implements BeanInformation {
       throw new BeanInformationException("Failed to acquire information about beanClass [" + beanClass + "].", e);
     }
     initialize();
-  }
-
-
-  // based on spring 5
-  private List<Method> findCandidateWriteMethods(MethodDescriptor... methodDescriptors) {
-    List<Method> matches = new ArrayList<>();
-    for (MethodDescriptor methodDescriptor : methodDescriptors) {
-      Method method = methodDescriptor.getMethod();
-      if (isCandidateWriteMethod(method)) {
-        matches.add(method);
-      }
-    }
-
-    // Sort non-void returning write methods to guard against the ill effects of
-    // non-deterministic sorting of methods returned from Class#getDeclaredMethods
-    // under JDK 7. See https://bugs.java.com/view_bug.do?bug_id=7023180
-    matches.sort((m1, m2) -> m2.toString().compareTo(m1.toString()));
-    return matches;
-  }
-
-
-  private Map<String, Method> findFluentWriteMethods(BeanInfo beanInfo) {
-    List<Method> methods = findCandidateWriteMethods(beanInfo.getMethodDescriptors());
-    Map<String, Method> fluentMethods = new HashMap<>();
-    for (Method method : methods) {
-      String propertyName = method.getName().substring(3);
-      propertyName = toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
-      fluentMethods.put(propertyName, method);
-    }
-    return fluentMethods;
   }
 
 
@@ -167,13 +184,6 @@ class JavaBeanInformation implements BeanInformation {
       }
 
       properties.put(propertyInformation.getName(), propertyInformation);
-    }
-  }
-
-
-  private void makeAccessible(Method method) {
-    if (!method.isAccessible()) {
-      ReflectionAccessor.getInstance().makeAccessible(method);
     }
   }
 
