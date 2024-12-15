@@ -14,9 +14,9 @@ public final class NetFactories {
     RandomGenerator random = context.getRandom();
     UrlValueFactory urlFactory = new UrlValueFactory(random);
     repository.addFactory(URL.class, urlFactory);
-    repository.addFactory(URI.class, () -> {
+    repository.addFactory(URI.class, (t) -> {
       try {
-        return urlFactory.create().toURI();
+        return urlFactory.create(t).toURI();
       } catch (URISyntaxException e) {
         try {
           return new URI("example:" + Long.toString(random.nextLong(0x4000_0000_0000_0000L), 36));

@@ -21,14 +21,26 @@ public final class FloatValueFactory extends RandomValueFactoryBase<Float> {
   }
 
 
+  @Override
+  protected Float createPrimary() {
+    return 1f;
+  }
+
+
   /**
    * Create a new Float object.
    *
    * @return A new Float object.
    */
   @Override
-  public Float create() {
+  protected Float createRandom() {
     return (float) getRandom().nextGaussian();
+  }
+
+
+  @Override
+  protected Float createSecondary() {
+    return 1.25f;
   }
 
 }

@@ -21,14 +21,26 @@ public final class IntegerValueFactory extends RandomValueFactoryBase<Integer> {
   }
 
 
+  @Override
+  protected Integer createPrimary() {
+    return 1;
+  }
+
+
   /**
    * Create a new Integer object.
    *
    * @return A new Integer object.
    */
   @Override
-  public Integer create() {
+  protected Integer createRandom() {
     return getRandom().nextInt();
+  }
+
+
+  @Override
+  protected Integer createSecondary() {
+    return 2;
   }
 
 }

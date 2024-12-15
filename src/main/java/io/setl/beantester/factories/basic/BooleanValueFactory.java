@@ -22,14 +22,26 @@ public final class BooleanValueFactory extends RandomValueFactoryBase<Boolean> {
   }
 
 
+  @Override
+  protected Boolean createPrimary() {
+    return null;
+  }
+
+
   /**
    * Create a new Boolean object.
    *
    * @return A new Boolean object.
    */
   @Override
-  public Boolean create() {
+  protected Boolean createRandom() {
     return getRandom().nextBoolean();
+  }
+
+
+  @Override
+  protected Boolean createSecondary() {
+    return Boolean.FALSE;
   }
 
 }

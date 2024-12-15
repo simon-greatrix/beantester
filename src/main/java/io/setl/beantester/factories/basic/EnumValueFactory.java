@@ -27,6 +27,15 @@ public class EnumValueFactory extends RandomValueFactoryBase<Enum<?>> {
       throw new IllegalArgumentException("Cannot create EnumFactory for non-Enum class.");
     }
     this.enumConstants = (Enum<?>[]) enumClass.getEnumConstants();
+    if (enumConstants.length < 2) {
+      System.getLogger("EnumValueFactory").log(System.Logger.Level.WARNING, "Enum class has less than 2 constants. This may cause issues with some tests.");
+    }
+  }
+
+
+  @Override
+  protected Enum<?> createPrimary() {
+    return enumConstants[0];
   }
 
 
@@ -36,9 +45,15 @@ public class EnumValueFactory extends RandomValueFactoryBase<Enum<?>> {
    * @return An Enum constant of the specified Enum type.
    */
   @Override
-  public Enum<?> create() {
+  protected Enum<?> createRandom() {
     // Get enum constant from ordinal
     return enumConstants[getRandom().nextInt(enumConstants.length)];
+  }
+
+
+  @Override
+  protected Enum<?> createSecondary() {
+    return enumConstants[Math.min(1, enumConstants.length - 1)];
   }
 
 }

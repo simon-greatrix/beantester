@@ -11,11 +11,22 @@ import io.setl.beantester.factories.basic.RandomValueFactoryBase;
 
 public class UrlValueFactory extends RandomValueFactoryBase<URL> {
 
-  private static final List<String> PATHS = Arrays.asList("", "/foo", "/foo/bar/", "/foo/bar/index?a=b");
+  private static final URL PRIMARY;
 
   private static final List<String> SCHEMES = Arrays.asList("http://", "https://", "ftp://");
 
+  private static final URL SECONDARY;
+
   private static final List<String> TLDS = Arrays.asList(".example", ".invalid", ".test");
+
+  static {
+    try {
+      PRIMARY = new URL("http://localhost/primary");
+      SECONDARY = new URL("http://localhost/secondary");
+    } catch (MalformedURLException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
 
 
   public UrlValueFactory(RandomGenerator random) {
@@ -24,7 +35,13 @@ public class UrlValueFactory extends RandomValueFactoryBase<URL> {
 
 
   @Override
-  public URL create() {
+  protected URL createPrimary() {
+    return PRIMARY;
+  }
+
+
+  @Override
+  protected URL createRandom() {
     RandomGenerator random = getRandom();
     String scheme = Sampler.getFrom(random, SCHEMES);
     String domain = generate(1, 2, ".");
@@ -42,6 +59,12 @@ public class UrlValueFactory extends RandomValueFactoryBase<URL> {
   }
 
 
+  @Override
+  protected URL createSecondary() {
+    return SECONDARY;
+  }
+
+
   protected String generate(int min, int max, String delim) {
     RandomGenerator random = getRandom();
     int count = random.nextInt(min, max);
@@ -50,7 +73,19 @@ public class UrlValueFactory extends RandomValueFactoryBase<URL> {
       if (i > 0) {
         sb.append(delim);
       }
-      sb.append(Integer.toString(random.nextInt(0x4000_0000), 36));
+      sb.append(word());
+    }
+    return sb.toString();
+  }
+
+
+  private String word() {
+    RandomGenerator random = getRandom();
+    int val = random.nextInt(1, 11881376);
+    StringBuilder sb = new StringBuilder();
+    while (val > 0) {
+      sb.append((char) ('a' + (val % 26)));
+      val /= 26;
     }
     return sb.toString();
   }

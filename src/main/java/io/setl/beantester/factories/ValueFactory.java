@@ -14,6 +14,6 @@ public interface ValueFactory<T> {
    *
    * @return A new object of the specified type.
    */
-  T create();
+  T create(ValueType type);
 
 }

@@ -21,13 +21,25 @@ import java.util.random.RandomGenerator;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
+import io.setl.beantester.factories.ValueType;
 
 public class TimeFactories {
+
+  private static final Clock PRIMARY_CLOCK;
+
+  private static final Clock SECONDARY_CLOCK;
+
 
   public static void load(TestContext context, ValueFactoryRepository repository) {
     new TimeFactories(context, repository).load();
   }
 
+
+  static {
+    PRIMARY_CLOCK = Clock.fixed(ZonedDateTime.of(2020, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+    ZoneId zoneId = ZoneId.of("America/New_York");
+    SECONDARY_CLOCK = Clock.fixed(ZonedDateTime.of(2021, 7, 15, 12, 30, 30, 0, zoneId).toInstant(), zoneId);
+  }
 
   private final Clock clock;
 
@@ -48,14 +60,25 @@ public class TimeFactories {
   }
 
 
+  private Clock clock(ValueType t) {
+    if (t == ValueType.PRIMARY) {
+      return PRIMARY_CLOCK;
+    }
+    if (t == ValueType.SECONDARY) {
+      return SECONDARY_CLOCK;
+    }
+    return clock;
+  }
+
+
   private void load() {
     RandomGenerator random = context.getRandom();
-    addFactory(java.util.Date.class, () -> new java.util.Date(clock.millis()));
-    addFactory(java.sql.Date.class, () -> new java.sql.Date(clock.millis()));
-    addFactory(java.sql.Timestamp.class, () -> new java.sql.Timestamp(clock.millis()));
+    addFactory(java.util.Date.class, (t) -> new java.util.Date(clock(t).millis()));
+    addFactory(java.sql.Date.class, (t) -> new java.sql.Date(clock(t).millis()));
+    addFactory(java.sql.Timestamp.class, (t) -> new java.sql.Timestamp(clock(t).millis()));
 
-    addFactory(Clock.class, () -> clock);
-    addFactory(Instant.class, clock::instant);
+    addFactory(Clock.class, (t) -> clock(t));
+    addFactory(Instant.class, (t) -> clock(t).instant());
     addFactory(LocalDate.class, newFactory(LocalDate::now));
     addFactory(LocalDateTime.class, newFactory(LocalDateTime::now));
     addFactory(LocalTime.class, newFactory(LocalTime::now));
@@ -65,21 +88,36 @@ public class TimeFactories {
     addFactory(Year.class, newFactory(Year::now));
     addFactory(YearMonth.class, newFactory(YearMonth::now));
     addFactory(ZonedDateTime.class, newFactory(ZonedDateTime::now));
-    addFactory(ZoneId.class, () -> RandomClock.randomZoneId(random));
+    addFactory(ZoneId.class, (t) -> RandomClock.randomZoneId(random));
     addFactory(ZoneOffset.class, newZoneOffsetFactory());
 
-    addFactory(Duration.class, () -> Duration.ofMillis(random.nextLong(0x1_0000_0000L) - 0x8000_0000L));
+    addFactory(Duration.class, (t) -> {
+      switch (t) {
+        case PRIMARY:
+          return Duration.ofMinutes(1);
+        case SECONDARY:
+          return Duration.ofHours(5);
+        default:
+          return Duration.ofMillis(random.nextLong(0x1_0000_0000L) - 0x8000_0000L);
+      }
+    });
     addFactory(Period.class, newPeriodFactory());
   }
 
 
   private <T> ValueFactory<T> newFactory(Function<Clock, T> function) {
-    return () -> function.apply(clock);
+    return (t) -> function.apply(clock(t));
   }
 
 
   private ValueFactory<Period> newPeriodFactory() {
-    return () -> {
+    return (t) -> {
+      if (t == ValueType.PRIMARY) {
+        return Period.ofDays(1);
+      }
+      if (t == ValueType.SECONDARY) {
+        return Period.ofMonths(1);
+      }
       RandomGenerator random = context.getRandom();
       if (random.nextBoolean()) {
         return Period.ofDays(random.nextInt(4096) - 2048);
@@ -95,7 +133,13 @@ public class TimeFactories {
 
 
   private ValueFactory<ZoneOffset> newZoneOffsetFactory() {
-    return () -> {
+    return (t) -> {
+      if (t == ValueType.PRIMARY) {
+        return ZoneOffset.UTC;
+      }
+      if (t == ValueType.SECONDARY) {
+        return ZoneOffset.ofHoursMinutes(5, 30);
+      }
       RandomGenerator random = context.getRandom();
       int sign = random.nextBoolean() ? 1 : -1;
       int hours = random.nextInt(18);

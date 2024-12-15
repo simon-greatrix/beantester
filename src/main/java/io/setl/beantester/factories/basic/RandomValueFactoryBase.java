@@ -1,15 +1,9 @@
 package io.setl.beantester.factories.basic;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.RandomAccess;
 import java.util.random.RandomGenerator;
-import java.util.random.RandomGeneratorFactory;
 
 import io.setl.beantester.factories.ValueFactory;
+import io.setl.beantester.factories.ValueType;
 
 /**
  * Abstract base class for a Factory that creates random objects of the specified type.
@@ -42,7 +36,22 @@ public abstract class RandomValueFactoryBase<T> implements ValueFactory<T> {
    * @return A new object of the specified type.
    */
   @Override
-  public abstract T create();
+  public T create(ValueType type) {
+    return switch (type) {
+      case PRIMARY -> createPrimary();
+      case SECONDARY -> createSecondary();
+      default -> createRandom();
+    };
+  }
+
+
+  protected abstract T createPrimary();
+
+
+  protected abstract T createRandom();
+
+
+  protected abstract T createSecondary();
 
 
   /**

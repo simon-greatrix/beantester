@@ -21,14 +21,26 @@ public final class DoubleValueFactory extends RandomValueFactoryBase<Double> {
   }
 
 
+  @Override
+  protected Double createPrimary() {
+    return 1.0;
+  }
+
+
   /**
    * Create a new Double object.
    *
    * @return A new Double object.
    */
   @Override
-  public Double create() {
+  protected Double createRandom() {
     return getRandom().nextGaussian();
+  }
+
+
+  @Override
+  protected Double createSecondary() {
+    return 1.25;
   }
 
 }

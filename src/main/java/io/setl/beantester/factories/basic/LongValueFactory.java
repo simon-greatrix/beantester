@@ -21,14 +21,26 @@ public final class LongValueFactory extends RandomValueFactoryBase<Long> {
   }
 
 
+  @Override
+  protected Long createPrimary() {
+    return 1L;
+  }
+
+
   /**
    * Create a new Long object.
    *
    * @return A new Long object.
    */
   @Override
-  public Long create() {
+  protected Long createRandom() {
     return getRandom().nextLong();
+  }
+
+
+  @Override
+  protected Long createSecondary() {
+    return 2L;
   }
 
 }

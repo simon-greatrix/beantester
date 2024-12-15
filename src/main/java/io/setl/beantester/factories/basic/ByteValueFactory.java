@@ -21,14 +21,26 @@ public final class ByteValueFactory extends RandomValueFactoryBase<Byte> {
   }
 
 
+  @Override
+  protected Byte createPrimary() {
+    return Byte.valueOf((byte) 0);
+  }
+
+
   /**
    * Create a new Byte object.
    *
    * @return A new Byte object.
    */
   @Override
-  public Byte create() {
+  protected Byte createRandom() {
     return (byte) getRandom().nextInt(256);
+  }
+
+
+  @Override
+  protected Byte createSecondary() {
+    return Byte.valueOf((byte) 1);
   }
 
 }

@@ -7,6 +7,7 @@ import java.util.random.RandomGenerator;
 
 import io.setl.beantester.factories.Sampler;
 import io.setl.beantester.factories.ValueFactory;
+import io.setl.beantester.factories.ValueType;
 
 public class LocaleValueFactory implements ValueFactory<Locale> {
 
@@ -21,7 +22,13 @@ public class LocaleValueFactory implements ValueFactory<Locale> {
 
 
   @Override
-  public Locale create() {
+  public Locale create(ValueType type) {
+    if (type == ValueType.PRIMARY) {
+      return Locale.UK;
+    }
+    if (type == ValueType.SECONDARY) {
+      return Locale.FRANCE;
+    }
     return Sampler.getFrom(random, locales);
   }
 
