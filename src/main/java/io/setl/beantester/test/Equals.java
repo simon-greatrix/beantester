@@ -81,7 +81,7 @@ public class Equals {
           AssertionUtils.fail(holder.getBeanClass() + ".equals(null) should return false");
         }
         if (beanBefore.equals(NOT_EQUAL_TO_ANYTHING)) {
-          AssertionUtils.fail(holder.getBeanClass() + ".equals(<Other Class>) should return false");
+          AssertionUtils.fail(holder.getBeanClass() + ".equals(<Incompatible Class>) should return false");
         }
 
         if (!beanBefore.equals(beanBefore)) {

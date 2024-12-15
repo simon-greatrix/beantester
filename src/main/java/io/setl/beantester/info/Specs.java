@@ -70,20 +70,8 @@ public class Specs {
   }
 
 
-
-  /**
-   * Customise the properties associated with a creator.
-   */
-  public interface CreatorPropertyCustomiser extends Spec {
-
-    Collection<PropertySpec> get();
-
-  }
-
-
-
   /** Add a property. */
-  public interface NewProperty extends PropertySpec {
+  public interface NewProperty extends Spec {
 
     /** Get the property to add. */
     PropertyInformation get();
@@ -95,21 +83,15 @@ public class Specs {
   /**
    * Specify to customise a property. During initialisation all properties will be passed to the customiser.
    */
-  public interface PropertyCustomiser extends PropertySpec, SerializableConsumer1<PropertyInformation> {
+  public interface PropertyCustomiser extends Spec, SerializableConsumer1<PropertyInformation> {
 
   }
 
-
-
-  /** A marker interface for anything that customises properties. */
-  public interface PropertySpec extends Spec {
-    // Marker interface
-  }
 
 
 
   /** Remove a named property. */
-  public interface RemoveProperty extends PropertySpec {
+  public interface RemoveProperty extends Spec {
 
     /** Get the name of the property to remove. */
     String get();
@@ -227,16 +209,6 @@ public class Specs {
     }
 
     return Optional.empty();
-  }
-
-
-  public static CreatorPropertyCustomiser creatorProperties(PropertySpec... properties) {
-    return () -> List.of(properties);
-  }
-
-
-  public static CreatorPropertyCustomiser creatorProperties(Collection<PropertySpec> properties) {
-    return () -> properties;
   }
 
 

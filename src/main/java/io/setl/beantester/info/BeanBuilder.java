@@ -31,8 +31,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
   }
 
 
-  @Override
-  public Object exec(Map<String, Object> values) throws Throwable {
+  public Object build(Map<String, Object> values) throws Throwable {
     Object builder = builderMethods.builder().exec();
     for (PropertyInformation propertyInformation : properties()) {
       String name = propertyInformation.name();
@@ -40,6 +39,13 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
         propertyInformation.write(builder, values.get(name));
       }
     }
+    return builder;
+  }
+
+
+  @Override
+  public Object exec(Map<String, Object> values) throws Throwable {
+    Object builder = build(values);
     return builderMethods.build().exec(builder);
   }
 

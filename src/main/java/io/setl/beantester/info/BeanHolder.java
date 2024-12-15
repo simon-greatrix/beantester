@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -17,6 +18,10 @@ import io.setl.beantester.util.AssertionUtils;
  * The bean holder holds a bean and manages its creation.
  */
 public class BeanHolder {
+
+  private record CreatorData(TreeMap<String, Object> params, HashSet<String> keys) {
+
+  }
 
   private final HashSet<String> changed = new HashSet<>();
 
@@ -72,6 +77,65 @@ public class BeanHolder {
 
 
   private void buildBean() {
+    CreatorData creatorData = creatorData();
+
+    if (bean == null || !creatorData.keys.isEmpty()) {
+      try {
+        bean = information.beanCreator().exec(creatorData.params);
+      } catch (Throwable e) {
+        throw new IllegalStateException("Failed to create bean", e);
+      }
+    }
+
+    for (var entry : values.entrySet()) {
+      String name = entry.getKey();
+      if (creatorData.keys.contains(name)) {
+        continue;
+      }
+
+      Object value = entry.getValue();
+      PropertyInformation info = information.property(name);
+
+      if (info != null && info.writable()) {
+        info.write(bean, value);
+      }
+    }
+
+  }
+
+
+  public Optional<Object> builder() {
+    if (information.beanCreator() instanceof BeanBuilder builder) {
+      CreatorData createData = creatorData();
+      try {
+        return Optional.of(builder.build(createData.params));
+      } catch (Throwable e) {
+        throw new AssertionError("Failed to create builder for class " + information.beanClass(), e);
+      }
+    } else {
+      return Optional.empty();
+    }
+  }
+
+
+  public BeanHolder copy() {
+    return new BeanHolder(this);
+  }
+
+
+  public Object createValue(ValueType type, String propertyName) {
+    PropertyInformation info = information.beanCreator().property(propertyName);
+    if (info == null) {
+      info = information.property(propertyName);
+    }
+    if (info == null) {
+      throw new IllegalArgumentException("No property named " + propertyName);
+    }
+    return information.testContext().getValueFactoryRepository().create(type, information, info);
+  }
+
+
+  private CreatorData creatorData() {
     TreeMap<String, Object> creatorParams = new TreeMap<>(initialValues);
     HashSet<String> creatorKeys = new HashSet<>();
 
@@ -90,46 +154,7 @@ public class BeanHolder {
         creatorParams.put(name, values.get(name));
       }
     }
-
-    if (bean == null || !creatorKeys.isEmpty()) {
-      try {
-        bean = information.beanCreator().exec(creatorParams);
-      } catch (Throwable e) {
-        throw new IllegalStateException("Failed to create bean", e);
-      }
-    }
-
-    for (var entry : values.entrySet()) {
-      String name = entry.getKey();
-      if (creatorKeys.contains(name)) {
-        continue;
-      }
-
-      Object value = entry.getValue();
-      PropertyInformation info = information.property(name);
-
-      if (info != null && info.writable()) {
-        info.write(bean, value);
-      }
-    }
-
-  }
-
-
-  public BeanHolder copy() {
-    return new BeanHolder(this);
-  }
-
-
-  public Object createValue(ValueType type, String propertyName) {
-    PropertyInformation info = information.beanCreator().property(propertyName);
-    if (info == null) {
-      info = information.property(propertyName);
-    }
-    if (info == null) {
-      throw new IllegalArgumentException("No property named " + propertyName);
-    }
-    return information.testContext().getValueFactoryRepository().create(type, information, information.property(propertyName));
+    return new CreatorData(creatorParams, creatorKeys);
   }
 
 
@@ -154,6 +179,11 @@ public class BeanHolder {
         .filter(PropertyInformation::writable)
         .forEach(p -> names.add(p.name()));
     return names;
+  }
+
+
+  public BeanInformation information() {
+    return information;
   }
 
 
@@ -289,7 +319,7 @@ public class BeanHolder {
     Object actual = readActual(propertyName);
     Object expected = readExpected(propertyName);
     if (!Objects.equals(actual, expected)) {
-      AssertionUtils.fail("Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
+      AssertionUtils.fail("Class " + information.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
     }
   }
 
