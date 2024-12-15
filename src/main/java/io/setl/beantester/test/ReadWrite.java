@@ -2,6 +2,8 @@ package io.setl.beantester.test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.random.RandomGenerator;
 
@@ -41,6 +43,7 @@ public class ReadWrite {
 
 
   public void test() {
+    testToString();
     testAllCombinations();
     testRandom();
   }
@@ -57,7 +60,6 @@ public class ReadWrite {
           for (Object value2 : values2) {
 
             holder.reset();
-            System.getLogger("ReadWrite").log(System.Logger.Level.INFO, "Testing " + name1 + " and " + name2 + " with values " + value1 + " and " + value2);
 
             holder.setProperty(name1, value1);
             holder.setProperty(name2, value2);
@@ -87,6 +89,15 @@ public class ReadWrite {
       for (int i = 0; i < paramCount; i++) {
         holder.verify(propertyNames[i]);
       }
+    }
+  }
+
+
+  private void testToString() {
+    Objects.requireNonNull(holder.bean().toString());
+    Optional<Object> builder = holder.builder();
+    if (builder.isPresent()) {
+      Objects.requireNonNull(builder.get().toString());
     }
   }
 

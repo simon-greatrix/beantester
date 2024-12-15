@@ -14,7 +14,6 @@ import java.util.TreeMap;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.info.Specs.BeanCreator;
 import io.setl.beantester.info.Specs.BuilderMethods;
-import io.setl.beantester.info.Specs.CreatorPropertyCustomiser;
 import io.setl.beantester.info.Specs.NewProperty;
 import io.setl.beantester.info.Specs.PropertyCustomiser;
 import io.setl.beantester.info.Specs.RemoveProperty;
@@ -183,7 +182,7 @@ class BeanInformationFactory {
   private Spec[] specs;
 
 
-  private void applyPropertyCustomisers(Collection<? extends Spec> specs, Model<?> model) {
+  private void applyPropertyCustomisers(Model<?> model) {
     // remove props
     for (RemoveProperty spec : specs(RemoveProperty.class, specs)) {
       model.removeProperty(spec.get());
@@ -222,15 +221,13 @@ class BeanInformationFactory {
     beanProperties.clear();
 
     findCreator();
-    for (CreatorPropertyCustomiser spec : specs(CreatorPropertyCustomiser.class, specs)) {
-      applyPropertyCustomisers(spec.get(), creator);
-    }
+    applyPropertyCustomisers(creator);
 
     findBeanProperties();
     BeanInformation information = new BeanInformation(testContext, beanClass)
         .beanCreator(creator)
         .properties(beanProperties.values());
-    applyPropertyCustomisers(List.of(specs), information);
+    applyPropertyCustomisers(information);
 
     return information;
   }

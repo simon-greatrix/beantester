@@ -3,6 +3,7 @@ package io.setl.beantester.example;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,17 +52,11 @@ public class BuildableBean {
 
 
     public BuildableBean build() {
-      List<String> links;
-      switch (this.links == null ? 0 : this.links.size()) {
-        case 0:
-          links = java.util.Collections.emptyList();
-          break;
-        case 1:
-          links = java.util.Collections.singletonList(this.links.get(0));
-          break;
-        default:
-          links = java.util.Collections.unmodifiableList(new ArrayList<String>(this.links));
-      }
+      List<String> links = switch (this.links == null ? 0 : this.links.size()) {
+        case 0 -> Collections.emptyList();
+        case 1 -> Collections.singletonList(this.links.get(0));
+        default -> Collections.unmodifiableList(new ArrayList<String>(this.links));
+      };
       Set<String> tags$value = this.tags$value;
       if (!this.tags$set) {
         tags$value = BuildableBean.$default$tags();
