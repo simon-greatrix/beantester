@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class BeanConstructor extends ModelImpl<BeanConstructor> implements Specs.BeanCreator<BeanConstructor> {
+public class BeanConstructor extends AbstractModel<BeanConstructor> implements Specs.BeanCreator<BeanConstructor> {
 
   private final Constructor<?> constructor;
 

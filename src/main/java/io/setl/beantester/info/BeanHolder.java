@@ -47,6 +47,17 @@ public class BeanHolder {
   }
 
 
+  private BeanHolder(BeanHolder copy) {
+    this.testContext = copy.testContext;
+    this.information = copy.information;
+
+    this.initialValues.putAll(copy.initialValues);
+    this.changed.addAll(copy.changed);
+    this.values.putAll(copy.values);
+    this.bean = null;
+  }
+
+
   /**
    * Get the bean. Every call to this creates a new instance.
    *
@@ -105,6 +116,11 @@ public class BeanHolder {
   }
 
 
+  public BeanHolder copy() {
+    return new BeanHolder(this);
+  }
+
+
   public Object createValue(ValueType type, String propertyName) {
     PropertyInformation info = information.beanCreator().property(propertyName);
     if (info == null) {
@@ -123,14 +139,20 @@ public class BeanHolder {
 
 
   /**
-   * Get all the non-ignored property names.
+   * Get all the non-ignored writable property names.
    *
    * @return the property names
    */
   public Collection<String> getPropertyNames() {
     TreeSet<String> names = new TreeSet<>();
-    information.properties().stream().filter(i -> !i.ignored()).forEach(p -> names.add(p.name()));
-    information.beanCreator().properties().stream().filter(i -> !i.ignored()).forEach(p -> names.add(p.name()));
+    information.properties().stream()
+        .filter(i -> !i.ignored())
+        .filter(PropertyInformation::writable)
+        .forEach(p -> names.add(p.name()));
+    information.beanCreator().properties().stream()
+        .filter(i -> !i.ignored())
+        .filter(PropertyInformation::writable)
+        .forEach(p -> names.add(p.name()));
     return names;
   }
 
@@ -201,6 +223,16 @@ public class BeanHolder {
   }
 
 
+  public boolean isWritable(String propertyName) {
+    PropertyInformation info = information.property(propertyName);
+    if (info != null && info.writable()) {
+      return true;
+    }
+    info = information.beanCreator().property(propertyName);
+    return info != null && info.writable();
+  }
+
+
   public Object readActual(String propertyName) {
     buildBean();
     return information.property(propertyName).read(bean);
@@ -223,10 +255,27 @@ public class BeanHolder {
   }
 
 
-  public void setProperty(String propertyName, Object value) {
+  public void setAllProperties(ValueType type, boolean useNulls) {
+    for (String propertyName : getPropertyNames()) {
+      if (useNulls && isNullable(propertyName)) {
+        setProperty(propertyName, null);
+      } else {
+        setProperty(propertyName, createValue(type, propertyName));
+      }
+    }
+  }
+
+
+  public boolean setProperty(String propertyName, Object value) {
+    if (Objects.equals(readExpected(propertyName), value)) {
+      return false;
+    }
+
     values.remove(propertyName);
     values.put(propertyName, value);
     changed.add(propertyName);
+
+    return true;
   }
 
 
