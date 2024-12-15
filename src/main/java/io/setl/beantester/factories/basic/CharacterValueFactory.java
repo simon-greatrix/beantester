@@ -22,14 +22,26 @@ public final class CharacterValueFactory extends RandomValueFactoryBase<Characte
   }
 
 
+  @Override
+  protected Character createPrimary() {
+    return 'A';
+  }
+
+
   /**
    * Create a new Character object.
    *
    * @return A new Character object.
    */
   @Override
-  public Character create() {
+  protected Character createRandom() {
     return (char) getRandom().nextInt(Character.MAX_VALUE);
+  }
+
+
+  @Override
+  protected Character createSecondary() {
+    return 'B';
   }
 
 }

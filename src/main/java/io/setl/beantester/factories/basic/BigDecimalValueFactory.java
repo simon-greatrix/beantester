@@ -11,6 +11,11 @@ import java.util.random.RandomGenerator;
  */
 public final class BigDecimalValueFactory extends RandomValueFactoryBase<BigDecimal> {
 
+  private static final BigDecimal PRIMARY = new BigDecimal("0.1");
+
+  private static final BigDecimal SECONDARY = new BigDecimal("1.1");
+
+
   /**
    * Construct a new BigDecimal object factory.
    *
@@ -23,18 +28,30 @@ public final class BigDecimalValueFactory extends RandomValueFactoryBase<BigDeci
   }
 
 
+  @Override
+  protected BigDecimal createPrimary() {
+    return PRIMARY;
+  }
+
+
   /**
    * Create a new Double object.
    *
    * @return A new Double object.
    */
   @Override
-  public BigDecimal create() {
+  protected BigDecimal createRandom() {
     byte[] bytes = new byte[12];
     getRandom().nextBytes(bytes);
     BigInteger unscaledValue = new BigInteger(bytes);
     int scale = getRandom().nextInt(16) - 8;
     return new BigDecimal(unscaledValue, scale);
+  }
+
+
+  @Override
+  protected BigDecimal createSecondary() {
+    return SECONDARY;
   }
 
 }

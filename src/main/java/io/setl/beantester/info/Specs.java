@@ -1,15 +1,20 @@
 package io.setl.beantester.info;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer1;
+import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction0;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
 
 public class Specs {
@@ -17,13 +22,26 @@ public class Specs {
   /**
    * Specifies a constructor. The bean's class must have a public constructor with matching argument types.
    */
-  interface BeanConstructor extends Spec {
+  public interface BeanConstructor extends Spec {
 
     /** The constructor's parameter names. The parameter names must be unique and equal in number to the parameters. */
-    List<String> getParameterNames();
+    List<String> names();
 
     /** The constructor's parameter types. The bean's class must have a public constructor with these exact parameter types. */
-    List<Class<?>> getParameterTypes();
+    List<Class<?>> types();
+
+    /** Validate the names and types are the same size and all non null. */
+    default void validate() {
+      Objects.requireNonNull(names(), "names");
+      Objects.requireNonNull(types(), "types");
+      if (names().size() != types().size()) {
+        throw new IllegalArgumentException("Names and types must be the same size");
+      }
+      for (int i = 0; i < names().size(); i++) {
+        Objects.requireNonNull(names().get(i), "Parameter name at index " + i + " is null");
+        Objects.requireNonNull(types().get(i), "Parameter type at index " + i + " is null");
+      }
+    }
 
   }
 
@@ -32,21 +50,87 @@ public class Specs {
   /**
    * Specify to construct a bean using the specified function. The function takes a map of parameter names to values and should create the bean accordingly.
    */
-  interface BeanCreator extends Spec, SerializableFunction1<Map<String, Object>, Object> {
+  public interface BeanCreator<M extends Model> extends Spec, SerializableFunction1<Map<String, Object>, Object>, Model<M> {
 
   }
+
+
+
+  /**
+   * A method that can be used to create the builder for a bean.
+   */
+  public interface BuilderMethods extends Spec {
+
+    /** The method invoked on the builder to create the bean. */
+    SerializableFunction1<Object, Object> build();
+
+    /** The static method invoked to create a builder. */
+    SerializableFunction0<Object> builder();
+
+  }
+
+
+
+  /**
+   * Customise the properties associated with a creator.
+   */
+  public interface CreatorPropertyCustomiser extends Spec {
+
+    Collection<PropertySpec> get();
+
+  }
+
+
+
+  /** Add a property. */
+  public interface NewProperty extends PropertySpec {
+
+    /** Get the property to add. */
+    PropertyInformation get();
+
+  }
+
 
 
   /**
    * Specify to customise a property. During initialisation all properties will be passed to the customiser.
    */
-  interface PropertyCustomiser extends Spec, SerializableConsumer1<PropertyInformation> {
+  public interface PropertyCustomiser extends PropertySpec, SerializableConsumer1<PropertyInformation> {
 
   }
 
 
-  interface Spec {
+
+  /** A marker interface for anything that customises properties. */
+  public interface PropertySpec extends Spec {
+    // Marker interface
+  }
+
+
+
+  /** Remove a named property. */
+  public interface RemoveProperty extends PropertySpec {
+
+    /** Get the name of the property to remove. */
+    String get();
+
+  }
+
+
+
+  public interface Spec {
     // marker
+  }
+
+
+
+  record BeanConstructorImpl(List<String> names, List<Class<?>> types) implements BeanConstructor {
+
+    BeanConstructorImpl(List<String> names, List<Class<?>> types) {
+      this.names = Collections.unmodifiableList(names);
+      this.types = Collections.unmodifiableList(types);
+    }
+
   }
 
 
@@ -57,45 +141,8 @@ public class Specs {
    *
    * @return the specification
    */
-  static BeanConstructor beanConstructor(Class<?> beanClass) {
-    Constructor<?>[] constructors = beanClass.getConstructors();
-    Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
-    for (Constructor<?> constructor : constructors) {
-      boolean namesAreKnown = true;
-
-      for (Parameter parameter : constructor.getParameters()) {
-        if (!parameter.isNamePresent()) {
-          namesAreKnown = false;
-          break;
-        }
-      }
-
-      if (namesAreKnown) {
-        // found it
-        List<String> names = new ArrayList<>();
-        List<Class<?>> types = new ArrayList<>();
-
-        for (Parameter parameter : constructor.getParameters()) {
-          names.add(parameter.getName());
-          types.add(parameter.getType());
-        }
-
-        return new BeanConstructor() {
-          @Override
-          public List<String> getParameterNames() {
-            return Collections.unmodifiableList(names);
-          }
-
-
-          @Override
-          public List<Class<?>> getParameterTypes() {
-            return Collections.unmodifiableList(types);
-          }
-        };
-      }
-    }
-
-    throw new IllegalStateException("No constructor with known parameter names found for: " + beanClass);
+  public static BeanConstructor beanConstructor(Class<?> beanClass) {
+    return beanConstructorIfPossible(beanClass).orElseThrow(() -> new IllegalArgumentException("No suitable constructor found for " + beanClass));
   }
 
 
@@ -106,7 +153,7 @@ public class Specs {
    *
    * @return the specification
    */
-  static BeanConstructor beanConstructor(Object... nameAndType) {
+  public static BeanConstructor beanConstructor(Object... nameAndType) {
     List<String> names = new ArrayList<>();
     List<Class<?>> types = new ArrayList<>();
 
@@ -131,19 +178,163 @@ public class Specs {
       }
     }
 
-    return new BeanConstructor() {
-      @Override
-      public List<String> getParameterNames() {
-        return Collections.unmodifiableList(names);
+    return new BeanConstructorImpl(names, types);
+  }
+
+
+  /**
+   * Specify to construct a bean using the public constructor with the lowest number of arguments for which the parameter names are known.
+   *
+   * @param beanClass the bean's class
+   *
+   * @return the specification
+   */
+  public static Optional<BeanConstructor> beanConstructorIfPossible(Class<?> beanClass) {
+    Constructor<?>[] constructors = beanClass.getConstructors();
+    Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
+
+    boolean warningLogged = false;
+
+    for (Constructor<?> constructor : constructors) {
+      boolean namesAreKnown = true;
+
+      for (Parameter parameter : constructor.getParameters()) {
+        if (!parameter.isNamePresent()) {
+          if (!warningLogged) {
+            System.getLogger("io.setl.beantester").log(
+                Level.WARNING,
+                "Parameter name not present in constructor for \"" + beanClass + "\". Remember to compile with \"-parameters\" enabled."
+            );
+            warningLogged = true;
+          }
+          namesAreKnown = false;
+          break;
+        }
       }
 
+      if (namesAreKnown) {
+        // found it
+        List<String> names = new ArrayList<>();
+        List<Class<?>> types = new ArrayList<>();
 
-      @Override
-      public List<Class<?>> getParameterTypes() {
-        return Collections.unmodifiableList(types);
+        for (Parameter parameter : constructor.getParameters()) {
+          names.add(parameter.getName());
+          types.add(parameter.getType());
+        }
+
+        return Optional.of(new BeanConstructorImpl(names, types));
+      }
+    }
+
+    return Optional.empty();
+  }
+
+
+  public static CreatorPropertyCustomiser creatorProperties(PropertySpec... properties) {
+    return () -> List.of(properties);
+  }
+
+
+  public static CreatorPropertyCustomiser creatorProperties(Collection<PropertySpec> properties) {
+    return () -> properties;
+  }
+
+
+  public static PropertyCustomiser ignored(Collection<String> propertyNames) {
+    return propertyInformation -> {
+      if (propertyNames.contains(propertyInformation.name())) {
+        propertyInformation.ignored(true);
       }
     };
+  }
 
+
+  public static PropertyCustomiser ignored(String... propertyNames) {
+    return ignored(Arrays.asList(propertyNames));
+  }
+
+
+  public static PropertyCustomiser ignoredExcept(Collection<String> propertyNames) {
+    return propertyInformation -> {
+      if (!propertyNames.contains(propertyInformation.name())) {
+        propertyInformation.ignored(true);
+      }
+    };
+  }
+
+
+  public static PropertyCustomiser ignoredExcept(String... propertyNames) {
+    return ignoredExcept(Arrays.asList(propertyNames));
+  }
+
+
+  public static NewProperty newProperty(PropertyInformation propertyInformation) {
+    return () -> propertyInformation;
+  }
+
+
+  public static PropertyCustomiser notNull(Collection<String> propertyNames) {
+    return propertyInformation -> {
+      if (propertyNames.contains(propertyInformation.name())) {
+        propertyInformation.nullable(false);
+      }
+    };
+  }
+
+
+  public static PropertyCustomiser notNull(String... propertyNames) {
+    return notNull(Arrays.asList(propertyNames));
+  }
+
+
+  public static PropertyCustomiser notSignificant(String... propertyNames) {
+    return notSignificant(Arrays.asList(propertyNames));
+  }
+
+
+  public static PropertyCustomiser notSignificant(Collection<String> propertyNames) {
+    return propertyInformation -> {
+      if (propertyNames.contains(propertyInformation.name())) {
+        propertyInformation.significant(false);
+      }
+    };
+  }
+
+
+  public static PropertyCustomiser nullable(String... propertyNames) {
+    return nullable(Arrays.asList(propertyNames));
+  }
+
+
+  public static PropertyCustomiser nullable(Collection<String> propertyNames) {
+    return propertyInformation -> {
+      if (propertyNames.contains(propertyInformation.name())) {
+        propertyInformation.nullable(true);
+      }
+    };
+  }
+
+
+  public static PropertyCustomiser significant(String... propertyNames) {
+    return significant(Arrays.asList(propertyNames));
+  }
+
+
+  public static PropertyCustomiser significant(Collection<String> propertyNames) {
+    return propertyInformation -> {
+      if (propertyNames.contains(propertyInformation.name())) {
+        propertyInformation.significant(true);
+      }
+    };
+  }
+
+
+  public static PropertyCustomiser type(String propertyName, Class<?> type) {
+    return propertyInformation -> {
+      if (propertyInformation.name().equals(propertyName)) {
+        propertyInformation.type(type);
+      }
+    };
   }
 
 }

@@ -21,14 +21,26 @@ public final class ShortValueFactory extends RandomValueFactoryBase<Short> {
   }
 
 
+  @Override
+  protected Short createPrimary() {
+    return (short) 1;
+  }
+
+
   /**
    * Create a new Short object.
    *
    * @return A new Short object.
    */
   @Override
-  public Short create() {
+  protected Short createRandom() {
     return (short) getRandom().nextInt(Short.MIN_VALUE, 1 + Short.MAX_VALUE);
+  }
+
+
+  @Override
+  protected Short createSecondary() {
+    return (short) 2;
   }
 
 }

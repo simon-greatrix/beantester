@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
+import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 
 import io.setl.beantester.TestContext;
@@ -38,6 +39,7 @@ import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.factories.NoSuchFactoryException;
 import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
+import io.setl.beantester.factories.ValueType;
 
 
 /**
@@ -45,8 +47,8 @@ import io.setl.beantester.factories.ValueFactoryRepository;
  */
 public class CollectionFactoryLookup implements FactoryLookup {
 
-  private static Map<Class<?>, ValueFactory<?>> buildDefaultCollectionFactories() {
-    Map<Class<?>, ValueFactory<?>> collectionFactories = new ConcurrentHashMap<>();
+  private static Map<Class<?>, Supplier<?>> buildDefaultCollectionFactories() {
+    Map<Class<?>, Supplier<?>> collectionFactories = new ConcurrentHashMap<>();
 
     // Lists
     collectionFactories.put(List.class, ArrayList::new);
@@ -73,23 +75,25 @@ public class CollectionFactoryLookup implements FactoryLookup {
   }
 
 
-  private final Map<Class<?>, ValueFactory<?>> collectionFactories = buildDefaultCollectionFactories();
+  private final Map<Class<?>, Supplier<?>> collectionFactories = buildDefaultCollectionFactories();
+
+  private final TestContext context;
 
   private final RandomGenerator random;
 
   private int maxSize = 8;
 
-  private final TestContext context;
 
   public CollectionFactoryLookup(TestContext context) {
     this.context = context;
     random = context.getRandom();
   }
 
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   private ValueFactory<?> createCollectionPopulatingFactory(Type typeToken) {
     Class<?> rawType = getRawType(typeToken);
-    ValueFactory<Object> instanceValueFactory = findCollectionInstanceFactory(typeToken, rawType);
+    Supplier<Object> instanceValueFactory = findCollectionInstanceFactory(typeToken, rawType);
 
     Type itemType = findElementType(typeToken, 0);
     ValueFactory<?> itemValueFactory = findItemFactory(itemType);
@@ -98,42 +102,61 @@ public class CollectionFactoryLookup implements FactoryLookup {
       return createMapPopulatingFactory(typeToken, instanceValueFactory, itemValueFactory);
 
     } else {
-      ValueFactory<Object> populatingValueFactory = () -> {
-        Collection collection = (Collection) instanceValueFactory.create();
 
-        int size = random.nextInt(maxSize);
-        for (int idx = 0; idx < size; idx++) {
-          collection.add(itemValueFactory.create());
+      return (t) -> {
+        Collection collection = (Collection) instanceValueFactory.get();
+        switch( t ) {
+          case PRIMARY:
+            collection.add(itemValueFactory.create(ValueType.PRIMARY));
+            break;
+          case SECONDARY:
+            collection.add(itemValueFactory.create(ValueType.PRIMARY));
+            collection.add(itemValueFactory.create(ValueType.SECONDARY));
+            break;
+          default:
+            int size = random.nextInt(maxSize);
+            for (int idx = 0; idx < size; idx++) {
+              collection.add(itemValueFactory.create(ValueType.RANDOM));
+            }
+            break;
         }
+
         return collection;
       };
-
-      return populatingValueFactory;
     }
   }
 
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private ValueFactory<?> createMapPopulatingFactory(Type typeToken, ValueFactory<Object> instanceValueFactory, ValueFactory<?> itemValueFactory) {
+  private ValueFactory<?> createMapPopulatingFactory(Type typeToken, Supplier<Object> instanceValueFactory, ValueFactory<?> keyFactory) {
     Type valueType = findElementType(typeToken, 1);
     ValueFactory<?> valueFactory = findItemFactory(valueType);
 
-    ValueFactory<Object> populatingValueFactory = () -> {
-      Map map = (Map) instanceValueFactory.create();
+    return (t) -> {
+      Map map = (Map) instanceValueFactory.get();
 
-      int size = random.nextInt(maxSize);
-      for (int idx = 0; idx < size; idx++) {
-        map.put(itemValueFactory.create(), valueFactory.create());
+      switch (t) {
+        case PRIMARY:
+          map.put(keyFactory.create(ValueType.PRIMARY), valueFactory.create(ValueType.PRIMARY));
+          break;
+        case SECONDARY:
+          map.put(keyFactory.create(ValueType.PRIMARY), valueFactory.create(ValueType.PRIMARY));
+          map.put(keyFactory.create(ValueType.SECONDARY), valueFactory.create(ValueType.SECONDARY));
+          break;
+        default:
+          int size = random.nextInt(maxSize);
+          for (int idx = 0; idx < size; idx++) {
+            map.put(keyFactory.create(t), valueFactory.create(t));
+          }
+          break;
       }
       return map;
     };
-
-    return populatingValueFactory;
   }
 
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private <T> ValueFactory<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
+  private <T> Supplier<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
     if (isEnumMap(type, rawType)) {
       Type keyType = findElementType(type, 0);
       return () -> (T) new EnumMap((Class) keyType);
@@ -144,7 +167,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
       return () -> (T) EnumSet.noneOf((Class) keyType);
     }
 
-    ValueFactory<?> valueFactory = collectionFactories.get(rawType);
+    Supplier<?> valueFactory = collectionFactories.get(rawType);
     if (valueFactory == null) {
       valueFactory = () -> {
         try {
@@ -155,7 +178,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
       };
       collectionFactories.put(rawType, valueFactory);
     }
-    return (ValueFactory<T>) valueFactory;
+    return (Supplier<T>) valueFactory;
   }
 
 

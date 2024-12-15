@@ -1,6 +1,5 @@
 package io.setl.beantester;
 
-import java.time.Clock;
 import java.util.Comparator;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.SplittableGenerator;
@@ -41,11 +40,14 @@ public class TestContext {
     root = generator;
   }
 
+  private final RandomClock clock;
+
+  private boolean preferWriters = true;
+
   private RandomGenerator random;
 
   private ValueFactoryRepository valueFactoryRepository;
 
-  private final RandomClock clock;
 
   public TestContext() {
     random = newRandom();
@@ -67,6 +69,22 @@ public class TestContext {
 
   public ValueFactoryRepository getValueFactoryRepository() {
     return valueFactoryRepository;
+  }
+
+
+  /**
+   * If a property can be set on creation and via a writer, do we prefer to create a new bean or update the existing one?.
+   *
+   * @return true if we prefer updating the existing bean, false if we prefer creating a new bean.
+   */
+  public boolean preferWriters() {
+    return preferWriters;
+  }
+
+
+  public TestContext setPreferWriters(boolean preferWriters) {
+    this.preferWriters = preferWriters;
+    return this;
   }
 
 }

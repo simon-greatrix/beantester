@@ -11,10 +11,22 @@ public final class BigIntegerValueFactory extends RandomValueFactoryBase<BigInte
 
 
   @Override
-  public BigInteger create() {
+  protected BigInteger createPrimary() {
+    return BigInteger.ONE;
+  }
+
+
+  @Override
+  protected BigInteger createRandom() {
     byte[] bytes = new byte[12];
     getRandom().nextBytes(bytes);
     return new BigInteger(bytes);
+  }
+
+
+  @Override
+  protected BigInteger createSecondary() {
+    return BigInteger.TWO;
   }
 
 }

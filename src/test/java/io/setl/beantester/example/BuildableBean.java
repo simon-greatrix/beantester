@@ -38,13 +38,13 @@ public class BuildableBean {
     }
 
 
-    public BuildableBeanBuilder amount(BigDecimal amount) {
+    public BuildableBeanBuilder amount(@NotNull BigDecimal amount) {
       this.amount = amount;
       return this;
     }
 
 
-    public BuildableBeanBuilder assetId(String assetId) {
+    public BuildableBeanBuilder assetId(@NotNull String assetId) {
       this.assetId = assetId;
       return this;
     }
@@ -105,7 +105,7 @@ public class BuildableBean {
     }
 
 
-    public BuildableBeanBuilder links(Collection<String> links) {
+    public BuildableBeanBuilder links(@NotNull Collection<String> links) {
       if (links == null) {
         throw new NullPointerException("links cannot be null");
       }
@@ -137,7 +137,7 @@ public class BuildableBean {
     }
 
 
-    public BuildableBeanBuilder type(String type) {
+    public BuildableBeanBuilder type(@NotNull String type) {
       this.type = type;
       return this;
     }

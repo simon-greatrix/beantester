@@ -163,14 +163,36 @@ public class SerializableLambdas {
     }
     Objects.requireNonNull(lambdaMethodType, "No exec method found in lambda type");
 
+    MethodType handleType = handle.type().wrap().changeReturnType(lambdaMethodType.returnType());
+
     try {
       CallSite site = LambdaMetafactory.altMetafactory(
+          // caller – Represents a lookup context with the accessibility privileges of the caller.
+          // Specifically, the lookup context must have full privilege access.
+          // When used with invokedynamic, this is stacked automatically by the VM.
           MethodHandles.lookup(),
+
+          // interfaceMethodName – The name of the method to implement.
+          // When used with invokedynamic, this is provided by the NameAndType of the InvokeDynamic structure and is stacked automatically by the VM.
           "exec",
+
+          // factoryType – The expected signature of the CallSite. The parameter types represent the types of capture variables; the return type is the
+          // interface to implement. When used with invokedynamic, this is provided by the NameAndType of the InvokeDynamic structure and is stacked
+          // automatically by the VM.
           MethodType.methodType(lambdaType),
+
+          // interfaceMethodType – Signature and return type of method to be implemented by the function object
           lambdaMethodType,
+
+          // implementation – A direct method handle describing the implementation method which should be called (with suitable adaptation of argument types
+          // and return types, and with captured arguments prepended to the invocation arguments) at invocation time.
           handle,
-          handle.type(),
+
+          // dynamicMethodType – The signature and return type that should be enforced dynamically at invocation time.
+          // In simple use cases this is the same as interfaceMethodType.
+          handleType,
+
+          // flags
           LambdaMetafactory.FLAG_SERIALIZABLE
       );
 
@@ -179,7 +201,7 @@ public class SerializableLambdas {
     } catch (Error error) {
       throw error;
     } catch (Throwable exception) {
-      throw new AssertionError("Internal error", exception);
+      throw new AssertionError("Internal error converting \""+handle+"\" to \""+lambdaType+"\"", exception);
     }
   }
 

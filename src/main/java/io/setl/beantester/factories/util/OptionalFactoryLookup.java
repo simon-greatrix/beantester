@@ -68,19 +68,19 @@ public class OptionalFactoryLookup implements FactoryLookup {
         : findItemFactory(itemType);
 
     if (rawType.equals(Optional.class)) {
-      return () -> (T) Optional.ofNullable(itemValueFactory.create());
+      return (t) -> (T) Optional.ofNullable(itemValueFactory.create(t));
     }
 
     if (rawType.equals(OptionalInt.class)) {
-      return () -> (T) OptionalInt.of((Integer) itemValueFactory.create());
+      return (t) -> (T) OptionalInt.of((Integer) itemValueFactory.create(t));
     }
 
     if (rawType.equals(OptionalLong.class)) {
-      return () -> (T) OptionalLong.of((Long) itemValueFactory.create());
+      return (t) -> (T) OptionalLong.of((Long) itemValueFactory.create(t));
     }
 
     if (rawType.equals(OptionalDouble.class)) {
-      return () -> (T) OptionalDouble.of((Double) itemValueFactory.create());
+      return (t) -> (T) OptionalDouble.of((Double) itemValueFactory.create(t));
     }
 
     throw new IllegalArgumentException("Unknown optional type:" + type);
