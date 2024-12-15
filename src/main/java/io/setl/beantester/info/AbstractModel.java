@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class ModelImpl<M extends ModelImpl<M>> implements Model<M> {
+public class AbstractModel<M extends AbstractModel<M>> implements Model<M> {
 
   protected final TreeMap<String, PropertyInformation> properties = new TreeMap<>();
 

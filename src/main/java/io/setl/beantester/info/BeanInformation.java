@@ -8,7 +8,7 @@ import io.setl.beantester.info.Specs.BeanCreator;
  *
  * @author Graham Williamson
  */
-public class BeanInformation extends ModelImpl<BeanInformation> {
+public class BeanInformation extends AbstractModel<BeanInformation> {
 
   /**
    * Create BeanInformation for a specified class.

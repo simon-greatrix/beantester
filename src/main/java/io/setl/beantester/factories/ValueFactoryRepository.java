@@ -23,6 +23,8 @@ public class ValueFactoryRepository {
 
   private final HashMap<Class<?>, HashMap<String, ValueFactory<?>>> overrides = new HashMap<>();
 
+  private BeanFactoryLookup beanFactoryLookup;
+
 
   /**
    * Add the specified Factory to the collection. If a Factory is already registered against the specified class, the existing registered Factory will be
@@ -94,8 +96,20 @@ public class ValueFactoryRepository {
       FactoryLookup lookup = factoryLookups.get(p);
       if (lookup.hasFactory(type)) {
         factory = lookup.getFactory(type);
+        if (type instanceof Class<?> clazz) {
+          factories.put(clazz, factory);
+        }
         return factory;
       }
+    }
+
+    // Finally, try the bean factory lookup
+    if (beanFactoryLookup.hasFactory(type)) {
+      factory = beanFactoryLookup.getFactory(type);
+      if (type instanceof Class<?> clazz) {
+        factories.put(clazz, factory);
+      }
+      return factory;
     }
 
     throw new NoSuchFactoryException("No factory found for " + type);
@@ -109,7 +123,7 @@ public class ValueFactoryRepository {
     TimeFactories.load(context, this);
     UtilFactories.load(context, this);
 
-
+    beanFactoryLookup = new BeanFactoryLookup(context);
   }
 
 }

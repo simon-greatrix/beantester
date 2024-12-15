@@ -6,7 +6,7 @@ import java.util.Map;
 import io.setl.beantester.info.Specs.BeanCreator;
 import io.setl.beantester.info.Specs.BuilderMethods;
 
-public class BeanBuilder extends ModelImpl<BeanBuilder> implements BeanCreator<BeanBuilder> {
+public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreator<BeanBuilder> {
 
   private final BuilderMethods builderMethods;
 
