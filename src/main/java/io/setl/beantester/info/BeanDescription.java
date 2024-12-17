@@ -8,13 +8,13 @@ import io.setl.beantester.info.Specs.BeanCreator;
  *
  * @author Graham Williamson
  */
-public class BeanInformation extends AbstractModel<BeanInformation> {
+public class BeanDescription extends AbstractModel<BeanDescription> {
 
   /**
    * Create BeanInformation for a specified class.
    */
-  public static BeanInformation create(TestContext testContext, Class<?> beanClass, Specs.Spec... specs) {
-    return new BeanInformationFactory().create(testContext, beanClass, specs);
+  public static BeanDescription create(TestContext testContext, Class<?> beanClass, Specs.Spec... specs) {
+    return new BeanDescriptionFactory().create(testContext, beanClass, specs);
   }
 
 
@@ -25,7 +25,7 @@ public class BeanInformation extends AbstractModel<BeanInformation> {
   private BeanCreator<?> beanCreator;
 
 
-  public BeanInformation(TestContext testContext, Class<?> beanClass) {
+  public BeanDescription(TestContext testContext, Class<?> beanClass) {
     this.testContext = testContext;
     this.beanClass = beanClass;
   }
@@ -46,11 +46,10 @@ public class BeanInformation extends AbstractModel<BeanInformation> {
   }
 
 
-  public BeanInformation beanCreator(BeanCreator<?> beanCreator) {
+  public BeanDescription beanCreator(BeanCreator<?> beanCreator) {
     this.beanCreator = beanCreator;
     return this;
   }
-
 
 
   public BeanHolder createHolder() {
@@ -65,11 +64,11 @@ public class BeanInformation extends AbstractModel<BeanInformation> {
 
   @Override
   public String toString() {
-    return "BeanInformation{" +
-        "beanClass=" + beanClass +
-        ", properties=" + properties() +
-        ", beanCreator=" + beanCreator +
-        '}';
+    return "BeanInformation{"
+        + "beanClass=" + beanClass
+        + ", properties=" + properties()
+        + ", beanCreator=" + beanCreator
+        + '}';
   }
 
 }

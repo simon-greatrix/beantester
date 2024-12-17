@@ -4,20 +4,26 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * An entity that can be described by a set of properties.
+ *
+ * @param <M> the model type
+ */
 public class AbstractModel<M extends AbstractModel<M>> implements Model<M> {
 
-  protected final TreeMap<String, PropertyInformation> properties = new TreeMap<>();
+  protected final TreeMap<String, Property> properties = new TreeMap<>();
 
 
   @Override
-  public Collection<PropertyInformation> properties() {
+  public Collection<Property> properties() {
     return properties.values();
   }
 
 
   @Override
-  public M properties(Collection<PropertyInformation> newProperties) {
-    for (PropertyInformation property : newProperties) {
+  @SuppressWarnings("unchecked")
+  public M properties(Collection<Property> newProperties) {
+    for (Property property : newProperties) {
       properties.put(property.name(), property);
     }
     return (M) this;
@@ -25,14 +31,15 @@ public class AbstractModel<M extends AbstractModel<M>> implements Model<M> {
 
 
   @Override
-  public M property(PropertyInformation property) {
+  @SuppressWarnings("unchecked")
+  public M property(Property property) {
     properties.put(property.name(), property);
     return (M) this;
   }
 
 
   @Override
-  public PropertyInformation property(String name) {
+  public Property property(String name) {
     if (name != null) {
       return properties.get(name);
     }
@@ -47,6 +54,7 @@ public class AbstractModel<M extends AbstractModel<M>> implements Model<M> {
 
 
   @Override
+  @SuppressWarnings("unchecked")
   public M removeProperty(String name) {
     if (name != null) {
       properties.remove(name);

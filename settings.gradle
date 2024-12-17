@@ -1,2 +1,23 @@
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    maven {
+      url 'https://maven.pkg.github.com/ledger-swarm/maven-repo'
+      credentials {
+        username = "$githubUser"
+        password = "$githubToken"
+      }
+    }
+  }
+
+  plugins {
+    id 'com.github.spotbugs' version '5.2.3'
+    id 'com.palantir.git-version' version '3.1.0'
+    id 'io.freefair.lombok' version '8.4'
+    id 'org.owasp.dependencycheck' version '8.4.2'
+  }
+}
+
 rootProject.name = 'beantester'
 

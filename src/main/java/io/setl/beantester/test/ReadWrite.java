@@ -10,6 +10,7 @@ import java.util.random.RandomGenerator;
 import io.setl.beantester.factories.ValueType;
 import io.setl.beantester.info.BeanHolder;
 
+/** Test that all the properties can be written and read correctly. */
 public class ReadWrite {
 
   private final BeanHolder holder;
@@ -19,6 +20,11 @@ public class ReadWrite {
   private final Map<String, Object[]> values = new HashMap<>();
 
 
+  /**
+   * New instance to test beans from the specified holder.
+   *
+   * @param holder source of beans
+   */
   public ReadWrite(BeanHolder holder) {
     this.holder = holder;
     TreeSet<String> names = new TreeSet<>(holder.getPropertyNames());
@@ -42,6 +48,7 @@ public class ReadWrite {
   }
 
 
+  /** Test the setting and reading of properties. */
   public void test() {
     testToString();
     testAllCombinations();
@@ -96,9 +103,7 @@ public class ReadWrite {
   private void testToString() {
     Objects.requireNonNull(holder.bean().toString());
     Optional<Object> builder = holder.builder();
-    if (builder.isPresent()) {
-      Objects.requireNonNull(builder.get().toString());
-    }
+    builder.ifPresent(o -> Objects.requireNonNull(o.toString()));
   }
 
 }

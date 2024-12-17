@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.example.BuildableBean;
 
-class BeanInformationTest {
+class BeanDescriptionTest {
 
   @Test
   void testConstructor() {
     TestContext testContext = new TestContext();
-    BeanInformation info = BeanInformation.create(testContext, BuildableBean.class);
+    BeanDescription info = BeanDescription.create(testContext, BuildableBean.class);
     System.out.println(info.toString());
     assertNotNull(info);
   }

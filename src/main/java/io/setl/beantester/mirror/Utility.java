@@ -29,37 +29,11 @@ abstract class Utility {
    * is also removed.
    *
    * @param str    The long class name
-   * @param chopit flag that determines whether chopping is executed or not
    *
    * @return Compacted class name
    */
-  public static String compactClassName(final String str, final boolean chopit) {
-    return compactClassName(str, "java.lang.", chopit);
-  }
-
-
-  /**
-   * Shorten long class name <em>str</em>, i.e., chop off the <em>prefix</em>,
-   * if the
-   * class name starts with this string and the flag <em>chopit</em> is true.
-   * Slashes <em>/</em> are converted to dots <em>.</em>.
-   *
-   * @param str    The long class name
-   * @param prefix The prefix the get rid off
-   * @param chopit flag that determines whether chopping is executed or not
-   *
-   * @return Compacted class name
-   */
-  public static String compactClassName(String str, final String prefix, final boolean chopit) {
-    final int len = prefix.length();
-    str = str.replace('/', '.'); // Is `/' on all systems, even DOS
-    if (chopit) {
-      // If string starts with 'prefix' and contains no further dots
-      if (str.startsWith(prefix) && (str.substring(len).indexOf('.') == -1)) {
-        str = str.substring(len);
-      }
-    }
-    return str;
+  public static String compactClassName(final String str) {
+    return str.replace('/', '.');
   }
 
 
@@ -67,11 +41,10 @@ abstract class Utility {
    * Converts argument list portion of method signature to string.
    *
    * @param signature Method signature
-   * @param chopit    flag that determines whether chopping is executed or not
    *
    * @return String Array of argument types
    */
-  public static String[] methodSignatureArgumentTypes(final String signature, final boolean chopit)
+  public static String[] methodSignatureArgumentTypes(final String signature)
       throws IllegalArgumentException {
     final List<String> vec = new ArrayList<>();
     int index;
@@ -82,30 +55,29 @@ abstract class Utility {
         throw new IllegalArgumentException("Invalid method signature: " + signature);
       }
       while (signature.charAt(index) != ')') {
-        vec.add(typeSignatureToString(signature.substring(index), chopit));
+        vec.add(typeSignatureToString(signature.substring(index)));
         //corrected concurrent private static field access
         index += unwrap(consumed_chars); // update position
       }
     } catch (final StringIndexOutOfBoundsException e) { // Should never occur
       throw new IllegalArgumentException("Invalid method signature: " + signature, e);
     }
-    return vec.toArray(new String[vec.size()]);
+    return vec.toArray(String[]::new);
   }
 
 
   /**
    * This method converts a type signature string into a Java type declaration such as
-   * `String[]' and throws a `ClassFormatException' when the parsed type is invalid.
+   * 'String[]' and throws a 'ClassFormatException' when the parsed type is invalid.
    *
    * @param signature type signature
-   * @param chopit    flag that determines whether chopping is executed or not
-   *
-   * @return string containing human readable type signature
+  *
+   * @return string containing human-readable type signature
    *
    * @since 6.4.0
    */
-  public static String typeSignatureToString(final String signature, final boolean chopit) throws IllegalArgumentException {
-    //corrected concurrent private static field acess
+  public static String typeSignatureToString(final String signature) throws IllegalArgumentException {
+    //corrected concurrent private static field access
     wrap(consumed_chars, 1); // This is the default, read just one char like `B'
     try {
       switch (signature.charAt(0)) {
@@ -122,13 +94,13 @@ abstract class Utility {
         case 'J':
           return "long";
         case 'T': { // TypeVariableSignature
-          final int index = signature.indexOf(';'); // Look for closing `;'
+          final int index = signature.indexOf(';'); // Look for closing ';'
           if (index < 0) {
             throw new IllegalArgumentException("Invalid type variable signature: " + signature);
           }
           //corrected concurrent private static field acess
           wrap(consumed_chars, index + 1); // "Tblabla;" `T' and `;' are removed
-          return compactClassName(signature.substring(1, index), chopit);
+          return compactClassName(signature.substring(1, index));
         }
         case 'L': { // Full class name
           // should this be a while loop? can there be more than
@@ -152,7 +124,7 @@ abstract class Utility {
           if (bracketIndex < 0) {
             // just a class identifier
             wrap(consumed_chars, index + 1); // "Lblabla;" `L' and `;' are removed
-            return compactClassName(signature.substring(1, index), chopit);
+            return compactClassName(signature.substring(1, index));
           }
           // but make sure we are not looking past the end of the current item
           fromIndex = signature.indexOf(';');
@@ -162,12 +134,12 @@ abstract class Utility {
           if (fromIndex < bracketIndex) {
             // just a class identifier
             wrap(consumed_chars, fromIndex + 1); // "Lblabla;" `L' and `;' are removed
-            return compactClassName(signature.substring(1, fromIndex), chopit);
+            return compactClassName(signature.substring(1, fromIndex));
           }
 
           // we have TypeArguments; build up partial result
           // as we recurse for each TypeArgument
-          final StringBuilder type = new StringBuilder(compactClassName(signature.substring(1, bracketIndex), chopit))
+          final StringBuilder type = new StringBuilder(compactClassName(signature.substring(1, bracketIndex)))
               .append("<");
           int consumed_chars = bracketIndex + 1; // Shadows global var
 
@@ -185,7 +157,7 @@ abstract class Utility {
             type.append("?");
             consumed_chars++;
           } else {
-            type.append(typeSignatureToString(signature.substring(consumed_chars), chopit));
+            type.append(typeSignatureToString(signature.substring(consumed_chars)));
             // update our consumed count by the number of characters the for type argument
             consumed_chars = unwrap(Utility.consumed_chars) + consumed_chars;
             wrap(Utility.consumed_chars, consumed_chars);
@@ -206,7 +178,7 @@ abstract class Utility {
               type.append("?");
               consumed_chars++;
             } else {
-              type.append(typeSignatureToString(signature.substring(consumed_chars), chopit));
+              type.append(typeSignatureToString(signature.substring(consumed_chars)));
               // update our consumed count by the number of characters the for type argument
               consumed_chars = unwrap(Utility.consumed_chars) + consumed_chars;
               wrap(Utility.consumed_chars, consumed_chars);
@@ -222,7 +194,7 @@ abstract class Utility {
             type.append(".");
             // convert SimpleClassTypeSignature to fake ClassTypeSignature
             // and then recurse to parse it
-            type.append(typeSignatureToString("L" + signature.substring(consumed_chars + 1), chopit));
+            type.append(typeSignatureToString("L" + signature.substring(consumed_chars + 1)));
             // update our consumed count by the number of characters the for type argument
             // note that this count includes the "L" we added, but that is ok
             // as it accounts for the "." we didn't consume
@@ -252,7 +224,7 @@ abstract class Utility {
           }
           consumed_chars = n; // Remember value
           // The rest of the string denotes a `<field_type>'
-          type = typeSignatureToString(signature.substring(n), chopit);
+          type = typeSignatureToString(signature.substring(n));
           //corrected concurrent private static field acess
           //Utility.consumed_chars += consumed_chars; is replaced by:
           final int _temp = unwrap(Utility.consumed_chars) + consumed_chars;

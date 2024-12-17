@@ -23,6 +23,7 @@ import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
 
+/** Load the "java.time.*" factories. */
 public class TimeFactories {
 
   private static final Clock PRIMARY_CLOCK;
@@ -30,8 +31,14 @@ public class TimeFactories {
   private static final Clock SECONDARY_CLOCK;
 
 
+  /**
+   * Load the "java.time.*" factories.
+   *
+   * @param context    the test context
+   * @param repository the repository to load the factories into
+   */
   public static void load(TestContext context, ValueFactoryRepository repository) {
-    new TimeFactories(context, repository).load();
+    new TimeFactories(context, repository).doLoad();
   }
 
 
@@ -71,8 +78,7 @@ public class TimeFactories {
   }
 
 
-  private void load() {
-    RandomGenerator random = context.getRandom();
+  private void doLoad() {
     addFactory(java.util.Date.class, (t) -> new java.util.Date(clock(t).millis()));
     addFactory(java.sql.Date.class, (t) -> new java.sql.Date(clock(t).millis()));
     addFactory(java.sql.Timestamp.class, (t) -> new java.sql.Timestamp(clock(t).millis()));
@@ -88,20 +94,18 @@ public class TimeFactories {
     addFactory(Year.class, newFactory(Year::now));
     addFactory(YearMonth.class, newFactory(YearMonth::now));
     addFactory(ZonedDateTime.class, newFactory(ZonedDateTime::now));
-    addFactory(ZoneId.class, (t) -> RandomClock.randomZoneId(random));
-    addFactory(ZoneOffset.class, newZoneOffsetFactory());
 
-    addFactory(Duration.class, (t) -> {
-      switch (t) {
-        case PRIMARY:
-          return Duration.ofMinutes(1);
-        case SECONDARY:
-          return Duration.ofHours(5);
-        default:
-          return Duration.ofMillis(random.nextLong(0x1_0000_0000L) - 0x8000_0000L);
-      }
-    });
+    addFactory(ZoneOffset.class, newZoneOffsetFactory());
     addFactory(Period.class, newPeriodFactory());
+
+    final RandomGenerator random = context.getRandom();
+    addFactory(ZoneId.class, (t) -> RandomClock.randomZoneId(random));
+
+    addFactory(Duration.class, (t) -> switch (t) {
+      case PRIMARY -> Duration.ofMinutes(1);
+      case SECONDARY -> Duration.ofHours(5);
+      default -> Duration.ofMillis(random.nextLong(0x1_0000_0000L) - 0x8000_0000L);
+    });
   }
 
 

@@ -17,6 +17,9 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer1;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction0;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
 
+/**
+ * Specifications for creating beans.
+ */
 public class Specs {
 
   /**
@@ -70,11 +73,18 @@ public class Specs {
   }
 
 
+
   /** Add a property. */
   public interface NewProperty extends Spec {
 
-    /** Get the property to add. */
-    PropertyInformation get();
+    /**
+     * Get the property to add. Properties can be associated with the bean itself, the bean's creator, or both.
+     *
+     * @param forCreator true if the property is for the creator, false if for the bean
+     *
+     * @return the property, or empty if not applicable
+     */
+    Optional<Property> get(boolean forCreator);
 
   }
 
@@ -83,10 +93,9 @@ public class Specs {
   /**
    * Specify to customise a property. During initialisation all properties will be passed to the customiser.
    */
-  public interface PropertyCustomiser extends Spec, SerializableConsumer1<PropertyInformation> {
+  public interface PropertyCustomiser extends Spec, SerializableConsumer1<Property> {
 
   }
-
 
 
 
@@ -100,6 +109,9 @@ public class Specs {
 
 
 
+  /**
+   * A marker interface for all specifications.
+   */
   public interface Spec {
     // marker
   }
@@ -212,23 +224,44 @@ public class Specs {
   }
 
 
-  public static PropertyCustomiser ignored(Collection<String> propertyNames) {
+  /**
+   * Create a customiser that sets properties as ignored.
+   *
+   * @param names the names that are ignored (i.e. those that will not be tested)
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser ignored(Collection<String> names) {
     return propertyInformation -> {
-      if (propertyNames.contains(propertyInformation.name())) {
+      if (names.contains(propertyInformation.name())) {
         propertyInformation.ignored(true);
       }
     };
   }
 
 
-  public static PropertyCustomiser ignored(String... propertyNames) {
-    return ignored(Arrays.asList(propertyNames));
+  /**
+   * Create a customiser that sets properties as ignored.
+   *
+   * @param names the names that are ignored (i.e. those that will not be tested)
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser ignored(String... names) {
+    return ignored(Arrays.asList(names));
   }
 
 
-  public static PropertyCustomiser ignoredExcept(Collection<String> propertyNames) {
+  /**
+   * Create a customiser that sets properties as ignored except for the specified names.
+   *
+   * @param names the names that are not ignored (i.e. those that will be tested)
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser ignoredExcept(Collection<String> names) {
     return propertyInformation -> {
-      if (!propertyNames.contains(propertyInformation.name())) {
+      if (!names.contains(propertyInformation.name())) {
         propertyInformation.ignored(true);
       }
     };
@@ -240,70 +273,136 @@ public class Specs {
   }
 
 
-  public static NewProperty newProperty(PropertyInformation propertyInformation) {
-    return () -> propertyInformation;
+  public static NewProperty newProperty(Property property, boolean onBean) {
+    return (b) -> (onBean == b) ? Optional.of(property) : Optional.empty();
   }
 
 
-  public static PropertyCustomiser notNull(Collection<String> propertyNames) {
+  /**
+   * Create a customiser that sets properties as not null.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+
+  public static PropertyCustomiser notNull(Collection<String> names) {
     return propertyInformation -> {
-      if (propertyNames.contains(propertyInformation.name())) {
+      if (names.contains(propertyInformation.name())) {
         propertyInformation.nullable(false);
       }
     };
   }
 
 
-  public static PropertyCustomiser notNull(String... propertyNames) {
-    return notNull(Arrays.asList(propertyNames));
+  /**
+   * Create a customiser that sets properties as not null.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser notNull(String... names) {
+    return notNull(Arrays.asList(names));
   }
 
 
-  public static PropertyCustomiser notSignificant(String... propertyNames) {
-    return notSignificant(Arrays.asList(propertyNames));
+  /**
+   * Create a customiser that sets properties as not significant.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+
+  public static PropertyCustomiser notSignificant(String... names) {
+    return notSignificant(Arrays.asList(names));
   }
 
 
-  public static PropertyCustomiser notSignificant(Collection<String> propertyNames) {
+  /**
+   * Create a customiser that sets properties as not significant.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser notSignificant(Collection<String> names) {
     return propertyInformation -> {
-      if (propertyNames.contains(propertyInformation.name())) {
+      if (names.contains(propertyInformation.name())) {
         propertyInformation.significant(false);
       }
     };
   }
 
 
-  public static PropertyCustomiser nullable(String... propertyNames) {
-    return nullable(Arrays.asList(propertyNames));
+  /**
+   * Create a customiser that sets properties as nullable.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser nullable(String... names) {
+    return nullable(Arrays.asList(names));
   }
 
 
-  public static PropertyCustomiser nullable(Collection<String> propertyNames) {
+  /**
+   * Create a customiser that sets properties as nullable.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser nullable(Collection<String> names) {
     return propertyInformation -> {
-      if (propertyNames.contains(propertyInformation.name())) {
+      if (names.contains(propertyInformation.name())) {
         propertyInformation.nullable(true);
       }
     };
   }
 
 
-  public static PropertyCustomiser significant(String... propertyNames) {
-    return significant(Arrays.asList(propertyNames));
+  /**
+   * Create a customiser that sets properties as significant.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser significant(String... names) {
+    return significant(Arrays.asList(names));
   }
 
 
-  public static PropertyCustomiser significant(Collection<String> propertyNames) {
+  /**
+   * Create a customiser that sets properties as significant.
+   *
+   * @param names the property names
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser significant(Collection<String> names) {
     return propertyInformation -> {
-      if (propertyNames.contains(propertyInformation.name())) {
+      if (names.contains(propertyInformation.name())) {
         propertyInformation.significant(true);
       }
     };
   }
 
 
-  public static PropertyCustomiser type(String propertyName, Class<?> type) {
+  /**
+   * Create a customiser that sets the explicit type for a property.
+   *
+   * @param name the property's name
+   * @param type the property's type
+   *
+   * @return the customiser
+   */
+  public static PropertyCustomiser type(String name, Class<?> type) {
     return propertyInformation -> {
-      if (propertyInformation.name().equals(propertyName)) {
+      if (propertyInformation.name().equals(name)) {
         propertyInformation.type(type);
       }
     };

@@ -27,7 +27,7 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;
 /**
  * Defines an object that creates BeanInformation objects.
  */
-class BeanInformationFactory {
+class BeanDescriptionFactory {
 
   /**
    * Find all the specs of a given type.
@@ -51,7 +51,7 @@ class BeanInformationFactory {
 
 
   /**
-   * Does a method name have a given prefix?
+   * Does a method name have a given prefix? The prefix is followed by an uppercase letter.
    *
    * @param name   the method name
    * @param prefix the prefix
@@ -64,7 +64,7 @@ class BeanInformationFactory {
 
 
   /**
-   * Does an annotation indicate that a parameter is nullable?
+   * Does an annotation indicate that a parameter is nullable? The annotation must be named either "NotNull" or "NonNull" (ignoring case).
    *
    * @param a the annotation
    *
@@ -170,7 +170,7 @@ class BeanInformationFactory {
 
 
   /** Properties on the bean. */
-  private final TreeMap<String, PropertyInformation> beanProperties = new TreeMap<>();
+  private final TreeMap<String, Property> beanProperties = new TreeMap<>();
 
   /** The bean's class. */
   private Class<?> beanClass;
@@ -190,7 +190,7 @@ class BeanInformationFactory {
 
     // customise props
     for (PropertyCustomiser spec : specs(PropertyCustomiser.class, specs)) {
-      for (PropertyInformation info : model.properties()) {
+      for (Property info : model.properties()) {
         try {
           spec.exec(info);
         } catch (Throwable e) {
@@ -200,8 +200,10 @@ class BeanInformationFactory {
     }
 
     // add props
+    boolean isCreator = model instanceof BeanCreator<?>;
     for (NewProperty spec : specs(NewProperty.class, specs)) {
-      model.property(spec.get());
+      Optional<Property> optProperty = spec.get(isCreator);
+      optProperty.ifPresent(model::property);
     }
   }
 
@@ -215,7 +217,7 @@ class BeanInformationFactory {
    *
    * @return the BeanInformation object
    */
-  BeanInformation create(TestContext testContext, Class<?> beanClass, Specs.Spec... specs) {
+  BeanDescription create(TestContext testContext, Class<?> beanClass, Specs.Spec... specs) {
     this.beanClass = beanClass;
     this.specs = specs;
     beanProperties.clear();
@@ -224,7 +226,7 @@ class BeanInformationFactory {
     applyPropertyCustomisers(creator);
 
     findBeanProperties();
-    BeanInformation information = new BeanInformation(testContext, beanClass)
+    BeanDescription information = new BeanDescription(testContext, beanClass)
         .beanCreator(creator)
         .properties(beanProperties.values());
     applyPropertyCustomisers(information);
@@ -373,10 +375,10 @@ class BeanInformationFactory {
       propertyName = methodName;
     }
 
-    PropertyInformation property = new PropertyInformation(propertyName)
+    Property property = new Property(propertyName)
         .reader(SerializableLambdas.createLambda(SerializableFunction1.class, method))
         .nullable(returnValueIsNullable(method));
-    PropertyInformation.merge(beanProperties, property);
+    Property.merge(beanProperties, property);
   }
 
 
@@ -387,11 +389,13 @@ class BeanInformationFactory {
     // A setter can return the old value of a field, or the bean itself for chaining.
     Class<?> returnType = method.getReturnType();
     Class<?> valueType = method.getParameterTypes()[0];
-    if (!(
-        returnType.equals(void.class)
-            || returnType.equals(valueType)
-            || returnType.equals(beanClass)
-    )) {
+    if (
+        !(
+            returnType.equals(void.class)
+                || returnType.equals(valueType)
+                || returnType.equals(beanClass)
+        )
+    ) {
       // not a setter
       return;
     }
@@ -403,7 +407,7 @@ class BeanInformationFactory {
       propertyName = methodName;
     }
 
-    PropertyInformation property = new PropertyInformation(propertyName)
+    Property property = new Property(propertyName)
         .nullable(parameterIsNullable(method, 0));
 
     if (method.getReturnType().equals(void.class)) {
@@ -412,7 +416,7 @@ class BeanInformationFactory {
       property.writer(SerializableLambdas.createLambda(SerializableFunction2.class, method));
     }
 
-    PropertyInformation.merge(beanProperties, property);
+    Property.merge(beanProperties, property);
   }
 
 
@@ -423,7 +427,7 @@ class BeanInformationFactory {
    *
    * @return a collection of writable properties
    */
-  Collection<PropertyInformation> findWritableProperties(Class<?> beanClass) {
+  Collection<Property> findWritableProperties(Class<?> beanClass) {
     this.beanClass = beanClass;
     this.specs = new Spec[0];
     beanProperties.clear();

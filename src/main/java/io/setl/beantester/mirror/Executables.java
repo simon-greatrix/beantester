@@ -63,15 +63,12 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableLambda;
  */
 public class Executables {
 
-  /**
-   * Thanks to Holger for this StackOverflow answer: https://stackoverflow.com/a/21879031/6095334
-   */
   @SuppressWarnings("unchecked")
   private static <E extends Executable> E doFindMethod(SerializableLambda lambda) {
     Executable executable = runFinder(lambda, () -> {
       SerializedLambda serializedLambda = getSerializedLambda(lambda);
 
-      String className = Utility.compactClassName(serializedLambda.getImplClass(), false);
+      String className = Utility.compactClassName(serializedLambda.getImplClass());
       Class<?> clazz = Class.forName(className);
       Class<?>[] parameters = getParameters(serializedLambda.getImplMethodSignature());
       String implMethodName = serializedLambda.getImplMethodName();
@@ -223,7 +220,7 @@ public class Executables {
 
 
   private static Class<?>[] getParameters(String signature) throws ClassNotFoundException {
-    String[] params = Utility.methodSignatureArgumentTypes(signature, false);
+    String[] params = Utility.methodSignatureArgumentTypes(signature);
 
     Class<?>[] paramTypes = new Class[params.length];
     for (int i = 0; i < params.length; i++) {
@@ -243,7 +240,8 @@ public class Executables {
         method.setAccessible(true);
         Object replacement = method.invoke(lambda);
         if (!(replacement instanceof SerializedLambda)) {
-          break;// custom interface implementation
+          // custom interface implementation
+          break;
         }
         serializedLambda = (SerializedLambda) replacement;
         break;

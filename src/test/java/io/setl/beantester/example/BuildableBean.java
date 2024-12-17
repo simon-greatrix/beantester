@@ -3,14 +3,19 @@ package io.setl.beantester.example;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
-/** The proposed outcome of a transfer. */
-public final class ApproverTransfer {
+import jakarta.annotation.Nonnull;
 
-  public static class ApproverTransferBuilder {
+/** An example of a bean with a builder. The original was created by Lombok. */
+public class BuildableBean {
+
+
+  public static class BuildableBeanBuilder {
 
     private BigDecimal amount;
 
@@ -18,58 +23,52 @@ public final class ApproverTransfer {
 
     private String correlationId;
 
-    private ApproverAccount from;
+    private String from;
 
     private int index;
 
-    private ArrayList<ApproverLink> links;
+    private ArrayList<String> links;
 
     private boolean tags$set;
 
     private Set<String> tags$value;
 
-    private ApproverAccount to;
+    private String to;
 
     private String type;
 
 
-    ApproverTransferBuilder() {
+    BuildableBeanBuilder() {
     }
 
 
-    public ApproverTransferBuilder amount(BigDecimal amount) {
+    public BuildableBeanBuilder amount(@Nonnull BigDecimal amount) {
       this.amount = amount;
       return this;
     }
 
 
-    public ApproverTransferBuilder assetId(String assetId) {
+    public BuildableBeanBuilder assetId(@Nonnull String assetId) {
       this.assetId = assetId;
       return this;
     }
 
 
-    public ApproverTransfer build() {
-      List<ApproverLink> links;
-      switch (this.links == null ? 0 : this.links.size()) {
-        case 0:
-          links = java.util.Collections.emptyList();
-          break;
-        case 1:
-          links = java.util.Collections.singletonList(this.links.get(0));
-          break;
-        default:
-          links = java.util.Collections.unmodifiableList(new ArrayList<ApproverLink>(this.links));
-      }
+    public BuildableBean build() {
+      List<String> links = switch (this.links == null ? 0 : this.links.size()) {
+        case 0 -> Collections.emptyList();
+        case 1 -> Collections.singletonList(this.links.get(0));
+        default -> Collections.unmodifiableList(new ArrayList<String>(this.links));
+      };
       Set<String> tags$value = this.tags$value;
       if (!this.tags$set) {
-        tags$value = ApproverTransfer.$default$tags();
+        tags$value = BuildableBean.$default$tags();
       }
-      return new ApproverTransfer(this.amount, this.assetId, this.correlationId, this.from, this.index, links, this.to, this.type, tags$value);
+      return new BuildableBean(this.amount, this.assetId, this.correlationId, this.from, this.index, links, this.to, this.type, tags$value);
     }
 
 
-    public ApproverTransferBuilder clearLinks() {
+    public BuildableBeanBuilder clearLinks() {
       if (this.links != null) {
         this.links.clear();
       }
@@ -77,53 +76,53 @@ public final class ApproverTransfer {
     }
 
 
-    public ApproverTransferBuilder correlationId(String correlationId) {
+    public BuildableBeanBuilder correlationId(String correlationId) {
       this.correlationId = correlationId;
       return this;
     }
 
 
-    public ApproverTransferBuilder from(ApproverAccount from) {
+    public BuildableBeanBuilder from(String from) {
       this.from = from;
       return this;
     }
 
 
-    public ApproverTransferBuilder index(int index) {
+    public BuildableBeanBuilder index(int index) {
       this.index = index;
       return this;
     }
 
 
-    public ApproverTransferBuilder link(ApproverLink link) {
+    public BuildableBeanBuilder link(String link) {
       if (this.links == null) {
-        this.links = new ArrayList<ApproverLink>();
+        this.links = new ArrayList<String>();
       }
       this.links.add(link);
       return this;
     }
 
 
-    public ApproverTransferBuilder links(Collection<? extends ApproverLink> links) {
+    public BuildableBeanBuilder links(@Nonnull Collection<String> links) {
       if (links == null) {
         throw new NullPointerException("links cannot be null");
       }
       if (this.links == null) {
-        this.links = new ArrayList<ApproverLink>();
+        this.links = new ArrayList<String>();
       }
       this.links.addAll(links);
       return this;
     }
 
 
-    public ApproverTransferBuilder tags(Set<String> tags) {
+    public BuildableBeanBuilder tags(Set<String> tags) {
       this.tags$value = tags;
       this.tags$set = true;
       return this;
     }
 
 
-    public ApproverTransferBuilder to(ApproverAccount to) {
+    public BuildableBeanBuilder to(String to) {
       this.to = to;
       return this;
     }
@@ -136,7 +135,7 @@ public final class ApproverTransfer {
     }
 
 
-    public ApproverTransferBuilder type(String type) {
+    public BuildableBeanBuilder type(@Nonnull String type) {
       this.type = type;
       return this;
     }
@@ -149,56 +148,52 @@ public final class ApproverTransfer {
   }
 
 
-  public static ApproverTransferBuilder builder() {
-    return new ApproverTransferBuilder();
+  public static BuildableBeanBuilder builder() {
+    return new BuildableBeanBuilder();
   }
 
 
   /** The amount this transaction applies to the account. */
-  @NotNull
+  @Nonnull
   private final BigDecimal amount;
 
   /** The asset ID. */
-  @NotNull
+  @Nonnull
   private final String assetId;
 
   /** The transfer's correlation ID. */
-
   private final String correlationId;
 
   /** The 'from' account. */
-
-  private final ApproverAccount from;
+  private final String from;
 
   /** The index of this transfer in the manifest. */
-
   private final int index;
 
   /** Links that constitute this transfer. */
-  @NotNull
-  private final List<ApproverLink> links;
+  @Nonnull
+  private final List<String> links;
 
   /** The 'to' account. */
-
-  private final ApproverAccount to;
+  private final String to;
 
   /** The type of the transfer. */
-  @NotNull
+  @Nonnull
   private final String type;
 
   /** Tags assigned to this transfer. */
   private Set<String> tags = new HashSet<>();
 
 
-  ApproverTransfer(
-      @NotNull BigDecimal amount,
-      @NotNull String assetId,
+  public BuildableBean(
+      @Nonnull BigDecimal amount,
+      @Nonnull String assetId,
       String correlationId,
-      ApproverAccount from,
+      String from,
       int index,
-      @NotNull List<ApproverLink> links,
-      ApproverAccount to,
-      @NotNull String type,
+      @Nonnull List<String> links,
+      String to,
+      @Nonnull String type,
       Set<String> tags
   ) {
     this.amount = amount;
@@ -217,28 +212,27 @@ public final class ApproverTransfer {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof ApproverTransfer)) {
+    if (!(o instanceof BuildableBean other)) {
       return false;
     }
-    final ApproverTransfer other = (ApproverTransfer) o;
     final Object this$amount = this.getAmount();
     final Object other$amount = other.getAmount();
-    if (this$amount == null ? other$amount != null : !this$amount.equals(other$amount)) {
+    if (!Objects.equals(this$amount, other$amount)) {
       return false;
     }
     final Object this$assetId = this.getAssetId();
     final Object other$assetId = other.getAssetId();
-    if (this$assetId == null ? other$assetId != null : !this$assetId.equals(other$assetId)) {
+    if (!Objects.equals(this$assetId, other$assetId)) {
       return false;
     }
     final Object this$correlationId = this.getCorrelationId();
     final Object other$correlationId = other.getCorrelationId();
-    if (this$correlationId == null ? other$correlationId != null : !this$correlationId.equals(other$correlationId)) {
+    if (!Objects.equals(this$correlationId, other$correlationId)) {
       return false;
     }
     final Object this$from = this.getFrom();
     final Object other$from = other.getFrom();
-    if (this$from == null ? other$from != null : !this$from.equals(other$from)) {
+    if (!Objects.equals(this$from, other$from)) {
       return false;
     }
     if (this.getIndex() != other.getIndex()) {
@@ -246,35 +240,32 @@ public final class ApproverTransfer {
     }
     final Object this$links = this.getLinks();
     final Object other$links = other.getLinks();
-    if (this$links == null ? other$links != null : !this$links.equals(other$links)) {
+    if (!Objects.equals(this$links, other$links)) {
       return false;
     }
     final Object this$to = this.getTo();
     final Object other$to = other.getTo();
-    if (this$to == null ? other$to != null : !this$to.equals(other$to)) {
+    if (!Objects.equals(this$to, other$to)) {
       return false;
     }
     final Object this$type = this.getType();
     final Object other$type = other.getType();
-    if (this$type == null ? other$type != null : !this$type.equals(other$type)) {
+    if (!Objects.equals(this$type, other$type)) {
       return false;
     }
     final Object this$tags = this.getTags();
     final Object other$tags = other.getTags();
-    if (this$tags == null ? other$tags != null : !this$tags.equals(other$tags)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this$tags, other$tags);
   }
 
 
-  @NotNull
+  @Nonnull
   public BigDecimal getAmount() {
     return this.amount;
   }
 
 
-  @NotNull
+  @Nonnull
   public String getAssetId() {
     return this.assetId;
   }
@@ -285,7 +276,7 @@ public final class ApproverTransfer {
   }
 
 
-  public ApproverAccount getFrom() {
+  public String getFrom() {
     return this.from;
   }
 
@@ -295,8 +286,8 @@ public final class ApproverTransfer {
   }
 
 
-  @NotNull
-  public List<ApproverLink> getLinks() {
+  @Nonnull
+  public List<String> getLinks() {
     return this.links;
   }
 
@@ -306,12 +297,12 @@ public final class ApproverTransfer {
   }
 
 
-  public ApproverAccount getTo() {
+  public String getTo() {
     return this.to;
   }
 
 
-  @NotNull
+  @Nonnull
   public String getType() {
     return this.type;
   }
@@ -367,9 +358,10 @@ public final class ApproverTransfer {
 
 
   public String toString() {
-    return "ApproverTransfer(amount=" + this.getAmount() + ", assetId=" + this.getAssetId() + ", correlationId=" + this.getCorrelationId() + ", from="
+    return "BuildableBean(amount=" + this.getAmount() + ", assetId=" + this.getAssetId() + ", correlationId=" + this.getCorrelationId() + ", from="
         + this.getFrom() + ", index=" + this.getIndex() + ", links=" + this.getLinks() + ", to=" + this.getTo() + ", type=" + this.getType() + ", tags="
         + this.getTags() + ")";
   }
 
 }
+

@@ -12,9 +12,12 @@ import io.setl.beantester.factories.io.FileFactories;
 import io.setl.beantester.factories.net.NetFactories;
 import io.setl.beantester.factories.time.TimeFactories;
 import io.setl.beantester.factories.util.UtilFactories;
-import io.setl.beantester.info.BeanInformation;
-import io.setl.beantester.info.PropertyInformation;
+import io.setl.beantester.info.BeanDescription;
+import io.setl.beantester.info.Property;
 
+/**
+ * Repository for value factories in the current test context.
+ */
 public class ValueFactoryRepository {
 
   private final HashMap<Class<?>, ValueFactory<?>> factories = new HashMap<>();
@@ -53,8 +56,7 @@ public class ValueFactoryRepository {
 
 
   /**
-   * <p>
-   * Add the specified FactoryLookup. The factory lookups are consulted after  will be first consulted when looking for a Factory
+   * Add the specified FactoryLookup. The factory lookups are consulted after specific factories.
    */
   public void addFactoryLookup(FactoryLookup factoryLookup) {
     factoryLookups.add(Objects.requireNonNull(factoryLookup));
@@ -69,7 +71,7 @@ public class ValueFactoryRepository {
    *
    * @return the candidate value
    */
-  public Object create(ValueType type, BeanInformation bean, PropertyInformation property) {
+  public Object create(ValueType type, BeanDescription bean, Property property) {
     Class<?> beanClass = bean.beanClass();
     String propertyName = property.name();
     ValueFactory<?> factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
@@ -80,6 +82,13 @@ public class ValueFactoryRepository {
   }
 
 
+  /**
+   * Get a value factory of the specified type.
+   *
+   * @param type the type.
+   *
+   * @return the factory
+   */
   public ValueFactory<?> getFactory(Type type) {
     // First check the factories map
     ValueFactory<?> factory;
@@ -116,6 +125,11 @@ public class ValueFactoryRepository {
   }
 
 
+  /**
+   * Load the default factories into this repository.
+   *
+   * @param context the test context
+   */
   public void loadDefaults(TestContext context) {
     BasicFactories.load(context, this);
     FileFactories.load(context, this);

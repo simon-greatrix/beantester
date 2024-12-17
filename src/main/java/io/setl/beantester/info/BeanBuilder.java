@@ -6,11 +6,19 @@ import java.util.Map;
 import io.setl.beantester.info.Specs.BeanCreator;
 import io.setl.beantester.info.Specs.BuilderMethods;
 
+/**
+ * Specification of a bean creator that uses a builder pattern.
+ */
 public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreator<BeanBuilder> {
 
   private final BuilderMethods builderMethods;
 
 
+  /**
+   * New instance.
+   *
+   * @param builderMethods the methods to create the builder and the bean
+   */
   public BeanBuilder(
       BuilderMethods builderMethods
   ) {
@@ -23,20 +31,29 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       throw new IllegalStateException("Failed to create builder", e);
     }
 
-    Collection<PropertyInformation> foundProperties = new BeanInformationFactory().findWritableProperties(builderClass);
+    Collection<Property> foundProperties = new BeanDescriptionFactory().findWritableProperties(builderClass);
 
-    for (PropertyInformation property : foundProperties) {
+    for (Property property : foundProperties) {
       property(property);
     }
   }
 
 
+  /**
+   * Create a builder, set the properties and build the object.
+   *
+   * @param values the values for the builder
+   *
+   * @return the built bean
+   *
+   * @throws Throwable if something goes wrong
+   */
   public Object build(Map<String, Object> values) throws Throwable {
     Object builder = builderMethods.builder().exec();
-    for (PropertyInformation propertyInformation : properties()) {
-      String name = propertyInformation.name();
+    for (Property property : properties()) {
+      String name = property.name();
       if (values.containsKey(name)) {
-        propertyInformation.write(builder, values.get(name));
+        property.write(builder, values.get(name));
       }
     }
     return builder;

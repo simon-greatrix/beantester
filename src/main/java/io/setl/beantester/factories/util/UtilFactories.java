@@ -14,8 +14,15 @@ import io.setl.beantester.factories.basic.BooleanValueFactory;
 import io.setl.beantester.factories.basic.IntegerValueFactory;
 import io.setl.beantester.factories.basic.LongValueFactory;
 
+/** Load the "java.util.*" factories. */
 public class UtilFactories {
 
+  /**
+   * Load the "java.util.*" factories.
+   *
+   * @param context    the test context
+   * @param repository the repository to load the factories into
+   */
   public static void load(TestContext context, ValueFactoryRepository repository) {
     RandomGenerator random = context.getRandom();
 

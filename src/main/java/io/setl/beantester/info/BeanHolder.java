@@ -12,7 +12,6 @@ import java.util.TreeSet;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
-import io.setl.beantester.util.AssertionUtils;
 
 /**
  * The bean holder holds a bean and manages its creation.
@@ -23,30 +22,41 @@ public class BeanHolder {
 
   }
 
+
+
   private final HashSet<String> changed = new HashSet<>();
 
-  private final BeanInformation information;
+  private final BeanDescription info;
 
   private final HashMap<String, Object> initialValues = new HashMap<>();
 
-  /** The current property values of the bean. */
+  private final TestContext testContext;
+
   private final LinkedHashMap<String, Object> values = new LinkedHashMap<>();
 
   private Object bean;
 
-  private TestContext testContext;
 
+  /**
+   * New instance.
+   *
+   * @param info the description of the bean
+   */
+  public BeanHolder(BeanDescription info) {
+    this.testContext = info.testContext();
+    this.info = info;
 
-  public BeanHolder(BeanInformation information) {
-    this.testContext = information.testContext();
-    this.information = information;
+    ValueFactoryRepository vfr = info.testContext().getValueFactoryRepository();
 
-    ValueFactoryRepository vfr = information.testContext().getValueFactoryRepository();
-
-    // Set a value for all non-null creator values.
-    for (PropertyInformation info : information.beanCreator().properties()) {
-      if (!info.nullable()) {
-        initialValues.put(info.name(), vfr.create(ValueType.PRIMARY, information, info));
+    // Set a value for all non-null values.
+    for (Property property : info.beanCreator().properties()) {
+      if (!property.nullable()) {
+        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
+      }
+    }
+    for (Property property : info.properties()) {
+      if (!property.nullable()) {
+        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
       }
     }
   }
@@ -54,7 +64,7 @@ public class BeanHolder {
 
   private BeanHolder(BeanHolder copy) {
     this.testContext = copy.testContext;
-    this.information = copy.information;
+    this.info = copy.info;
 
     this.initialValues.putAll(copy.initialValues);
     this.changed.addAll(copy.changed);
@@ -81,9 +91,9 @@ public class BeanHolder {
 
     if (bean == null || !creatorData.keys.isEmpty()) {
       try {
-        bean = information.beanCreator().exec(creatorData.params);
+        bean = info.beanCreator().exec(creatorData.params);
       } catch (Throwable e) {
-        throw new IllegalStateException("Failed to create bean", e);
+        throw new IllegalStateException("Failed to create bean of type " + info.beanClass(), e);
       }
     }
 
@@ -94,7 +104,7 @@ public class BeanHolder {
       }
 
       Object value = entry.getValue();
-      PropertyInformation info = information.property(name);
+      Property info = this.info.property(name);
 
       if (info != null && info.writable()) {
         info.write(bean, value);
@@ -104,17 +114,22 @@ public class BeanHolder {
   }
 
 
+  /**
+   * Create a builder with the current property values. If the bean does not user a builder, returns an empty Optional.
+   *
+   * @return the created builder
+   */
   public Optional<Object> builder() {
-    if (information.beanCreator() instanceof BeanBuilder builder) {
+    if (info.beanCreator() instanceof BeanBuilder builder) {
       CreatorData createData = creatorData();
       try {
         return Optional.of(builder.build(createData.params));
       } catch (Throwable e) {
-        throw new AssertionError("Failed to create builder for class " + information.beanClass(), e);
+        throw new AssertionError("Failed to create builder for class " + info.beanClass(), e);
       }
-    } else {
-      return Optional.empty();
     }
+
+    return Optional.empty();
   }
 
 
@@ -123,15 +138,23 @@ public class BeanHolder {
   }
 
 
-  public Object createValue(ValueType type, String propertyName) {
-    PropertyInformation info = information.beanCreator().property(propertyName);
+  /**
+   * Create a value for a named property.
+   *
+   * @param type the value type
+   * @param name the property name
+   *
+   * @return the created value
+   */
+  public Object createValue(ValueType type, String name) {
+    Property info = this.info.beanCreator().property(name);
     if (info == null) {
-      info = information.property(propertyName);
+      info = this.info.property(name);
     }
     if (info == null) {
-      throw new IllegalArgumentException("No property named " + propertyName);
+      throw new IllegalArgumentException("No property named " + name);
     }
-    return information.testContext().getValueFactoryRepository().create(type, information, info);
+    return this.info.testContext().getValueFactoryRepository().create(type, this.info, info);
   }
 
 
@@ -140,10 +163,10 @@ public class BeanHolder {
     HashSet<String> creatorKeys = new HashSet<>();
 
     for (String name : changed) {
-      PropertyInformation infoBean = information.property(name);
+      Property infoBean = info.property(name);
       boolean beanWritable = infoBean != null && infoBean.writable();
 
-      PropertyInformation infoCreator = information.beanCreator().property(name);
+      Property infoCreator = info.beanCreator().property(name);
       boolean creatorWritable = infoCreator != null && infoCreator.writable();
 
       if (
@@ -159,7 +182,7 @@ public class BeanHolder {
 
 
   public Class<?> getBeanClass() {
-    return information.beanClass();
+    return info.beanClass();
   }
 
 
@@ -170,55 +193,55 @@ public class BeanHolder {
    */
   public Collection<String> getPropertyNames() {
     TreeSet<String> names = new TreeSet<>();
-    information.properties().stream()
+    info.properties().stream()
         .filter(i -> !i.ignored())
-        .filter(PropertyInformation::writable)
+        .filter(Property::writable)
         .forEach(p -> names.add(p.name()));
-    information.beanCreator().properties().stream()
+    info.beanCreator().properties().stream()
         .filter(i -> !i.ignored())
-        .filter(PropertyInformation::writable)
+        .filter(Property::writable)
         .forEach(p -> names.add(p.name()));
     return names;
   }
 
 
-  public BeanInformation information() {
-    return information;
+  public BeanDescription information() {
+    return info;
   }
 
 
   /**
-   * Is a property nullable?
+   * Is a property nullable? A property can only be nullable if both the creator and the bean consider it to be nullable.
    *
-   * @param propertyName the property name
+   * @param name the property name
    *
    * @return true if the property is nullable, false otherwise
    */
-  public boolean isNullable(String propertyName) {
-    PropertyInformation info = information.property(propertyName);
+  public boolean isNullable(String name) {
+    Property info = this.info.property(name);
 
     //The property is only nullable if it is nullable everywhere.
     if (info != null && !info.nullable()) {
       return false;
     }
-    info = information.beanCreator().property(propertyName);
+    info = this.info.beanCreator().property(name);
     return info == null || info.nullable();
   }
 
 
   /**
-   * Is the property significant for equality testing?
+   * Is the property significant for equality testing? This must be set explicitly.
    *
-   * @param propertyName the property name
+   * @param name the property name
    *
    * @return true if the property is significant, false otherwise
    */
-  public boolean isSignificant(String propertyName) {
-    PropertyInformation info = information.property(propertyName);
+  public boolean isSignificant(String name) {
+    Property info = this.info.property(name);
     if (info != null && info.significant() && info.writable()) {
       return true;
     }
-    info = information.beanCreator().property(propertyName);
+    info = this.info.beanCreator().property(name);
     return info != null && info.significant() && info.writable();
   }
 
@@ -226,23 +249,23 @@ public class BeanHolder {
   /**
    * Is the property testable? A testable property is readable and writable.
    *
-   * @param propertyName the property name
+   * @param name the property name
    *
    * @return true if the property is testable, false otherwise
    */
-  public boolean isTestable(String propertyName) {
+  public boolean isTestable(String name) {
     boolean isIgnored = false;
     boolean isWritable = false;
     boolean isReadable = false;
 
-    PropertyInformation info = information.property(propertyName);
+    Property info = this.info.property(name);
     if (info != null) {
       isIgnored = info.ignored();
       isWritable = info.writable();
       isReadable = info.readable();
     }
 
-    info = information.beanCreator().property(propertyName);
+    info = this.info.beanCreator().property(name);
     if (info != null) {
       isIgnored = isIgnored || info.ignored();
       isWritable = isWritable || info.writable();
@@ -253,31 +276,53 @@ public class BeanHolder {
   }
 
 
-  public boolean isWritable(String propertyName) {
-    PropertyInformation info = information.property(propertyName);
+  /**
+   * Is a property writable? A property can be writable either in the bean or in the creator.
+   *
+   * @param name the property name
+   *
+   * @return true if the property is writable, false otherwise
+   */
+  public boolean isWritable(String name) {
+    Property info = this.info.property(name);
     if (info != null && info.writable()) {
       return true;
     }
-    info = information.beanCreator().property(propertyName);
+    info = this.info.beanCreator().property(name);
     return info != null && info.writable();
   }
 
 
-  public Object readActual(String propertyName) {
+  /**
+   * Read the actual value of a property. Note that this may trigger bean creation.
+   *
+   * @param name the property name
+   *
+   * @return the actual value
+   */
+  public Object readActual(String name) {
     buildBean();
-    return information.property(propertyName).read(bean);
+    return info.property(name).read(bean);
   }
 
 
-  public Object readExpected(String propertyName) {
-    Object o = values.get(propertyName);
-    if (o == null && !values.containsKey(propertyName)) {
-      o = initialValues.get(propertyName);
+  /**
+   * Read the expected value of a property.
+   *
+   * @param name the property name
+   *
+   * @return the expected value
+   */
+  public Object readExpected(String name) {
+    Object o = values.get(name);
+    if (o == null && !values.containsKey(name)) {
+      o = initialValues.get(name);
     }
     return o;
   }
 
 
+  /** Reset all the property values. */
   public void reset() {
     bean = null;
     values.clear();
@@ -285,6 +330,12 @@ public class BeanHolder {
   }
 
 
+  /**
+   * Set all properties to the same type of value.
+   *
+   * @param type     the value type
+   * @param useNulls true if nullable properties should be set to null
+   */
   public void setAllProperties(ValueType type, boolean useNulls) {
     for (String propertyName : getPropertyNames()) {
       if (useNulls && isNullable(propertyName)) {
@@ -296,14 +347,22 @@ public class BeanHolder {
   }
 
 
-  public boolean setProperty(String propertyName, Object value) {
-    if (Objects.equals(readExpected(propertyName), value)) {
+  /**
+   * Set the property value. Note that this does not invoke the setter methods.
+   *
+   * @param name  the name of the property to set
+   * @param value the value to set the property to
+   *
+   * @return true if the property value was changed, false otherwise
+   */
+  public boolean setProperty(String name, Object value) {
+    if (Objects.equals(readExpected(name), value)) {
       return false;
     }
 
-    values.remove(propertyName);
-    values.put(propertyName, value);
-    changed.add(propertyName);
+    values.remove(name);
+    values.put(name, value);
+    changed.add(name);
 
     return true;
   }
@@ -319,7 +378,7 @@ public class BeanHolder {
     Object actual = readActual(propertyName);
     Object expected = readExpected(propertyName);
     if (!Objects.equals(actual, expected)) {
-      AssertionUtils.fail("Class " + information.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
+      throw new AssertionError("Class " + info.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
     }
   }
 

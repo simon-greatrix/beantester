@@ -1,5 +1,8 @@
-package io.setl.beantester.util;
+package io.setl.beantester.mirror;
 
+import static java.util.Objects.requireNonNull;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -12,10 +15,8 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Properties;
 
 /**
  * Static methods for working with types.
@@ -31,6 +32,7 @@ public final class Types {
 
   private static final class GenericArrayTypeImpl implements GenericArrayType, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 0;
 
     private final Type componentType;
@@ -71,6 +73,7 @@ public final class Types {
 
   private static final class ParameterizedTypeImpl implements ParameterizedType, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 0;
 
     private final Type ownerType;
@@ -82,8 +85,7 @@ public final class Types {
 
     public ParameterizedTypeImpl(Type ownerType, Type rawType, Type... typeArguments) {
       // require an owner type if the raw type needs it
-      if (rawType instanceof Class<?>) {
-        Class<?> rawTypeAsClass = (Class<?>) rawType;
+      if (rawType instanceof Class<?> rawTypeAsClass) {
         boolean isStaticOrTopLevelClass = Modifier.isStatic(rawTypeAsClass.getModifiers())
             || rawTypeAsClass.getEnclosingClass() == null;
         checkArgument(ownerType != null || isStaticOrTopLevelClass);
@@ -93,7 +95,7 @@ public final class Types {
       this.rawType = canonicalize(rawType);
       this.typeArguments = typeArguments.clone();
       for (int t = 0, length = this.typeArguments.length; t < length; t++) {
-        checkNotNull(this.typeArguments[t]);
+        requireNonNull(this.typeArguments[t]);
         checkNotPrimitive(this.typeArguments[t]);
         this.typeArguments[t] = canonicalize(this.typeArguments[t]);
       }
@@ -159,6 +161,7 @@ public final class Types {
    */
   private static final class WildcardTypeImpl implements WildcardType, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 0;
 
     private final Type lowerBound;
@@ -171,14 +174,14 @@ public final class Types {
       checkArgument(upperBounds.length == 1);
 
       if (lowerBounds.length == 1) {
-        checkNotNull(lowerBounds[0]);
+        requireNonNull(lowerBounds[0]);
         checkNotPrimitive(lowerBounds[0]);
         checkArgument(upperBounds[0] == Object.class);
         this.lowerBound = canonicalize(lowerBounds[0]);
         this.upperBound = Object.class;
 
       } else {
-        checkNotNull(upperBounds[0]);
+        requireNonNull(upperBounds[0]);
         checkNotPrimitive(upperBounds[0]);
         this.lowerBound = null;
         this.upperBound = canonicalize(upperBounds[0]);
@@ -244,22 +247,18 @@ public final class Types {
    * type is {@link Serializable}.
    */
   public static Type canonicalize(Type type) {
-    if (type instanceof Class) {
-      Class<?> c = (Class<?>) type;
+    if (type instanceof Class<?> c) {
       return c.isArray() ? new GenericArrayTypeImpl(canonicalize(c.getComponentType())) : c;
 
-    } else if (type instanceof ParameterizedType) {
-      ParameterizedType p = (ParameterizedType) type;
+    } else if (type instanceof ParameterizedType p) {
       return new ParameterizedTypeImpl(p.getOwnerType(),
           p.getRawType(), p.getActualTypeArguments()
       );
 
-    } else if (type instanceof GenericArrayType) {
-      GenericArrayType g = (GenericArrayType) type;
+    } else if (type instanceof GenericArrayType g) {
       return new GenericArrayTypeImpl(g.getGenericComponentType());
 
-    } else if (type instanceof WildcardType) {
-      WildcardType w = (WildcardType) type;
+    } else if (type instanceof WildcardType w) {
       return new WildcardTypeImpl(w.getUpperBounds(), w.getLowerBounds());
 
     } else {
@@ -273,14 +272,6 @@ public final class Types {
     if (!condition) {
       throw new IllegalArgumentException();
     }
-  }
-
-
-  private static <T> T checkNotNull(T obj) {
-    if (obj == null) {
-      throw new NullPointerException();
-    }
-    return obj;
   }
 
 
@@ -318,43 +309,34 @@ public final class Types {
       // Class already specifies equals().
       return a.equals(b);
 
-    } else if (a instanceof ParameterizedType) {
-      if (!(b instanceof ParameterizedType)) {
+    } else if (a instanceof ParameterizedType pa) {
+      if (!(b instanceof ParameterizedType pb)) {
         return false;
       }
 
-      // TODO: save a .clone() call
-      ParameterizedType pa = (ParameterizedType) a;
-      ParameterizedType pb = (ParameterizedType) b;
       return equal(pa.getOwnerType(), pb.getOwnerType())
           && pa.getRawType().equals(pb.getRawType())
           && Arrays.equals(pa.getActualTypeArguments(), pb.getActualTypeArguments());
 
-    } else if (a instanceof GenericArrayType) {
-      if (!(b instanceof GenericArrayType)) {
+    } else if (a instanceof GenericArrayType ga) {
+      if (!(b instanceof GenericArrayType gb)) {
         return false;
       }
 
-      GenericArrayType ga = (GenericArrayType) a;
-      GenericArrayType gb = (GenericArrayType) b;
       return equals(ga.getGenericComponentType(), gb.getGenericComponentType());
 
-    } else if (a instanceof WildcardType) {
-      if (!(b instanceof WildcardType)) {
+    } else if (a instanceof WildcardType wa) {
+      if (!(b instanceof WildcardType wb)) {
         return false;
       }
 
-      WildcardType wa = (WildcardType) a;
-      WildcardType wb = (WildcardType) b;
       return Arrays.equals(wa.getUpperBounds(), wb.getUpperBounds())
           && Arrays.equals(wa.getLowerBounds(), wb.getLowerBounds());
 
-    } else if (a instanceof TypeVariable) {
-      if (!(b instanceof TypeVariable)) {
+    } else if (a instanceof TypeVariable<?> va) {
+      if (!(b instanceof TypeVariable<?> vb)) {
         return false;
       }
-      TypeVariable<?> va = (TypeVariable<?>) a;
-      TypeVariable<?> vb = (TypeVariable<?>) b;
       return va.getGenericDeclaration() == vb.getGenericDeclaration()
           && va.getName().equals(vb.getName());
 
@@ -362,36 +344,6 @@ public final class Types {
       // This isn't a type we support. Could be a generic array type, wildcard type, etc.
       return false;
     }
-  }
-
-
-  /**
-   * Returns the component type of this array type.
-   *
-   * @throws ClassCastException if this type is not an array.
-   */
-  public static Type getArrayComponentType(Type array) {
-    return array instanceof GenericArrayType
-        ? ((GenericArrayType) array).getGenericComponentType()
-        : ((Class<?>) array).getComponentType();
-  }
-
-
-  /**
-   * Returns the element type of this collection type.
-   *
-   * @throws IllegalArgumentException if this type is not a collection.
-   */
-  public static Type getCollectionElementType(Type context, Class<?> contextRawType) {
-    Type collectionType = getSupertype(context, contextRawType, Collection.class);
-
-    if (collectionType instanceof WildcardType) {
-      collectionType = ((WildcardType) collectionType).getUpperBounds()[0];
-    }
-    if (collectionType instanceof ParameterizedType) {
-      return ((ParameterizedType) collectionType).getActualTypeArguments()[0];
-    }
-    return Object.class;
   }
 
 
@@ -435,37 +387,12 @@ public final class Types {
   }
 
 
-  /**
-   * Returns a two element array containing this map's key and value types in
-   * positions 0 and 1 respectively.
-   */
-  public static Type[] getMapKeyAndValueTypes(Type context, Class<?> contextRawType) {
-    /*
-     * Work around a problem with the declaration of java.util.Properties. That
-     * class should extend Hashtable<String, String>, but it's declared to
-     * extend Hashtable<Object, Object>.
-     */
-    if (context == Properties.class) {
-      return new Type[]{String.class, String.class}; // TODO: test subclasses of Properties!
-    }
-
-    Type mapType = getSupertype(context, contextRawType, Map.class);
-    // TODO: strip wildcards?
-    if (mapType instanceof ParameterizedType) {
-      ParameterizedType mapParameterizedType = (ParameterizedType) mapType;
-      return mapParameterizedType.getActualTypeArguments();
-    }
-    return new Type[]{Object.class, Object.class};
-  }
-
-
   public static Class<?> getRawType(Type type) {
     if (type instanceof Class<?>) {
       // type is a normal class.
       return (Class<?>) type;
 
-    } else if (type instanceof ParameterizedType) {
-      ParameterizedType parameterizedType = (ParameterizedType) type;
+    } else if (type instanceof ParameterizedType parameterizedType) {
 
       // I'm not exactly sure why getRawType() returns Type instead of Class.
       // Neal isn't either but suspects some pathological case related
@@ -553,8 +480,7 @@ public final class Types {
   ) {
     // this implementation is made a little more complicated in an attempt to avoid object-creation
     while (true) {
-      if (toResolve instanceof TypeVariable) {
-        TypeVariable<?> typeVariable = (TypeVariable<?>) toResolve;
+      if (toResolve instanceof TypeVariable<?> typeVariable) {
         if (visitedTypeVariables.contains(typeVariable)) {
           // cannot reduce due to infinite recursion
           return toResolve;
@@ -566,24 +492,21 @@ public final class Types {
           return toResolve;
         }
 
-      } else if (toResolve instanceof Class && ((Class<?>) toResolve).isArray()) {
-        Class<?> original = (Class<?>) toResolve;
+      } else if (toResolve instanceof Class<?> original && ((Class<?>) toResolve).isArray()) {
         Type componentType = original.getComponentType();
         Type newComponentType = resolve(context, contextRawType, componentType, visitedTypeVariables);
         return componentType == newComponentType
             ? original
             : arrayOf(newComponentType);
 
-      } else if (toResolve instanceof GenericArrayType) {
-        GenericArrayType original = (GenericArrayType) toResolve;
+      } else if (toResolve instanceof GenericArrayType original) {
         Type componentType = original.getGenericComponentType();
         Type newComponentType = resolve(context, contextRawType, componentType, visitedTypeVariables);
         return componentType == newComponentType
             ? original
             : arrayOf(newComponentType);
 
-      } else if (toResolve instanceof ParameterizedType) {
-        ParameterizedType original = (ParameterizedType) toResolve;
+      } else if (toResolve instanceof ParameterizedType original) {
         Type ownerType = original.getOwnerType();
         Type newOwnerType = resolve(context, contextRawType, ownerType, visitedTypeVariables);
         boolean changed = newOwnerType != ownerType;
@@ -604,8 +527,7 @@ public final class Types {
             ? newParameterizedTypeWithOwner(newOwnerType, original.getRawType(), args)
             : original;
 
-      } else if (toResolve instanceof WildcardType) {
-        WildcardType original = (WildcardType) toResolve;
+      } else if (toResolve instanceof WildcardType original) {
         Type[] originalLowerBound = original.getLowerBounds();
         Type[] originalUpperBound = original.getUpperBounds();
 

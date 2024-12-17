@@ -2,7 +2,7 @@ package io.setl.beantester.factories.util;
 
 import static java.util.Collections.unmodifiableMap;
 
-import static io.setl.beantester.util.Types.getRawType;
+import static io.setl.beantester.mirror.Types.getRawType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -21,7 +21,7 @@ import io.setl.beantester.factories.ValueFactoryRepository;
 
 
 /**
- * FactoryCollection for Optional, OptionalInt, OptionalLong, and OptionalDouble types
+ * FactoryCollection for Optional, OptionalInt, OptionalLong, and OptionalDouble types.
  */
 public class OptionalFactoryLookup implements FactoryLookup {
 
@@ -52,9 +52,9 @@ public class OptionalFactoryLookup implements FactoryLookup {
   }
 
 
-  private Type findElementType(Type type, int index) {
+  private Type findFirstElementType(Type type) {
     if (type instanceof ParameterizedType) {
-      return ((ParameterizedType) type).getActualTypeArguments()[index];
+      return ((ParameterizedType) type).getActualTypeArguments()[0];
     }
     return String.class;
   }
@@ -64,7 +64,7 @@ public class OptionalFactoryLookup implements FactoryLookup {
   private <T> ValueFactory<T> findInstanceFactory(Type type, Class<?> rawType) {
     Class<?> itemType = OPTIONAL_TO_ITEM_TYPE_MAP.get(rawType);
     ValueFactory<?> itemValueFactory = itemType == null
-        ? findItemFactory(findElementType(type, 0))
+        ? findItemFactory(findFirstElementType(type))
         : findItemFactory(itemType);
 
     if (rawType.equals(Optional.class)) {

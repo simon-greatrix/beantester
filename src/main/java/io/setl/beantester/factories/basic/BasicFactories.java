@@ -8,6 +8,7 @@ import java.util.random.RandomGenerator;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.ValueFactoryRepository;
 
+/** Load the basic factories. */
 public class BasicFactories {
 
   private static final UUID PRIMARY_UUID = UUID.fromString("00000000-0000-4000-8000-000000000000");
@@ -15,6 +16,12 @@ public class BasicFactories {
   private static final UUID SECONDARY_UUID = UUID.fromString("ffffffff-ffff-4fff-bfff-ffffffffffff");
 
 
+  /**
+   * Load the basic factories.
+   *
+   * @param context    the test context
+   * @param repository the repository to load the factories into
+   */
   public static void load(TestContext context, ValueFactoryRepository repository) {
     RandomGenerator random = context.getRandom();
 

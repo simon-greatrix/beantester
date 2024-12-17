@@ -9,8 +9,12 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+/**
+ * A collection of functional interfaces that are serializable and can be used to create lambdas from method references.
+ */
 public class SerializableLambdas {
 
+  /** A method that takes no arguments and does not return a value. */
   @FunctionalInterface
   public interface SerializableConsumer0 extends SerializableLambda {
 
@@ -20,6 +24,7 @@ public class SerializableLambdas {
 
 
 
+  /** A method that takes one argument and does not return a value. */
   @FunctionalInterface
   public interface SerializableConsumer1<T1> extends SerializableLambda {
 
@@ -29,6 +34,7 @@ public class SerializableLambdas {
 
 
 
+  /** A method that takes two arguments and does not return a value. */
   @FunctionalInterface
   public interface SerializableConsumer2<T1, T2> extends SerializableLambda {
 
@@ -38,6 +44,7 @@ public class SerializableLambdas {
 
 
 
+  /** A method that takes three arguments and does not return a value. */
   @FunctionalInterface
   public interface SerializableConsumer3<T1, T2, T3> extends SerializableLambda {
 
@@ -47,6 +54,7 @@ public class SerializableLambdas {
 
 
 
+  /** A method that takes four arguments and does not return a value. */
   @FunctionalInterface
   public interface SerializableConsumer4<T1, T2, T3, T4> extends SerializableLambda {
 
@@ -56,6 +64,7 @@ public class SerializableLambdas {
 
 
 
+  /** A function that takes no arguments and returns a value (i.e. it is a supplier). */
   @FunctionalInterface
   public interface SerializableFunction0<R> extends SerializableLambda {
 
@@ -65,6 +74,7 @@ public class SerializableLambdas {
 
 
 
+  /** A function that takes one argument and returns a value. */
   @FunctionalInterface
   public interface SerializableFunction1<T1, R> extends SerializableLambda {
 
@@ -74,6 +84,7 @@ public class SerializableLambdas {
 
 
 
+  /** A function that takes two arguments and returns a value. */
   @FunctionalInterface
   public interface SerializableFunction2<T1, T2, R> extends SerializableLambda {
 
@@ -83,6 +94,7 @@ public class SerializableLambdas {
 
 
 
+  /** A function that takes three arguments and returns a value. */
   @FunctionalInterface
   public interface SerializableFunction3<T1, T2, T3, R> extends SerializableLambda {
 
@@ -92,6 +104,7 @@ public class SerializableLambdas {
 
 
 
+  /** A function that takes four arguments and returns a value. */
   @FunctionalInterface
   public interface SerializableFunction4<T1, T2, T3, T4, R> extends SerializableLambda {
 
@@ -101,6 +114,7 @@ public class SerializableLambdas {
 
 
 
+  /** A marker interface for serializable lambdas. */
   public interface SerializableLambda extends Serializable {
 
   }
@@ -201,7 +215,7 @@ public class SerializableLambdas {
     } catch (Error error) {
       throw error;
     } catch (Throwable exception) {
-      throw new AssertionError("Internal error converting \""+handle+"\" to \""+lambdaType+"\"", exception);
+      throw new AssertionError("Internal error converting \"" + handle + "\" to \"" + lambdaType + "\"", exception);
     }
   }
 

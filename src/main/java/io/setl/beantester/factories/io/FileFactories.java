@@ -11,6 +11,9 @@ import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
 
+/**
+ * Load the file factories.
+ */
 public class FileFactories {
 
   private static File generateTempFile(ValueType type) {
@@ -34,6 +37,12 @@ public class FileFactories {
   }
 
 
+  /**
+   * Load the file factories.
+   *
+   * @param context    the test context
+   * @param repository the repository to load the factories into
+   */
   public static void load(TestContext context, ValueFactoryRepository repository) {
     repository.addFactory(File.class, FileFactories::generateTempFile);
     repository.addFactory(Path.class, FileFactories::generateTempPath);

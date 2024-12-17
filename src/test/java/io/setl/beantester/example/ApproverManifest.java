@@ -2,7 +2,10 @@ package io.setl.beantester.example;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
+import jakarta.annotation.Nonnull;
 
 /** The manifest of a set of transfers. */
 public final class ApproverManifest {
@@ -47,7 +50,7 @@ public final class ApproverManifest {
     }
 
 
-    public ApproverManifestBuilder swarmId(@NotNull String swarmId) {
+    public ApproverManifestBuilder swarmId(@Nonnull String swarmId) {
       this.swarmId = swarmId;
       return this;
     }
@@ -91,18 +94,18 @@ public final class ApproverManifest {
   private final String requestId;
 
   /** Swarm ID assigned by the scheduler. */
-  @NotNull
+  @Nonnull
   private final String swarmId;
 
   /** Transfers associated with this manifest. */
-  @NotNull
+  @Nonnull
   private final List<ApproverTransfer> transfers;
 
   /** Tags assigned to this manifest. */
   private Set<String> tags = new HashSet<>();
 
 
-  ApproverManifest(String correlationId, String requestId, @NotNull String swarmId, @NotNull List<ApproverTransfer> transfers, Set<String> tags) {
+  ApproverManifest(String correlationId, String requestId, @Nonnull String swarmId, @Nonnull List<ApproverTransfer> transfers, Set<String> tags) {
     this.correlationId = correlationId;
     this.requestId = requestId;
     this.swarmId = swarmId;
@@ -115,36 +118,32 @@ public final class ApproverManifest {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof ApproverManifest)) {
+    if (!(o instanceof ApproverManifest other)) {
       return false;
     }
-    final ApproverManifest other = (ApproverManifest) o;
     final Object this$correlationId = this.getCorrelationId();
     final Object other$correlationId = other.getCorrelationId();
-    if (this$correlationId == null ? other$correlationId != null : !this$correlationId.equals(other$correlationId)) {
+    if (!Objects.equals(this$correlationId, other$correlationId)) {
       return false;
     }
     final Object this$requestId = this.getRequestId();
     final Object other$requestId = other.getRequestId();
-    if (this$requestId == null ? other$requestId != null : !this$requestId.equals(other$requestId)) {
+    if (!Objects.equals(this$requestId, other$requestId)) {
       return false;
     }
     final Object this$swarmId = this.getSwarmId();
     final Object other$swarmId = other.getSwarmId();
-    if (this$swarmId == null ? other$swarmId != null : !this$swarmId.equals(other$swarmId)) {
+    if (!Objects.equals(this$swarmId, other$swarmId)) {
       return false;
     }
     final Object this$transfers = this.getTransfers();
     final Object other$transfers = other.getTransfers();
-    if (this$transfers == null ? other$transfers != null : !this$transfers.equals(other$transfers)) {
+    if (!Objects.equals(this$transfers, other$transfers)) {
       return false;
     }
     final Object this$tags = this.getTags();
     final Object other$tags = other.getTags();
-    if (this$tags == null ? other$tags != null : !this$tags.equals(other$tags)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this$tags, other$tags);
   }
 
 
@@ -158,7 +157,7 @@ public final class ApproverManifest {
   }
 
 
-  @NotNull
+  @Nonnull
   public String getSwarmId() {
     return this.swarmId;
   }
@@ -169,7 +168,7 @@ public final class ApproverManifest {
   }
 
 
-  @NotNull
+  @Nonnull
   public List<ApproverTransfer> getTransfers() {
     return this.transfers;
   }
