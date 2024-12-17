@@ -79,7 +79,7 @@ class ClassUtils {
       return Array.newInstance(elementClass, 0).getClass();
     }
 
-    // "[[I" or "[[Ljava.lang.String;" style arrays
+    // "[I" or "[[Ljava.lang.String;" style arrays
     if (name.startsWith(INTERNAL_ARRAY_PREFIX)) {
       String elementName = name.substring(INTERNAL_ARRAY_PREFIX.length());
       Class<?> elementClass = forName(elementName, classLoader);
@@ -191,12 +191,9 @@ class ClassUtils {
     registerCommonClasses(Enum.class, Iterable.class, Iterator.class, Enumeration.class,
         Collection.class, List.class, Set.class, Map.class, Map.Entry.class, Optional.class
     );
-
-    Class<?>[] javaLanguageInterfaceArray = {
-        Serializable.class, Externalizable.class,
+    registerCommonClasses(Serializable.class, Externalizable.class,
         Closeable.class, AutoCloseable.class, Cloneable.class, Comparable.class
-    };
-    registerCommonClasses(javaLanguageInterfaceArray);
+    );
   }
 
 }

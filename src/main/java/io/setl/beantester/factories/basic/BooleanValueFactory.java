@@ -24,7 +24,7 @@ public final class BooleanValueFactory extends RandomValueFactoryBase<Boolean> {
 
   @Override
   protected Boolean createPrimary() {
-    return null;
+    return Boolean.TRUE;
   }
 
 

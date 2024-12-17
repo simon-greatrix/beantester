@@ -26,6 +26,11 @@ public class RandomIncreasingClock extends Clock {
   private ZoneId zoneId;
 
 
+  /**
+   * New instance.
+   *
+   * @param random the random generator
+   */
   public RandomIncreasingClock(RandomGenerator random) {
     this.random = random;
     zoneId = RandomClock.randomZoneId(random);

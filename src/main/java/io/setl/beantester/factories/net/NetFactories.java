@@ -8,8 +8,17 @@ import java.util.random.RandomGenerator;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.ValueFactoryRepository;
 
+/**
+ * Load the network factories.
+ */
 public final class NetFactories {
 
+  /**
+   * Load the network factories.
+   *
+   * @param context    the test context
+   * @param repository the repository to load the factories into
+   */
   public static void load(TestContext context, ValueFactoryRepository repository) {
     RandomGenerator random = context.getRandom();
     UrlValueFactory urlFactory = new UrlValueFactory(random);

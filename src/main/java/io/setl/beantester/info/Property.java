@@ -14,7 +14,10 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer2;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;
 
-public class PropertyInformation {
+/**
+ * Description of the properties of a bean.
+ */
+public class Property {
 
   static boolean inferNullable(Method readMethod, Method writeMethod) {
     List<Annotation> names = new ArrayList<>();
@@ -40,12 +43,12 @@ public class PropertyInformation {
   }
 
 
-  static void merge(Map<String, PropertyInformation> map, PropertyInformation update) {
+  static void merge(Map<String, Property> map, Property update) {
     map.compute(update.name(), (k, v) -> {
       if (v == null) {
         return update;
       }
-      return new PropertyInformation(v, update);
+      return new Property(v, update);
     });
   }
 
@@ -56,7 +59,7 @@ public class PropertyInformation {
 
   private boolean nullable = true;
 
-  private SerializableFunction1<Object, Object> reader;
+  private SerializableFunction1<?, ?> reader;
 
   private boolean significant = true;
 
@@ -72,7 +75,7 @@ public class PropertyInformation {
    *
    * @param original the original instance
    */
-  public PropertyInformation(PropertyInformation original) {
+  public Property(Property original) {
     this.name = original.name;
     this.ignored = original.ignored;
     this.nullable = original.nullable;
@@ -90,7 +93,7 @@ public class PropertyInformation {
    * @param original the original instance
    * @param update   the instance to update with
    */
-  public PropertyInformation(PropertyInformation original, PropertyInformation update) {
+  public Property(Property original, Property update) {
     if (!original.name.equals(update.name)) {
       throw new IllegalArgumentException("Names must match");
     }
@@ -119,7 +122,7 @@ public class PropertyInformation {
    *
    * @param name the property name
    */
-  public PropertyInformation(
+  public Property(
       String name
   ) {
     this.name = Objects.requireNonNull(name);
@@ -127,13 +130,13 @@ public class PropertyInformation {
 
 
   /**
-   * Copy all the settings from another property information instance.
+   * Copy all the settings, except the name, from another property information instance.
    *
    * @param original the original instance
    *
    * @return this
    */
-  public PropertyInformation copyFrom(PropertyInformation original) {
+  public Property copyFrom(Property original) {
     this.ignored = original.ignored;
     this.nullable = original.nullable;
     this.reader = original.reader;
@@ -152,21 +155,20 @@ public class PropertyInformation {
    *
    * @return this
    */
-  public PropertyInformation ignored(boolean ignored) {
+  public Property ignored(boolean ignored) {
     this.ignored = ignored;
     return this;
   }
 
 
   /**
-   * Is this property completely ignored during testing?
+   * Is this property completely ignored during testing? If a property is ignored, though if also not-null it may be set during bean creation.
    *
    * @return true if ignored, false otherwise
    */
   public boolean ignored() {
     return ignored;
   }
-
 
 
   /**
@@ -180,13 +182,13 @@ public class PropertyInformation {
 
 
   /**
-   * Can this property be null?
+   * Can this property be null? If not set explicitly, this will be inferred from the annotations on the read and write methods.
    *
    * @param nullable true if the property can be null, false otherwise
    *
    * @return this
    */
-  public PropertyInformation nullable(boolean nullable) {
+  public Property nullable(boolean nullable) {
     this.nullable = nullable;
     return this;
   }
@@ -209,9 +211,11 @@ public class PropertyInformation {
    *
    * @return the value of the property
    */
-  public Object read(Object bean) {
+  public <T, R> R read(T bean) {
     try {
-      return reader != null ? reader.exec(bean) : null;
+      @SuppressWarnings("unchecked")
+      SerializableFunction1<T, R> castReader = (SerializableFunction1<T, R>) this.reader;
+      return castReader != null ? castReader.exec(bean) : null;
     } catch (Throwable e) {
       throw new IllegalStateException("Failed to read property " + name, e);
     }
@@ -219,7 +223,7 @@ public class PropertyInformation {
 
 
   /**
-   * Can this property be read?
+   * Can this property be read? To be readable a property must have a reader function.
    *
    * @return true if the property can be read, false otherwise
    */
@@ -235,7 +239,7 @@ public class PropertyInformation {
    *
    * @return this
    */
-  public PropertyInformation reader(SerializableFunction1<Object, Object> reader) {
+  public <T, R> Property reader(SerializableFunction1<T, R> reader) {
     this.reader = reader;
     return this;
   }
@@ -248,7 +252,7 @@ public class PropertyInformation {
    *
    * @return this
    */
-  public PropertyInformation significant(boolean significant) {
+  public Property significant(boolean significant) {
     this.significant = significant;
     return this;
   }
@@ -281,7 +285,7 @@ public class PropertyInformation {
    *
    * @return this
    */
-  public PropertyInformation type(Type type) {
+  public Property type(Type type) {
     this.type = type;
     return this;
   }
@@ -331,13 +335,28 @@ public class PropertyInformation {
     }
   }
 
-  public PropertyInformation writer(SerializableConsumer2<Object, Object> writer) {
+
+  /**
+   * Set the writer function for this property. The writer returns void.
+   *
+   * @param writer the new writer
+   *
+   * @return this
+   */
+  public Property writer(SerializableConsumer2<Object, Object> writer) {
     this.writer1 = null;
     this.writer2 = writer;
     return this;
   }
 
-  public PropertyInformation writer(SerializableFunction2<Object, Object, Object> writer) {
+
+  /**
+   * Set the writer function for this property. The writer returns something, which will be ignored. This is for writers that support chaining or return the
+   * old value of a property.
+   *
+   * @param writer the new writer function
+   */
+  public Property writer(SerializableFunction2<Object, Object, Object> writer) {
     this.writer1 = writer;
     this.writer2 = null;
     return this;

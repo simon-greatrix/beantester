@@ -9,6 +9,7 @@ import java.util.random.RandomGenerator;
 import io.setl.beantester.factories.Sampler;
 import io.setl.beantester.factories.basic.RandomValueFactoryBase;
 
+/** Factory for URLs. */
 public class UrlValueFactory extends RandomValueFactoryBase<URL> {
 
   private static final URL PRIMARY;

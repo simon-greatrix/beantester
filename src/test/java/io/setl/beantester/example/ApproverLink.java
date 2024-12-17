@@ -1,7 +1,10 @@
 package io.setl.beantester.example;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+
+import jakarta.annotation.Nonnull;
 
 /**
  * A link in a transfer.
@@ -77,10 +80,10 @@ public class ApproverLink {
   }
 
 
-  @NotNull
+  @Nonnull
   private final ApproverAccount account;
 
-  @NotNull
+  @Nonnull
   private final AccountAction action;
 
   /** The index of this link in the transfer. */
@@ -90,7 +93,7 @@ public class ApproverLink {
   private Set<String> tags = new HashSet<>();
 
 
-  ApproverLink(@NotNull ApproverAccount account, @NotNull AccountAction action, int index, Set<String> tags) {
+  ApproverLink(@Nonnull ApproverAccount account, @Nonnull AccountAction action, int index, Set<String> tags) {
     this.account = account;
     this.action = action;
     this.index = index;
@@ -107,21 +110,20 @@ public class ApproverLink {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof ApproverLink)) {
+    if (!(o instanceof ApproverLink other)) {
       return false;
     }
-    final ApproverLink other = (ApproverLink) o;
-    if (!other.canEqual((Object) this)) {
+    if (!other.canEqual(this)) {
       return false;
     }
     final Object this$account = this.getAccount();
     final Object other$account = other.getAccount();
-    if (this$account == null ? other$account != null : !this$account.equals(other$account)) {
+    if (!Objects.equals(this$account, other$account)) {
       return false;
     }
     final Object this$action = this.getAction();
     final Object other$action = other.getAction();
-    if (this$action == null ? other$action != null : !this$action.equals(other$action)) {
+    if (!Objects.equals(this$action, other$action)) {
       return false;
     }
     if (this.getIndex() != other.getIndex()) {
@@ -129,20 +131,17 @@ public class ApproverLink {
     }
     final Object this$tags = this.getTags();
     final Object other$tags = other.getTags();
-    if (this$tags == null ? other$tags != null : !this$tags.equals(other$tags)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this$tags, other$tags);
   }
 
 
-  @NotNull
+  @Nonnull
   public ApproverAccount getAccount() {
     return this.account;
   }
 
 
-  @NotNull
+  @Nonnull
   public AccountAction getAction() {
     return this.action;
   }

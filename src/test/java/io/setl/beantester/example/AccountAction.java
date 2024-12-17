@@ -16,5 +16,5 @@ public enum AccountAction {
    */
   CREDIT,
 
-  UNRECOGNIZED;
+  UNRECOGNIZED
 }

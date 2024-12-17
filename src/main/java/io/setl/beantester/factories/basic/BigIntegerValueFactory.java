@@ -3,6 +3,9 @@ package io.setl.beantester.factories.basic;
 import java.math.BigInteger;
 import java.util.random.RandomGenerator;
 
+/**
+ * Factory for BigInteger instances.
+ */
 public final class BigIntegerValueFactory extends RandomValueFactoryBase<BigInteger> {
 
   public BigIntegerValueFactory(RandomGenerator random) throws IllegalArgumentException {

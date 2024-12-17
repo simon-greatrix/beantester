@@ -1,25 +1,28 @@
 package io.setl.beantester.example;
 
 
+import java.util.Objects;
+import jakarta.annotation.Nonnull;
+
 /**
  * An account in a transfer.
  */
 public class ApproverAccount {
 
 
-  @NotNull
+  @Nonnull
   private final String account;
 
 
-  @NotNull
+  @Nonnull
   private final String assetId;
 
 
-  @NotNull
+  @Nonnull
   private final String domain;
 
 
-  @NotNull
+  @Nonnull
   private final String participant;
 
 
@@ -55,58 +58,54 @@ public class ApproverAccount {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof ApproverAccount)) {
+    if (!(o instanceof ApproverAccount other)) {
       return false;
     }
-    final ApproverAccount other = (ApproverAccount) o;
-    if (!other.canEqual((Object) this)) {
+    if (!other.canEqual(this)) {
       return false;
     }
     final Object this$account = this.account;
     final Object other$account = other.account;
-    if (this$account == null ? other$account != null : !this$account.equals(other$account)) {
+    if (!Objects.equals(this$account, other$account)) {
       return false;
     }
     final Object this$assetId = this.assetId;
     final Object other$assetId = other.assetId;
-    if (this$assetId == null ? other$assetId != null : !this$assetId.equals(other$assetId)) {
+    if (!Objects.equals(this$assetId, other$assetId)) {
       return false;
     }
     final Object this$domain = this.domain;
     final Object other$domain = other.domain;
-    if (this$domain == null ? other$domain != null : !this$domain.equals(other$domain)) {
+    if (!Objects.equals(this$domain, other$domain)) {
       return false;
     }
     final Object this$participant = this.participant;
     final Object other$participant = other.participant;
-    if (this$participant == null ? other$participant != null : !this$participant.equals(other$participant)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this$participant, other$participant);
   }
 
 
-  @NotNull
+  @Nonnull
   public String getAccount() {
     return this.account;
   }
 
 
-  @NotNull
+  @Nonnull
   public String getAssetId() {
     return this.assetId;
   }
 
 
 
-  @NotNull
+  @Nonnull
   public String getDomain() {
     return this.domain;
   }
 
 
 
-  @NotNull
+  @Nonnull
   public String getParticipant() {
     return this.participant;
   }

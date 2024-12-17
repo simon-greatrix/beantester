@@ -1,7 +1,7 @@
 package io.setl.beantester.factories.util;
 
 
-import static io.setl.beantester.util.Types.getRawType;
+import static io.setl.beantester.mirror.Types.getRawType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -105,7 +105,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
       return (t) -> {
         Collection collection = (Collection) instanceValueFactory.get();
-        switch( t ) {
+        switch (t) {
           case PRIMARY:
             collection.add(itemValueFactory.create(ValueType.PRIMARY));
             break;

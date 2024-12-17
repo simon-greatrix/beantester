@@ -8,7 +8,7 @@ import io.setl.beantester.factories.NoSuchFactoryException;
 import io.setl.beantester.factories.ValueFactory;
 
 /**
- * FactoryLookup for EnumFactory instances
+ * FactoryLookup for EnumFactory instances.
  */
 public class EnumFactoryLookup implements FactoryLookup {
 

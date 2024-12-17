@@ -1,27 +1,180 @@
 plugins {
-    id 'java'
+  id 'java'
+  id 'java-library'
+  id 'idea'
+  id 'maven-publish'
+  id "com.palantir.git-version"
+  id 'io.freefair.lombok'
+
+  // Code quality
+  id 'checkstyle'
+  id "com.github.spotbugs"
+  id 'org.owasp.dependencycheck'
+}
+
+// Specify the versions of our dependencies
+configure(allprojects) {
+  project ->
+    ext {
+      // External libraries
+      lombokVersion = '1.18.28'
+      mockitoVersion = '4.5.1'
+      slf4jVersion = '2.0.7'
+    }
 }
 
 group = 'io.setl'
-version = '1.0-SNAPSHOT'
+
+if (
+    versionDetails().branchName ==~ /^(master)|(release.*)|(patch.*)$/
+        && versionDetails().isCleanTag
+        && gitVersion() ==~ /^\d+(\.\d+)+(-.+)?$/
+) {
+  project.version = gitVersion()
+} else {
+  project.version = '100-SNAPSHOT'
+}
 
 repositories {
-    mavenCentral()
+  // Maven local only for our own snapshot builds
+  mavenLocal {
+    content {
+      snapshotsOnly()
+      includeGroupAndSubgroups('io.setl')
+      includeGroupAndSubgroups('io.ledgerswarm')
+    }
+  }
+
+  // check central repository
+  mavenCentral()
+
+  // check ledger swarm specific repository
+  maven {
+    url = 'https://maven.pkg.github.com/ledger-swarm/maven-repo'
+    credentials {
+      username = "$githubUser"
+      password = "$githubToken"
+    }
+  }
+}
+
+checkstyle {
+  toolVersion = "10.13.0"
+  configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+
+// Do not perform checkstyle checks on test code
+checkstyleTest {
+  enabled = false
+}
+
+spotbugs {
+  excludeFilter = rootProject.file('config/spotbugs/spotbugs-exclude.xml')
+}
+
+spotbugsMain {
+  reports {
+    html {
+      required = true
+    }
+    xml {
+      required = false
+    }
+  }
+}
+
+// Do not perform spotbugs analysis on test code
+spotbugsTest {
+  enabled = false
+}
+
+// Guava conflict with checkstyle plugin.
+configurations.checkstyle {
+  resolutionStrategy.capabilitiesResolution.withCapability("com.google.collections:google-collections") {
+    select("com.google.guava:guava:0")
+  }
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+  testCompileOnly group:'org.projectlombok', name: 'lombok', version: lombokVersion
+  testImplementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
+  testImplementation platform('org.junit:junit-bom:5.10.0')
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+java {
+  withJavadocJar()
+  withSourcesJar()
+}
+
+javadoc {
+  // Exclude generated code and test code from javadoc
+  source = sourceSets.main.allJava.filter { !(it.path.contains('/generated/') || it.path.contains('/src/test/')) }
+  options.addStringOption('Xdoclint:none', '-quiet')
+  failOnError = false
 }
 
 compileJava {
-    options.compilerArgs << '-parameters'
+  options.compilerArgs << '-parameters'
 }
 
 compileTestJava {
-    options.compilerArgs << '-parameters'
+  options.compilerArgs << '-parameters'
+}
+
+tasks.register('writeBuildProperties', WriteProperties) {
+  destinationFile = file("$buildDir/ls-build.properties")
+  property("project.name", project.name)
+  property("project.group", project.group)
+  property("project.version", project.version)
+  property("buildTime", java.time.Instant.now())
+
+  pluginManager.withPlugin("com.palantir.git-version") {
+    def gitDetails = versionDetails()
+    property("git.lastTag", gitDetails.lastTag)
+    property("git.commitDistance", gitDetails.commitDistance)
+    property("git.gitHash", gitDetails.gitHash)
+    property("git.gitHashFull", gitDetails.gitHashFull)
+    property("git.branchName", gitDetails.branchName)
+    property("git.isCleanTag", gitDetails.isCleanTag)
+  }
+}
+
+jar {
+  dependsOn writeBuildProperties
+  from("$buildDir/ls-build.properties") {
+    include "ls-build.properties"
+    into "META-INF"
+  }
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
+}
+
+idea {
+  module {
+    downloadJavadoc = true
+    downloadSources = true
+  }
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      artifactId = project.name
+
+      from components.java
+    }
+  }
+  repositories {
+    maven {
+      name = 'github'
+      url = 'https://maven.pkg.github.com/ledger-swarm/maven-repo'
+      credentials {
+        username = "$githubUser"
+        password = "$githubToken"
+      }
+    }
+  }
 }

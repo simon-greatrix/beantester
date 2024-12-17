@@ -11,7 +11,7 @@ public interface Model<M extends Model> {
    *
    * @return A Collection of all properties of the bean.
    */
-  Collection<PropertyInformation> properties();
+  Collection<Property> properties();
 
   /**
    * Add a collection of properties to this.
@@ -20,7 +20,7 @@ public interface Model<M extends Model> {
    *
    * @return this
    */
-  M properties(Collection<PropertyInformation> properties);
+  M properties(Collection<Property> properties);
 
 
   /**
@@ -30,7 +30,7 @@ public interface Model<M extends Model> {
    *
    * @return this
    */
-  M property(PropertyInformation property);
+  M property(Property property);
 
   /**
    * Get information about a specific property of the bean.
@@ -39,7 +39,7 @@ public interface Model<M extends Model> {
    *
    * @return Information about the specified property.
    */
-  PropertyInformation property(String name);
+  Property property(String name);
 
 
   /** Get the names of all the properties. */

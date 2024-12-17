@@ -9,6 +9,7 @@ import io.setl.beantester.factories.Sampler;
 import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueType;
 
+/** A factory for Locale instances. */
 public class LocaleValueFactory implements ValueFactory<Locale> {
 
   private final List<Locale> locales = Arrays.asList(Locale.getAvailableLocales());

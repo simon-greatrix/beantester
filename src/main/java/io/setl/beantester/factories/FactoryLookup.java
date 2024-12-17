@@ -1,11 +1,10 @@
 package io.setl.beantester.factories;
 
 import java.lang.reflect.Type;
-import java.util.function.Supplier;
 
 
 /**
- * For looking up Factory instances
+ * For looking up Factory instances.
  */
 public interface FactoryLookup {
 
@@ -31,7 +30,7 @@ public interface FactoryLookup {
 
 
   /**
-   * Does this contain a Factory registered against the specified class?
+   * Check if this contains a Factory registered against the specified class.
    *
    * @param type The type a Factory could be registered against. This should be the type of object that the Factory
    *             creates.

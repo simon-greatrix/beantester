@@ -26,6 +26,13 @@ public class RandomClock extends Clock {
   }
 
 
+  /**
+   * Select a random ZoneId.
+   *
+   * @param random the random generator
+   *
+   * @return a random ZoneId
+   */
   public static ZoneId randomZoneId(RandomGenerator random) {
     String zoneId = Sampler.getFrom(random, ZoneId.getAvailableZoneIds());
     try {
@@ -51,6 +58,11 @@ public class RandomClock extends Clock {
   private ZoneId zoneId;
 
 
+  /**
+   * New instance.
+   *
+   * @param random the random generator
+   */
   public RandomClock(RandomGenerator random) {
     this.random = random;
     zoneId = randomZoneId(random);

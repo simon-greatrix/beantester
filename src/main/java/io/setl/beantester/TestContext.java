@@ -29,11 +29,10 @@ public class TestContext {
       generator = SplittableGenerator.of("L64X128MixRandom");
     } catch (IllegalArgumentException e) {
       // L64X128MixRandom is not supported, use the one with the most state bits
+      // SecureRandom has MAX_VALUE stateBits.
       generator = (SplittableGenerator) RandomGeneratorFactory.all()
           .filter(rgf -> !rgf.name().equals("SecureRandom")) // SecureRandom has MAX_VALUE stateBits.
-          .filter(RandomGeneratorFactory::isSplittable)
-          .sorted(Comparator.comparingInt(RandomGeneratorFactory<RandomGenerator>::stateBits).reversed())
-          .findFirst()
+          .filter(RandomGeneratorFactory::isSplittable).max(Comparator.comparingInt(RandomGeneratorFactory<RandomGenerator>::stateBits))
           .orElseThrow()
           .create();
     }
@@ -42,13 +41,14 @@ public class TestContext {
 
   private final RandomClock clock;
 
+  private final RandomGenerator random;
+
+  private final ValueFactoryRepository valueFactoryRepository;
+
   private boolean preferWriters = true;
 
-  private RandomGenerator random;
 
-  private ValueFactoryRepository valueFactoryRepository;
-
-
+  /** New instance. */
   public TestContext() {
     random = newRandom();
     clock = new RandomClock(random);
