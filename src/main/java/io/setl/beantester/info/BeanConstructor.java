@@ -27,10 +27,14 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements S
     if (names.size() != types.size()) {
       throw new IllegalArgumentException("Names and types must be the same size");
     }
+
     try {
-      this.constructor = beanClass.getConstructor(types.toArray(new Class[0]));
+      constructor = beanClass.getConstructor(types.toArray(Class[]::new));
     } catch (NoSuchMethodException e) {
       throw new IllegalArgumentException("No constructor found for " + beanClass + " with types " + types);
+    }
+    if (!constructor.trySetAccessible()) {
+      throw new IllegalArgumentException("Constructor is not accessible: " + constructor);
     }
 
     for (int i = 0; i < names.size(); i++) {
@@ -43,18 +47,6 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements S
               .nullable(BeanDescriptionFactory.parameterIsNullable(constructor, i))
       );
     }
-  }
-
-
-  /**
-   * New instance.
-   *
-   * @param beanClass the class of the bean
-   * @param names     the names of the parameters in the constructor
-   * @param types     the types of the parameters in the constructor
-   */
-  public BeanConstructor(Class<?> beanClass, List<String> names, List<Class<?>> types) {
-    this(beanClass, new Specs.BeanConstructorImpl(names, types));
   }
 
 

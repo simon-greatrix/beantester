@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.setl.beantester.mirror.Executables;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer2;
@@ -18,29 +19,6 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;
  * Description of the properties of a bean.
  */
 public class Property {
-
-  static boolean inferNullable(Method readMethod, Method writeMethod) {
-    List<Annotation> names = new ArrayList<>();
-    if (readMethod != null) {
-      // Look at annotations on the return value
-      names.addAll(Arrays.asList(readMethod.getAnnotations()));
-    }
-    if (writeMethod != null) {
-      // Look at annotations on the first parameter.
-      names.addAll(Arrays.asList(writeMethod.getParameterAnnotations()[0]));
-    }
-
-    // Check all the annotations
-    for (Annotation a : names) {
-      String simpleName = a.annotationType().getSimpleName();
-      if (simpleName.equalsIgnoreCase("NotNull") || simpleName.equalsIgnoreCase("NonNull")) {
-        return false;
-      }
-    }
-
-    // default to nullable
-    return true;
-  }
 
 
   static void merge(Map<String, Property> map, Property update) {
@@ -223,6 +201,16 @@ public class Property {
 
 
   /**
+   * Get the read method if it exists.
+   *
+   * @return the read method if it exists
+   */
+  public Optional<Method> readMethod() {
+    return Optional.ofNullable(reader).map(Executables::findGetter);
+  }
+
+
+  /**
    * Can this property be read? To be readable a property must have a reader function.
    *
    * @return true if the property can be read, false otherwise
@@ -333,6 +321,24 @@ public class Property {
     } catch (Throwable e) {
       throw new IllegalStateException("Failed to write property " + name, e);
     }
+  }
+
+
+  /**
+   * Get the write method, if it exists.
+   *
+   * @return the write method, if it exists
+   */
+  public Optional<Method> writeMethod() {
+    if (writer1 != null) {
+      Method m = Executables.findGetter(writer1);
+      return Optional.of(m);
+    }
+    if (writer2 != null) {
+      Method m = Executables.findMethod(writer2);
+      return Optional.of(m);
+    }
+    return Optional.empty();
   }
 
 

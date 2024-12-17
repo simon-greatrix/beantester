@@ -10,13 +10,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import io.setl.beantester.TestContext;
+import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
 
 /**
  * The bean holder holds a bean and manages its creation.
  */
-public class BeanHolder {
+public class BeanHolder implements ValueFactory<Object> {
 
   private record CreatorData(TreeMap<String, Object> params, HashSet<String> keys) {
 
@@ -135,6 +136,13 @@ public class BeanHolder {
 
   public BeanHolder copy() {
     return new BeanHolder(this);
+  }
+
+
+  @Override
+  public Object create(ValueType type) {
+    setAllProperties(type, true);
+    return bean();
   }
 
 

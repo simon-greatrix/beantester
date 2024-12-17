@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.setl.beantester.TestContext;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer1;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction0;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
@@ -54,6 +55,19 @@ public class Specs {
    * Specify to construct a bean using the specified function. The function takes a map of parameter names to values and should create the bean accordingly.
    */
   public interface BeanCreator<M extends Model> extends Spec, SerializableFunction1<Map<String, Object>, Object>, Model<M> {
+
+  }
+
+
+
+  /** Use a method to create a bean. */
+  public interface BeanMaker extends BeanConstructor {
+
+    /** The class that contains the method. */
+    Class<?> factoryClass();
+
+    /** The name of the method that creates the bean. */
+    String factoryName();
 
   }
 
@@ -110,6 +124,17 @@ public class Specs {
 
 
   /**
+   * A specification that is resolved just before use to a collection of other specifications.
+   */
+  public interface ResolvingSpec extends Spec {
+
+    Collection<Spec> resolve(TestContext context, Class<?> beanClass);
+
+  }
+
+
+
+  /**
    * A marker interface for all specifications.
    */
   public interface Spec {
@@ -121,6 +146,19 @@ public class Specs {
   record BeanConstructorImpl(List<String> names, List<Class<?>> types) implements BeanConstructor {
 
     BeanConstructorImpl(List<String> names, List<Class<?>> types) {
+      this.names = Collections.unmodifiableList(names);
+      this.types = Collections.unmodifiableList(types);
+    }
+
+  }
+
+
+
+  record BeanMakerImpl(Class<?> factoryClass, String factoryName, List<String> names, List<Class<?>> types) implements BeanMaker {
+
+    BeanMakerImpl(Class<?> factoryClass, String factoryName, List<String> names, List<Class<?>> types) {
+      this.factoryClass = factoryClass;
+      this.factoryName = factoryName;
       this.names = Collections.unmodifiableList(names);
       this.types = Collections.unmodifiableList(types);
     }
@@ -147,32 +185,37 @@ public class Specs {
    *
    * @return the specification
    */
-  public static BeanConstructor beanConstructor(Object... nameAndType) {
-    List<String> names = new ArrayList<>();
-    List<Class<?>> types = new ArrayList<>();
-
-    int length = nameAndType.length;
-    if (length % 2 != 0) {
-      throw new IllegalArgumentException("Odd number of arguments: " + length);
+  public static Spec beanConstructor(Object... nameAndType) {
+    Optional<BeanConstructorImpl> optImpl = isNameTypeList(nameAndType);
+    if (optImpl.isPresent()) {
+      return optImpl.get();
     }
-    for (int i = 0; i < length; i++) {
-      Object o = nameAndType[i];
-      if (i % 2 == 0) {
-        if (o instanceof String str) {
-          names.add(str);
-        } else {
-          throw new IllegalArgumentException("Expected a name (String) at index " + i + " but got: " + ((o != null) ? o.getClass().toString() : "null"));
-        }
-      } else {
-        if (o instanceof Class<?> cls) {
-          types.add(cls);
-        } else {
-          throw new IllegalArgumentException("Expected a type (Class<?>) at index " + i + " but got: " + ((o != null) ? o.getClass().toString() : "null"));
-        }
+
+    Optional<List<Class<?>>> optTypeList = isTypeList(nameAndType);
+    if (optTypeList.isEmpty()) {
+      throw new IllegalArgumentException("Expected pairs of names and types, or just types with names in byte code, but got: " + Arrays.toString(nameAndType));
+    }
+
+    final List<Class<?>> types = optTypeList.get();
+
+    return (ResolvingSpec) (context, beanClass) -> {
+      Constructor<?> c;
+      try {
+        c = beanClass.getConstructor(types.toArray(Class<?>[]::new));
+      } catch (NoSuchMethodException e) {
+        throw new IllegalArgumentException("Class " + beanClass + " does not have a constructor with types " + types, e);
       }
-    }
 
-    return new BeanConstructorImpl(names, types);
+      ArrayList<String> names = new ArrayList<>(types.size());
+      for (Parameter p : c.getParameters()) {
+        if (!p.isNamePresent()) {
+          throw new IllegalArgumentException(
+              "Parameter names are not present in constructor for " + beanClass + ". Remember to compile with \"-parameters\" enabled.");
+        }
+        names.add(p.getName());
+      }
+      return List.of(new BeanConstructorImpl(names, types));
+    };
   }
 
 
@@ -225,6 +268,34 @@ public class Specs {
 
 
   /**
+   * Create a bean maker referencing a method in the bean class. The method must be static, return the bean's class, have a unique name and have been compiled
+   * with the '-parameter' option so the parameter names are available.
+   */
+  public static ResolvingSpec namedBeanMaker(String factoryName) {
+    return null; // TODO
+  }
+
+
+  /**
+   * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
+   * option so the parameter names are available.
+   */
+  public static BeanMaker namedBeanMaker(Class<?> factoryClass, String factoryName) {
+    return null; // TODO
+  }
+
+
+
+  /**
+   * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
+   * option so the parameter names are available.
+   */
+  public static Spec beanMaker(Class<?> factoryClass, String factoryName, Object... nameAndType) {
+    return null; // TODO
+  }
+
+
+  /**
    * Create a customiser that sets properties as ignored.
    *
    * @param names the names that are ignored (i.e. those that will not be tested)
@@ -270,6 +341,37 @@ public class Specs {
 
   public static PropertyCustomiser ignoredExcept(String... propertyNames) {
     return ignoredExcept(Arrays.asList(propertyNames));
+  }
+
+
+  private static Optional<BeanConstructorImpl> isNameTypeList(Object[] args) {
+    if (args.length % 2 != 0) {
+      return Optional.empty();
+    }
+    ArrayList<String> names = new ArrayList<>(args.length / 2);
+    ArrayList<Class<?>> types = new ArrayList<>(args.length / 2);
+
+    for (int i = 0; i < args.length; i += 2) {
+      if (!(args[i] instanceof String) || !(args[i + 1] instanceof Class<?>)) {
+        return Optional.empty();
+      }
+      names.add((String) args[i]);
+      types.add((Class<?>) args[i + 1]);
+    }
+
+    return Optional.of(new BeanConstructorImpl(names, types));
+  }
+
+
+  private static Optional<List<Class<?>>> isTypeList(Object[] args) {
+    ArrayList<Class<?>> types = new ArrayList<>(args.length);
+    for (Object arg : args) {
+      if (!(arg instanceof Class<?>)) {
+        return Optional.empty();
+      }
+      types.add((Class<?>) arg);
+    }
+    return Optional.of(types);
   }
 
 

@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -37,7 +38,7 @@ class BeanDescriptionFactory {
    *
    * @return a list of specs of the given type
    */
-  static <S extends Specs.Spec> Optional<S> firstSpec(Class<S> type, Spec... specs) {
+  private static <S extends Specs.Spec> Optional<S> firstSpec(Class<S> type, Spec... specs) {
     if (specs == null) {
       return Optional.empty();
     }
@@ -126,7 +127,7 @@ class BeanDescriptionFactory {
    *
    * @return a list of specs of the given type
    */
-  static <S extends Specs.Spec> List<S> specs(Class<S> type, Spec... specs) {
+  private static <S extends Specs.Spec> List<S> specs(Class<S> type, Spec... specs) {
     if (specs == null) {
       return List.of();
     }
@@ -142,7 +143,7 @@ class BeanDescriptionFactory {
    *
    * @return a list of specs of the given type
    */
-  static <S extends Specs.Spec> List<S> specs(Class<S> type, Collection<? extends Spec> specs) {
+  private static <S extends Specs.Spec> List<S> specs(Class<S> type, Collection<? extends Spec> specs) {
     if (specs == null) {
       return List.of();
     }
@@ -176,7 +177,7 @@ class BeanDescriptionFactory {
   private Class<?> beanClass;
 
   /** Creator for the bean. */
-  private BeanCreator creator;
+  private BeanCreator<?> creator;
 
   /** Specs used in creating the bean and property information. */
   private Spec[] specs;
@@ -217,9 +218,28 @@ class BeanDescriptionFactory {
    *
    * @return the BeanInformation object
    */
-  BeanDescription create(TestContext testContext, Class<?> beanClass, Specs.Spec... specs) {
+  BeanDescription create(TestContext testContext, Class<?> beanClass, Spec... specs) {
     this.beanClass = beanClass;
-    this.specs = specs;
+
+    ArrayList<Spec> specList = new ArrayList<>();
+    for (Spec spec : specs) {
+      if (spec instanceof Specs.ResolvingSpec) {
+        LinkedList<Spec> resolveList = new LinkedList<>();
+        resolveList.add(spec);
+        while (!resolveList.isEmpty()) {
+          Spec current = resolveList.removeFirst();
+          if (current instanceof Specs.ResolvingSpec resolving) {
+            resolveList.addAll(0, resolving.resolve(testContext, beanClass));
+          } else {
+            specList.add(current);
+          }
+        }
+      } else {
+        specList.add(spec);
+      }
+    }
+    this.specs = specList.toArray(Spec[]::new);
+
     beanProperties.clear();
 
     findCreator();
@@ -232,6 +252,23 @@ class BeanDescriptionFactory {
     applyPropertyCustomisers(information);
 
     return information;
+  }
+
+
+  /**
+   * Find the testable properties of a class. A testable property is one that has both a getter and a setter. Note that this will not find properties that
+   * are set via the creator.
+   *
+   * @param beanClass the class to find the writable properties of
+   *
+   * @return a collection of writable properties
+   */
+  Collection<Property> findAllProperties(Class<?> beanClass) {
+    this.beanClass = beanClass;
+    this.specs = new Spec[0];
+    beanProperties.clear();
+    findBeanProperties();
+    return beanProperties.values();
   }
 
 
@@ -262,10 +299,23 @@ class BeanDescriptionFactory {
 
 
   private void findCreator() {
+    // Interfaces need special handling
+    if (beanClass.isInterface()) {
+      creator = new BeanProxy(beanClass);
+      return;
+    }
+
     // Does the bean have a specific creator?
-    Optional<BeanCreator> optCreator = firstSpec(BeanCreator.class, specs);
+    Optional<BeanCreator<?>> optCreator =firstSpec(BeanCreator.class, specs);
     if (optCreator.isPresent()) {
       creator = optCreator.get();
+      return;
+    }
+
+    // Does the bean have a maker specifier?
+    Optional<Specs.BeanMaker> optMaker = firstSpec(Specs.BeanMaker.class, specs);
+    if (optMaker.isPresent()) {
+      creator = new BeanMaker(optMaker.get());
       return;
     }
 
