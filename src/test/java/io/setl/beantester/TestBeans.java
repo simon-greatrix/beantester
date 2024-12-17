@@ -12,6 +12,7 @@ import io.setl.beantester.example.ApproverAccount;
 import io.setl.beantester.example.ApproverLink;
 import io.setl.beantester.example.ApproverManifest;
 import io.setl.beantester.example.ApproverTransfer;
+import io.setl.beantester.example.BalanceTypeIdentifier;
 import io.setl.beantester.example.BuildableBean;
 import io.setl.beantester.example.LedgerAccount;
 import io.setl.beantester.example.LedgerManifest;
@@ -23,6 +24,12 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableLambda;
 
 public class TestBeans {
 
+
+  @Test
+  void testBalanceTypeIdentifier() throws Throwable {
+    TestContext testContext = new TestContext();
+    BeanVerifier.verify(testContext, BalanceTypeIdentifier.class);
+  }
 
   @Test
   void testApproverManifest() throws Throwable {

@@ -23,4 +23,15 @@ public class NoSuchFactoryException extends RuntimeException {
     super(message);
   }
 
+
+  /**
+   * Construct a new No Such Factory Exception with the specified message.
+   *
+   * @param message A human-readable String message describing the problem that occurred.
+   * @param cause   The Throwable that caused this exception to be thrown.
+   */
+  public NoSuchFactoryException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
 }

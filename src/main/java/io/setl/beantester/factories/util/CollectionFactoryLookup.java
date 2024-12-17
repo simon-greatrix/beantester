@@ -192,11 +192,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
   private ValueFactory<?> findItemFactory(Type itemType) {
     ValueFactoryRepository repository = context.getValueFactoryRepository();
-    try {
-      return repository.getFactory(itemType);
-    } catch (NoSuchFactoryException e) {
-      return repository.getFactory(void.class);
-    }
+    return repository.getFactory(itemType);
   }
 
 

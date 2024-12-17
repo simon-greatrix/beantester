@@ -1,5 +1,7 @@
 package io.setl.beantester.example;
 
+import jakarta.annotation.Nonnull;
+
 /**
  * A mechanism for identifying balance types.
  */
@@ -10,6 +12,7 @@ public interface BalanceTypeIdentifier {
    *
    * @return the label
    */
+  @Nonnull
   String getLabel();
 
 }

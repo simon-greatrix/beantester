@@ -2,12 +2,13 @@ package io.setl.beantester.factories;
 
 import static io.setl.beantester.mirror.Types.getRawType;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Type;
 import java.util.Optional;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.info.BeanHolder;
 import io.setl.beantester.info.BeanDescription;
+import io.setl.beantester.info.BeanHolder;
 
 /**
  * The bean factory lookup is special as it is a lookup of last resort. It will always be consulted last when looking for a factory.
@@ -45,6 +46,7 @@ public class BeanFactoryLookup implements FactoryLookup {
         return holder.bean();
       });
     } catch (Throwable t) {
+      System.getLogger(BeanFactoryLookup.class.getName()).log(Level.ERROR, "Failed to create factory for: " + clazz, t);
       return Optional.empty();
     }
 
