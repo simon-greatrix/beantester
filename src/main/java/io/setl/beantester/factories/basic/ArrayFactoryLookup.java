@@ -29,7 +29,7 @@ public class ArrayFactoryLookup implements FactoryLookup {
 
 
   private ValueFactory<?> getComponentFactory(Class<?> clazz) {
-    ValueFactoryRepository repository = testContext.getValueFactoryRepository();
+    ValueFactoryRepository repository = testContext.getFactories();
     return repository.getFactory(clazz.getComponentType());
   }
 

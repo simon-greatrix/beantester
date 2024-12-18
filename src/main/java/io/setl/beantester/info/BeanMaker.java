@@ -1,6 +1,7 @@
 package io.setl.beantester.info;
 
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** A call to a bean's factory method. */
-public class BeanMaker extends AbstractModel<BeanMaker> implements Specs.BeanCreator<BeanMaker> {
+public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<BeanMaker> {
 
   private final Method method;
 
@@ -36,9 +37,6 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements Specs.BeanCre
     if (!method.trySetAccessible()) {
       throw new IllegalArgumentException("Method is not accessible: " + method);
     }
-    if (method.getParameterCount() != 0) {
-      throw new IllegalArgumentException("Method must have no parameters: " + method);
-    }
     if (!Modifier.isStatic(method.getModifiers())) {
       throw new IllegalArgumentException("Method must be static: " + method);
     }
@@ -57,12 +55,16 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements Specs.BeanCre
 
 
   @Override
-  public Object exec(Map<String, Object> params) throws Throwable {
+  public Object apply(Map<String, Object> params) {
     Object[] args = new Object[names.size()];
     for (int i = 0; i < names.size(); i++) {
       args[i] = params.get(names.get(i));
     }
-    return method.invoke(null, args);
+    try {
+      return method.invoke(null, args);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      throw new AssertionError("Unable to create bean via method: " + method, e);
+    }
   }
 
 }

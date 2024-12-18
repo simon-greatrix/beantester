@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.info.Specs.BeanCreator;
+import io.setl.beantester.info.Specs.BeanCreatorSpec;
 import io.setl.beantester.info.Specs.BuilderMethods;
 import io.setl.beantester.info.Specs.NewProperty;
 import io.setl.beantester.info.Specs.PropertyCustomiser;
@@ -306,9 +306,9 @@ class BeanDescriptionFactory {
     }
 
     // Does the bean have a specific creator?
-    Optional<BeanCreator<?>> optCreator =firstSpec(BeanCreator.class, specs);
+    Optional<BeanCreatorSpec> optCreator = firstSpec(BeanCreatorSpec.class, specs);
     if (optCreator.isPresent()) {
-      creator = optCreator.get();
+      creator = optCreator.get().creator();
       return;
     }
 
@@ -382,19 +382,22 @@ class BeanDescriptionFactory {
       return Optional.empty();
     }
 
+    @SuppressWarnings("unchecked")
+    SerializableFunction1<Object, Object> buildLambda = SerializableLambdas.createLambda(SerializableFunction1.class, buildMethod);
+    @SuppressWarnings("unchecked")
+    SerializableFunction0<Object> builderLambda = SerializableLambdas.createLambda(SerializableFunction0.class, builderMethod);
+
     // We have both methods, so return them
     return Optional.of(new BuilderMethods() {
       @Override
-      @SuppressWarnings("unchecked")
       public SerializableFunction1<Object, Object> build() {
-        return SerializableLambdas.createLambda(SerializableFunction1.class, buildMethod);
+        return buildLambda;
       }
 
 
       @Override
-      @SuppressWarnings("unchecked")
       public SerializableFunction0<Object> builder() {
-        return SerializableLambdas.createLambda(SerializableFunction0.class, builderMethod);
+        return builderLambda;
       }
     });
   }
@@ -411,7 +414,15 @@ class BeanDescriptionFactory {
     // regular getter
     String methodName = method.getName();
     String propertyName;
-    if (hasPrefix(methodName, "get")) {
+    if (
+        hasPrefix(methodName, "getIs")
+            && (
+            method.getReturnType().equals(boolean.class)
+                || method.getReturnType().equals(Boolean.class)
+        )
+    ) {
+      propertyName = stripPrefix(methodName, "is");
+    } else if (hasPrefix(methodName, "get")) {
       propertyName = stripPrefix(methodName, "get");
     } else if (
         hasPrefix(methodName, "is")
@@ -436,6 +447,7 @@ class BeanDescriptionFactory {
   @SuppressWarnings("unchecked")
   private void findSetter(Method method) {
     String methodName = method.getName();
+
     // A setter can return the old value of a field, or the bean itself for chaining.
     Class<?> returnType = method.getReturnType();
     Class<?> valueType = method.getParameterTypes()[0];
@@ -450,9 +462,24 @@ class BeanDescriptionFactory {
       return;
     }
 
+    // A setter may start with "set".
     String propertyName;
-    if (hasPrefix(methodName, "set")) {
+    if (
+        hasPrefix(methodName, "setIs") && (
+            method.getParameterTypes()[0].equals(boolean.class)
+                || method.getParameterTypes()[0].equals(Boolean.class)
+        )
+    ) {
+      propertyName = stripPrefix(methodName, "setIs");
+    } else if (hasPrefix(methodName, "set")) {
       propertyName = stripPrefix(methodName, "set");
+    } else if (
+        hasPrefix(methodName, "is") && (
+            method.getParameterTypes()[0].equals(boolean.class)
+                || method.getParameterTypes()[0].equals(Boolean.class)
+        )
+    ) {
+      propertyName = stripPrefix(methodName, "is");
     } else {
       propertyName = methodName;
     }

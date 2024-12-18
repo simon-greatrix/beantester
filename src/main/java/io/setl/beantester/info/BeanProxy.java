@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.setl.beantester.info.Specs.BeanCreator;
 
 /**
  * Creator for interface beans.
@@ -101,7 +100,7 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
 
 
   @Override
-  public Object exec(Map<String, Object> stringObjectMap) throws Throwable {
+  public Object apply(Map<String, Object> stringObjectMap) {
     return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, new ProxyHandler());
   }
 

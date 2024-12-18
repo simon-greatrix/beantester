@@ -14,6 +14,7 @@ import io.setl.beantester.factories.time.TimeFactories;
 import io.setl.beantester.factories.util.UtilFactories;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.Property;
+import io.setl.beantester.mirror.Types;
 
 /**
  * Repository for value factories in the current test context.
@@ -38,6 +39,18 @@ public class ValueFactoryRepository {
    */
   public void addFactory(Class<?> clazz, ValueFactory<?> valueFactory) {
     factories.put(Objects.requireNonNull(clazz), Objects.requireNonNull(valueFactory));
+  }
+
+
+  /**
+   * Add the specified bean description as a factory to the collection. If a Factory is already registered against the specified class, the existing registered
+   * Factory will be replaced with the one derived from the bean description you specify here.
+   *
+   * @param description The bean description
+   */
+  public void addFactory(BeanDescription description) {
+    ValueFactory<?> valueFactory = description.createHolder();
+    addFactory(description.beanClass(), valueFactory);
   }
 
 
@@ -119,6 +132,10 @@ public class ValueFactoryRepository {
         factories.put(clazz, factory);
       }
       return factory;
+    }
+
+    if (!(type instanceof Class<?>)) {
+      return getFactory(Types.getRawType(type));
     }
 
     throw new NoSuchFactoryException("No factory found for " + type);

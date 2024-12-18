@@ -9,7 +9,7 @@ import java.util.TreeMap;
  *
  * @param <M> the model type
  */
-public class AbstractModel<M extends AbstractModel<M>> implements Model<M> {
+public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Model<M> {
 
   protected final TreeMap<String, Property> properties = new TreeMap<>();
 

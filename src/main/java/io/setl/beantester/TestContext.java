@@ -67,7 +67,7 @@ public class TestContext {
   }
 
 
-  public ValueFactoryRepository getValueFactoryRepository() {
+  public ValueFactoryRepository getFactories() {
     return valueFactoryRepository;
   }
 

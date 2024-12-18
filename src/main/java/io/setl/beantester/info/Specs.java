@@ -2,6 +2,8 @@ package io.setl.beantester.info;
 
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +11,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -51,10 +52,10 @@ public class Specs {
 
 
 
-  /**
-   * Specify to construct a bean using the specified function. The function takes a map of parameter names to values and should create the bean accordingly.
-   */
-  public interface BeanCreator<M extends Model> extends Spec, SerializableFunction1<Map<String, Object>, Object>, Model<M> {
+  /** A specification that provides an explicit creator for a bean. */
+  public interface BeanCreatorSpec extends Spec {
+
+    BeanCreator<?> creator();
 
   }
 
@@ -163,6 +164,11 @@ public class Specs {
       this.types = Collections.unmodifiableList(types);
     }
 
+
+    BeanMakerImpl(Class<?> factoryClass, String factoryName, BeanConstructor constructor) {
+      this(factoryClass, factoryName, constructor.names(), constructor.types());
+    }
+
   }
 
 
@@ -206,15 +212,7 @@ public class Specs {
         throw new IllegalArgumentException("Class " + beanClass + " does not have a constructor with types " + types, e);
       }
 
-      ArrayList<String> names = new ArrayList<>(types.size());
-      for (Parameter p : c.getParameters()) {
-        if (!p.isNamePresent()) {
-          throw new IllegalArgumentException(
-              "Parameter names are not present in constructor for " + beanClass + ". Remember to compile with \"-parameters\" enabled.");
-        }
-        names.add(p.getName());
-      }
-      return List.of(new BeanConstructorImpl(names, types));
+      return List.of(findParameters(beanClass, c));
     };
   }
 
@@ -228,70 +226,93 @@ public class Specs {
    */
   public static Optional<BeanConstructor> beanConstructorIfPossible(Class<?> beanClass) {
     Constructor<?>[] constructors = beanClass.getConstructors();
-    Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
 
-    boolean warningLogged = false;
+    Arrays.sort(
+        constructors,
+        Comparator
+            .<Constructor<?>>comparingInt(Constructor::getParameterCount)
+            .thenComparing(Constructor::toString)
+    );
 
-    for (Constructor<?> constructor : constructors) {
-      boolean namesAreKnown = true;
+    if (constructors.length == 0) {
+      return Optional.empty();
+    }
+    return findParametersIfPossible(beanClass, constructors[0]);
+  }
 
-      for (Parameter parameter : constructor.getParameters()) {
-        if (!parameter.isNamePresent()) {
-          if (!warningLogged) {
-            System.getLogger("io.setl.beantester").log(
-                Level.WARNING,
-                "Parameter name not present in constructor for \"" + beanClass + "\". Remember to compile with \"-parameters\" enabled."
-            );
-            warningLogged = true;
-          }
-          namesAreKnown = false;
-          break;
-        }
-      }
 
-      if (namesAreKnown) {
-        // found it
-        List<String> names = new ArrayList<>();
-        List<Class<?>> types = new ArrayList<>();
+  /**
+   * Create a bean maker referencing a method in the bean class. The method must be static, have a unique name and have been compiled with the '-parameter'
+   * option so the parameter names are available.
+   *
+   * @param factoryName the name of the factory method
+   * @param nameAndType pairs of parameter names and types (or just types if parameter names are available in the byte code)
+   */
+  public static ResolvingSpec beanMaker(String factoryName, Object... nameAndType) {
+    return (testContext, beanClass) -> List.of(beanMaker(beanClass, factoryName, nameAndType));
+  }
 
-        for (Parameter parameter : constructor.getParameters()) {
-          names.add(parameter.getName());
-          types.add(parameter.getType());
-        }
 
-        return Optional.of(new BeanConstructorImpl(names, types));
+  /**
+   * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
+   * option so the parameter names are available.
+   */
+  public static BeanMaker beanMaker(Class<?> factoryClass, String factoryName, Object... nameAndType) {
+    Optional<BeanConstructorImpl> optImpl = isNameTypeList(nameAndType);
+    if (optImpl.isPresent()) {
+      return new BeanMakerImpl(factoryClass, factoryName, optImpl.get());
+    }
+    Optional<List<Class<?>>> optTypeList = isTypeList(nameAndType);
+    if (optTypeList.isEmpty()) {
+      throw new IllegalArgumentException("Expected pairs of names and types, or just types with names in byte code, but got: " + Arrays.toString(nameAndType));
+    }
+
+    Method method;
+    try {
+      method = factoryClass.getMethod(factoryName, optTypeList.get().toArray(Class[]::new));
+    } catch (NoSuchMethodException e) {
+      throw new IllegalArgumentException("No method with name \"" + factoryName + "\" found in " + factoryClass + " with types " + optTypeList.get());
+    }
+
+    return new BeanMakerImpl(factoryClass, factoryName, findParameters(factoryClass, method));
+  }
+
+
+  private static BeanConstructor findParameters(Class<?> beanClass, Executable executable) {
+    return findParametersIfPossible(beanClass, executable).orElseThrow(
+        () -> new IllegalArgumentException("No parameters found for method \"" + executable + "\" in " + beanClass)
+    );
+  }
+
+
+  private static Optional<BeanConstructor> findParametersIfPossible(Class<?> beanClass, Executable executable) {
+    boolean namesAreKnown = true;
+
+    for (Parameter parameter : executable.getParameters()) {
+      if (!parameter.isNamePresent()) {
+        System.getLogger("io.setl.beantester").log(
+            Level.WARNING,
+            "Parameter name not present in \"" + executable + "\" for \"" + beanClass + "\". Remember to compile with \"-parameters\" enabled."
+        );
+        namesAreKnown = false;
+        break;
       }
     }
 
+    if (namesAreKnown) {
+      // found it
+      List<String> names = new ArrayList<>();
+      List<Class<?>> types = new ArrayList<>();
+
+      for (Parameter parameter : executable.getParameters()) {
+        names.add(parameter.getName());
+        types.add(parameter.getType());
+      }
+
+      return Optional.of(new BeanConstructorImpl(names, types));
+    }
+
     return Optional.empty();
-  }
-
-
-  /**
-   * Create a bean maker referencing a method in the bean class. The method must be static, return the bean's class, have a unique name and have been compiled
-   * with the '-parameter' option so the parameter names are available.
-   */
-  public static ResolvingSpec namedBeanMaker(String factoryName) {
-    return null; // TODO
-  }
-
-
-  /**
-   * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
-   * option so the parameter names are available.
-   */
-  public static BeanMaker namedBeanMaker(Class<?> factoryClass, String factoryName) {
-    return null; // TODO
-  }
-
-
-
-  /**
-   * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
-   * option so the parameter names are available.
-   */
-  public static Spec beanMaker(Class<?> factoryClass, String factoryName, Object... nameAndType) {
-    return null; // TODO
   }
 
 
@@ -372,6 +393,45 @@ public class Specs {
       types.add((Class<?>) arg);
     }
     return Optional.of(types);
+  }
+
+
+  /**
+   * Create a bean maker referencing a method in the bean class. The method must be static, return the bean's class, have a unique name and have been compiled
+   * with the '-parameter' option so the parameter names are available.
+   *
+   * @param factoryName the name of the factory method in the bean class.
+   */
+  public static ResolvingSpec namedBeanMaker(String factoryName) {
+    return (testContext, beanClass) -> List.of(namedBeanMaker(beanClass, factoryName));
+  }
+
+
+  /**
+   * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
+   * option so the parameter names are available.
+   *
+   * @param factoryClass the class that contains the factory method
+   * @param factoryName  the name of the factory method in the factory class
+   */
+  public static BeanMaker namedBeanMaker(Class<?> factoryClass, String factoryName) {
+    // Find the methods
+    Method[] methods = factoryClass.getMethods();
+    Method method = null;
+    for (Method m : methods) {
+      if (m.getName().equals(factoryName)) {
+        if (method != null) {
+          throw new IllegalArgumentException("Multiple methods with name \"" + factoryName + "\" found in " + factoryClass);
+        }
+        method = m;
+      }
+    }
+    if (method == null) {
+      throw new IllegalArgumentException("No method with name \"" + factoryName + "\" found in " + factoryClass);
+    }
+
+    BeanConstructor parameters = findParameters(factoryClass, method);
+    return new BeanMakerImpl(factoryClass, factoryName, parameters.names(), parameters.types());
   }
 
 

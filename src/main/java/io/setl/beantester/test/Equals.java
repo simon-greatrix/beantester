@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import io.setl.beantester.factories.ValueType;
 import io.setl.beantester.info.BeanHolder;
 
@@ -60,22 +62,24 @@ public class Equals {
   }
 
 
-  private void doTest(boolean isSignificant, boolean didChange, Object beanBefore, Object beanAfter, String name) {
+  private void doTest(boolean isSignificant, boolean didChange, Object beanBefore, Object beanAfter, String name, Object valueBefore, Object valueAfter) {
+    String change = "property " + name + " from \"" + valueBefore + "\" to \"" + valueAfter + "\"";
     if (isSignificant && didChange) {
       // changed a significant property, so must not be equal now
       if (beanBefore.equals(beanAfter)) {
-        throw new AssertionError(holder.getBeanClass() + ".equals() is not consistent with setting property " + name);
+        throw new AssertionError(
+            holder.getBeanClass() + ".equals() is not consistent with setting " + change);
       }
     } else {
       // either did not change, or was not significant, so must be equal
       if (!beanBefore.equals(beanAfter)) {
-        String msg = didChange ? " returned false after changing non-significant property" : " returned false after not changing property";
-        throw new AssertionError(holder.getBeanClass() + ".equals() " + msg + " " + name);
+        String msg = didChange ? " returned false after changing non-significant " : " returned false after not changing ";
+        throw new AssertionError(holder.getBeanClass() + ".equals() " + msg + " " + change);
       }
 
       if (testHashCode && beanBefore.hashCode() != beanAfter.hashCode()) {
-        String msg = didChange ? " returned different value after changing non-significant property" : " returned different value after not changing property";
-        throw new AssertionError(holder.getBeanClass() + ".hashCode() " + msg + " " + name);
+        String msg = didChange ? " returned different value after changing non-significant " : " returned different value after not changing ";
+        throw new AssertionError(holder.getBeanClass() + ".hashCode() " + msg + " " + change);
       }
     }
   }
@@ -103,7 +107,8 @@ public class Equals {
         copy.setProperty(name, value1);
         Object beanBefore = copy.bean();
 
-        // A bean is never equal to null
+
+        // Verify the basic equality contract
         verifyBaseEquality(beanBefore, copy.bean());
 
         // Loop over the property values for this property and verify that changing it affects equality as required.
@@ -112,7 +117,7 @@ public class Equals {
           boolean didChange = copy2.setProperty(name, value2);
           Object beanAfter = copy2.bean();
 
-          doTest(isSignificant, didChange, beanBefore, beanAfter, name);
+          doTest(isSignificant, didChange, beanBefore, beanAfter, name, value1, value2);
         }
       }
     }
@@ -135,19 +140,24 @@ public class Equals {
           throw new AssertionError(holder.getBeanClass() + ".equals() is not reflexive");
         }
 
+        Object valueBefore = holder.readActual(propertyName);
+
+        Object valueAfter = null;
         boolean didChange = false;
         for (int j = 0; !didChange && j < 5; j++) {
-          didChange = holder.setProperty(propertyName, holder.createValue(ValueType.RANDOM, propertyName));
+          valueAfter = holder.createValue(ValueType.RANDOM, propertyName);
+          didChange = holder.setProperty(propertyName, valueAfter);
         }
 
         bean2 = holder.bean();
         boolean isSignificant = holder.isSignificant(propertyName);
-        doTest(isSignificant, didChange, bean1, bean2, propertyName);
+        doTest(isSignificant, didChange, bean1, bean2, propertyName, valueBefore, valueAfter);
       }
     }
   }
 
 
+  @SuppressFBWarnings("EC_NULL_ARG")
   private void verifyBaseEquality(Object beanBefore, Object otherBean) {
     // A bean is never equal to null
     if (beanBefore.equals(null)) {
