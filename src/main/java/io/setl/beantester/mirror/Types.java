@@ -395,8 +395,6 @@ public final class Types {
     } else if (type instanceof ParameterizedType parameterizedType) {
 
       // I'm not exactly sure why getRawType() returns Type instead of Class.
-      // Neal isn't either but suspects some pathological case related
-      // to nested classes exists.
       Type rawType = parameterizedType.getRawType();
       checkArgument(rawType instanceof Class);
       return (Class<?>) rawType;

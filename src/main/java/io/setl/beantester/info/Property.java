@@ -1,11 +1,7 @@
 package io.setl.beantester.info;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +30,8 @@ public class Property {
   private final String name;
 
   private boolean ignored = false;
+
+  private Type inferredType = null;
 
   private boolean nullable = true;
 
@@ -149,6 +147,20 @@ public class Property {
   }
 
 
+  private Type inferredType() {
+    if (inferredType == null) {
+      if (writer1 != null) {
+        inferredType = Executables.findGetter(writer1).getGenericParameterTypes()[0];
+      } else if (writer2 != null) {
+        inferredType = Executables.findMethod(writer2).getGenericParameterTypes()[0];
+      } else if (reader != null) {
+        inferredType = Executables.findGetter(reader).getGenericReturnType();
+      }
+    }
+    return inferredType;
+  }
+
+
   /**
    * Get the name of this property.
    *
@@ -229,6 +241,7 @@ public class Property {
    */
   public <T, R> Property reader(SerializableFunction1<T, R> reader) {
     this.reader = reader;
+    inferredType = null;
     return this;
   }
 
@@ -287,16 +300,7 @@ public class Property {
     if (type != null) {
       return type;
     }
-    if (writer1 != null) {
-      return Executables.findGetter(writer1).getGenericParameterTypes()[0];
-    }
-    if (writer2 != null) {
-      return Executables.findMethod(writer2).getGenericParameterTypes()[0];
-    }
-    if (reader != null) {
-      return Executables.findGetter(reader).getGenericReturnType();
-    }
-    return null;
+    return inferredType();
   }
 
 
@@ -352,6 +356,7 @@ public class Property {
   public Property writer(SerializableConsumer2<Object, Object> writer) {
     this.writer1 = null;
     this.writer2 = writer;
+    inferredType = null;
     return this;
   }
 
@@ -365,6 +370,7 @@ public class Property {
   public Property writer(SerializableFunction2<Object, Object, Object> writer) {
     this.writer1 = writer;
     this.writer2 = null;
+    inferredType = null;
     return this;
   }
 

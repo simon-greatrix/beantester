@@ -47,7 +47,7 @@ public class BeanHolder implements ValueFactory<Object> {
     this.testContext = info.testContext();
     this.info = info;
 
-    ValueFactoryRepository vfr = info.testContext().getValueFactoryRepository();
+    ValueFactoryRepository vfr = info.testContext().getFactories();
 
     // Set a value for all non-null values.
     for (Property property : info.beanCreator().properties()) {
@@ -92,7 +92,7 @@ public class BeanHolder implements ValueFactory<Object> {
 
     if (bean == null || !creatorData.keys.isEmpty()) {
       try {
-        bean = info.beanCreator().exec(creatorData.params);
+        bean = info.beanCreator().apply(creatorData.params);
       } catch (Throwable e) {
         throw new IllegalStateException("Failed to create bean of type " + info.beanClass(), e);
       }
@@ -162,7 +162,7 @@ public class BeanHolder implements ValueFactory<Object> {
     if (info == null) {
       throw new IllegalArgumentException("No property named " + name);
     }
-    return this.info.testContext().getValueFactoryRepository().create(type, this.info, info);
+    return this.info.testContext().getFactories().create(type, this.info, info);
   }
 
 
@@ -378,6 +378,14 @@ public class BeanHolder implements ValueFactory<Object> {
 
   public TestContext testContext() {
     return testContext;
+  }
+
+
+  @Override
+  public String toString() {
+    TreeMap<String, Object> myValues = new TreeMap<>(initialValues);
+    myValues.putAll(values);
+    return "BeanHolder(" + info.beanClass() + ", values=" + myValues + ")";
   }
 
 

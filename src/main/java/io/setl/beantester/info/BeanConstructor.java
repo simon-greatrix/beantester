@@ -2,12 +2,13 @@ package io.setl.beantester.info;
 
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /** A call to a bean's constructor. */
-public class BeanConstructor extends AbstractModel<BeanConstructor> implements Specs.BeanCreator<BeanConstructor> {
+public class BeanConstructor extends AbstractModel<BeanConstructor> implements BeanCreator<BeanConstructor> {
 
   private final Constructor<?> constructor;
 
@@ -51,12 +52,16 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements S
 
 
   @Override
-  public Object exec(Map<String, Object> params) throws Throwable {
+  public Object apply(Map<String, Object> params) {
     Object[] args = new Object[names.size()];
     for (int i = 0; i < names.size(); i++) {
       args[i] = params.get(names.get(i));
     }
-    return constructor.newInstance(args);
+    try {
+      return constructor.newInstance(args);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new AssertionError("Failed to create bean via constructor: " + constructor, e);
+    }
   }
 
 }

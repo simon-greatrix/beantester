@@ -1,7 +1,7 @@
 package io.setl.beantester.info;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.info.Specs.BeanCreator;
+import io.setl.beantester.info.Specs.BeanCreatorSpec;
 
 /**
  * Defines an object that provides information about a JavaBean.
@@ -46,7 +46,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
   }
 
 
-  public BeanDescription beanCreator(BeanCreator<?> beanCreator) {
+  public BeanDescription beanCreator(BeanCreator beanCreator) {
     this.beanCreator = beanCreator;
     return this;
   }

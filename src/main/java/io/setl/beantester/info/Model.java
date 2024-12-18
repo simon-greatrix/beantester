@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 
 /** A model is something with properties. */
-public interface Model<M extends Model> {
+public interface Model<M extends Model<M>> {
 
   /**
    * Get information about all properties of the bean. The returned list is immutable.

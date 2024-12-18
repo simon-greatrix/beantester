@@ -3,7 +3,6 @@ package io.setl.beantester.info;
 import java.util.Collection;
 import java.util.Map;
 
-import io.setl.beantester.info.Specs.BeanCreator;
 import io.setl.beantester.info.Specs.BuilderMethods;
 
 /**
@@ -39,6 +38,17 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
   }
 
 
+  @Override
+  public Object apply(Map<String, Object> values) {
+    try {
+      Object builder = build(values);
+      return builderMethods.build().exec(builder);
+    } catch (Throwable t) {
+      throw new AssertionError("Failed to build bean", t);
+    }
+  }
+
+
   /**
    * Create a builder, set the properties and build the object.
    *
@@ -57,13 +67,6 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       }
     }
     return builder;
-  }
-
-
-  @Override
-  public Object exec(Map<String, Object> values) throws Throwable {
-    Object builder = build(values);
-    return builderMethods.build().exec(builder);
   }
 
 }

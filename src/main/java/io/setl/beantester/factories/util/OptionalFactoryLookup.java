@@ -88,7 +88,7 @@ public class OptionalFactoryLookup implements FactoryLookup {
 
 
   private ValueFactory<?> findItemFactory(Type itemType) {
-    ValueFactoryRepository repository = context.getValueFactoryRepository();
+    ValueFactoryRepository repository = context.getFactories();
     try {
       return repository.getFactory(itemType);
     } catch (NoSuchFactoryException e) {

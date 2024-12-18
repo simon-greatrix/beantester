@@ -191,7 +191,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
 
   private ValueFactory<?> findItemFactory(Type itemType) {
-    ValueFactoryRepository repository = context.getValueFactoryRepository();
+    ValueFactoryRepository repository = context.getFactories();
     return repository.getFactory(itemType);
   }
 
