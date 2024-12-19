@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Double objects.
- *
- * @author Graham Williamson
  */
 public final class DoubleValueFactory extends RandomValueFactoryBase<Double> {
 

@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Short objects.
- *
- * @author Graham Williamson
  */
 public final class ShortValueFactory extends RandomValueFactoryBase<Short> {
 

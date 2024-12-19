@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Byte objects.
- *
- * @author Graham Williamson
  */
 public final class ByteValueFactory extends RandomValueFactoryBase<Byte> {
 

@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Enum constants of the specified Enum type.
- *
- * @author Graham Williamson
  */
 public class EnumValueFactory extends RandomValueFactoryBase<Enum<?>> {
 

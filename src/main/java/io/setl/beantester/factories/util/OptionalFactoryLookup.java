@@ -2,7 +2,7 @@ package io.setl.beantester.factories.util;
 
 import static java.util.Collections.unmodifiableMap;
 
-import static io.setl.beantester.mirror.Types.getRawType;
+import static io.setl.beantester.mirror.Executables.getRawType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

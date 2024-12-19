@@ -107,7 +107,6 @@ public class Equals {
         copy.setProperty(name, value1);
         Object beanBefore = copy.bean();
 
-
         // Verify the basic equality contract
         verifyBaseEquality(beanBefore, copy.bean());
 

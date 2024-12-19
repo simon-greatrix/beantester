@@ -1,9 +1,16 @@
 package io.setl.beantester.mirror;
 
+import java.lang.invoke.MethodType;
 import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.concurrent.Callable;
 
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer0;
@@ -65,27 +72,37 @@ public class Executables {
 
   @SuppressWarnings("unchecked")
   private static <E extends Executable> E doFindMethod(SerializableLambda lambda) {
-    Executable executable = runFinder(lambda, () -> {
+    try {
       SerializedLambda serializedLambda = getSerializedLambda(lambda);
 
-      String className = Utility.compactClassName(serializedLambda.getImplClass());
-      Class<?> clazz = Class.forName(className);
-      Class<?>[] parameters = getParameters(serializedLambda.getImplMethodSignature());
-      String implMethodName = serializedLambda.getImplMethodName();
-      return "<init>".equals(implMethodName)
-          ? clazz.getDeclaredConstructor(parameters)
-          : clazz.getDeclaredMethod(implMethodName, parameters);
-    });
+      String className = serializedLambda.getImplClass().replace('/', '.');
 
-    return (E) executable;
+      ClassLoader classLoader = getClassLoader();
+      Class<?> clazz = Class.forName(className, false, classLoader);
+      Class<?>[] parameters = MethodType.fromMethodDescriptorString(serializedLambda.getImplMethodSignature(), classLoader).parameterArray();
+
+      String implMethodName = serializedLambda.getImplMethodName();
+
+      return "<init>".equals(implMethodName)
+          ? (E) clazz.getDeclaredConstructor(parameters)
+          : (E) clazz.getDeclaredMethod(implMethodName, parameters);
+    } catch (IllegalArgumentException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Cannot find method for " + lambda, e);
+    }
   }
 
 
   private static String doFindMethodName(SerializableLambda lambda) {
-    return runFinder(lambda, () -> {
+    try {
       SerializedLambda serializedLambda = getSerializedLambda(lambda);
       return serializedLambda.getImplMethodName();
-    });
+    } catch (IllegalArgumentException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Cannot find method for " + lambda, e);
+    }
   }
 
 
@@ -219,16 +236,52 @@ public class Executables {
   }
 
 
-  private static Class<?>[] getParameters(String signature) throws ClassNotFoundException {
-    String[] params = Utility.methodSignatureArgumentTypes(signature);
-
-    Class<?>[] paramTypes = new Class[params.length];
-    for (int i = 0; i < params.length; i++) {
-      String className = params[i];
-      Class<?> clazz = ClassUtils.forName(className, null);
-      paramTypes[i] = clazz;
+  private static ClassLoader getClassLoader() {
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    if (cl != null) {
+      return cl;
     }
-    return paramTypes;
+
+    return Executables.class.getClassLoader();
+  }
+
+
+  /**
+   * Convert a type to a raw class.
+   *
+   * @param type the type
+   *
+   * @return the raw class
+   */
+  public static Class<?> getRawType(Type type) {
+    if (type instanceof Class<?>) {
+      // type is a normal class.
+      return (Class<?>) type;
+    }
+
+    if (type instanceof ParameterizedType parameterizedType) {
+      Type rawType = parameterizedType.getRawType();
+      return (Class<?>) rawType;
+    }
+
+    if (type instanceof GenericArrayType) {
+      Type componentType = ((GenericArrayType) type).getGenericComponentType();
+      return Array.newInstance(getRawType(componentType), 0).getClass();
+    }
+
+    if (type instanceof TypeVariable) {
+      // we could use the variable's bounds, but that won't work if there are multiple.
+      // having a raw type that's more general than necessary is okay
+      return Object.class;
+    }
+
+    if (type instanceof WildcardType) {
+      return getRawType(((WildcardType) type).getUpperBounds()[0]);
+    }
+
+    String className = type == null ? "null" : type.getClass().getName();
+    throw new IllegalArgumentException("Expected a Class, ParameterizedType, or "
+        + "GenericArrayType, but <" + type + "> is of type " + className);
   }
 
 

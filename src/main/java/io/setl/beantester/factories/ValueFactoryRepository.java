@@ -14,7 +14,7 @@ import io.setl.beantester.factories.time.TimeFactories;
 import io.setl.beantester.factories.util.UtilFactories;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.Property;
-import io.setl.beantester.mirror.Types;
+import io.setl.beantester.mirror.Executables;
 
 /**
  * Repository for value factories in the current test context.
@@ -135,7 +135,7 @@ public class ValueFactoryRepository {
     }
 
     if (!(type instanceof Class<?>)) {
-      return getFactory(Types.getRawType(type));
+      return getFactory(Executables.getRawType(type));
     }
 
     throw new NoSuchFactoryException("No factory found for " + type);

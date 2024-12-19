@@ -1,6 +1,6 @@
 package io.setl.beantester.factories;
 
-import static io.setl.beantester.mirror.Types.getRawType;
+import static io.setl.beantester.mirror.Executables.getRawType;
 
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Type;
