@@ -1,21 +1,19 @@
 package io.setl.beantester.info;
 
-import java.lang.System.Logger.Level;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer1;
+import io.setl.beantester.info.specs.BeanConstructorFactory;
+import io.setl.beantester.info.specs.BeanMakerFactory;
+import io.setl.beantester.info.specs.Ignored;
+import io.setl.beantester.info.specs.Nullable;
+import io.setl.beantester.info.specs.Significance;
+import io.setl.beantester.info.specs.TypeSetter;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction0;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
 
@@ -108,7 +106,7 @@ public class Specs {
   /**
    * Specify to customise a property. During initialisation all properties will be passed to the customiser.
    */
-  public interface PropertyCustomiser extends Spec, SerializableConsumer1<Property> {
+  public interface PropertyCustomiser extends Spec, Consumer<Property> {
 
   }
 
@@ -129,6 +127,14 @@ public class Specs {
    */
   public interface ResolvingSpec extends Spec {
 
+    /**
+     * Resolve the specification to a collection of other specifications.
+     *
+     * @param context   the test context
+     * @param beanClass the bean class the specification will be applied to
+     *
+     * @return the resolved specifications
+     */
     Collection<Spec> resolve(TestContext context, Class<?> beanClass);
 
   }
@@ -143,35 +149,6 @@ public class Specs {
   }
 
 
-
-  record BeanConstructorImpl(List<String> names, List<Class<?>> types) implements BeanConstructor {
-
-    BeanConstructorImpl(List<String> names, List<Class<?>> types) {
-      this.names = Collections.unmodifiableList(names);
-      this.types = Collections.unmodifiableList(types);
-    }
-
-  }
-
-
-
-  record BeanMakerImpl(Class<?> factoryClass, String factoryName, List<String> names, List<Class<?>> types) implements BeanMaker {
-
-    BeanMakerImpl(Class<?> factoryClass, String factoryName, List<String> names, List<Class<?>> types) {
-      this.factoryClass = factoryClass;
-      this.factoryName = factoryName;
-      this.names = Collections.unmodifiableList(names);
-      this.types = Collections.unmodifiableList(types);
-    }
-
-
-    BeanMakerImpl(Class<?> factoryClass, String factoryName, BeanConstructor constructor) {
-      this(factoryClass, factoryName, constructor.names(), constructor.types());
-    }
-
-  }
-
-
   /**
    * Specify to construct a bean using the public constructor with the lowest number of arguments for which the parameter names are known.
    *
@@ -180,7 +157,7 @@ public class Specs {
    * @return the specification
    */
   public static BeanConstructor beanConstructor(Class<?> beanClass) {
-    return beanConstructorIfPossible(beanClass).orElseThrow(() -> new IllegalArgumentException("No suitable constructor found for " + beanClass));
+    return BeanConstructorFactory.beanConstructor(beanClass);
   }
 
 
@@ -192,52 +169,7 @@ public class Specs {
    * @return the specification
    */
   public static Spec beanConstructor(Object... nameAndType) {
-    Optional<BeanConstructorImpl> optImpl = isNameTypeList(nameAndType);
-    if (optImpl.isPresent()) {
-      return optImpl.get();
-    }
-
-    Optional<List<Class<?>>> optTypeList = isTypeList(nameAndType);
-    if (optTypeList.isEmpty()) {
-      throw new IllegalArgumentException("Expected pairs of names and types, or just types with names in byte code, but got: " + Arrays.toString(nameAndType));
-    }
-
-    final List<Class<?>> types = optTypeList.get();
-
-    return (ResolvingSpec) (context, beanClass) -> {
-      Constructor<?> c;
-      try {
-        c = beanClass.getConstructor(types.toArray(Class<?>[]::new));
-      } catch (NoSuchMethodException e) {
-        throw new IllegalArgumentException("Class " + beanClass + " does not have a constructor with types " + types, e);
-      }
-
-      return List.of(findParameters(beanClass, c));
-    };
-  }
-
-
-  /**
-   * Specify to construct a bean using the public constructor with the lowest number of arguments for which the parameter names are known.
-   *
-   * @param beanClass the bean's class
-   *
-   * @return the specification
-   */
-  public static Optional<BeanConstructor> beanConstructorIfPossible(Class<?> beanClass) {
-    Constructor<?>[] constructors = beanClass.getConstructors();
-
-    Arrays.sort(
-        constructors,
-        Comparator
-            .<Constructor<?>>comparingInt(Constructor::getParameterCount)
-            .thenComparing(Constructor::toString)
-    );
-
-    if (constructors.length == 0) {
-      return Optional.empty();
-    }
-    return findParametersIfPossible(beanClass, constructors[0]);
+    return BeanConstructorFactory.beanConstructor(nameAndType);
   }
 
 
@@ -258,61 +190,7 @@ public class Specs {
    * option so the parameter names are available.
    */
   public static BeanMaker beanMaker(Class<?> factoryClass, String factoryName, Object... nameAndType) {
-    Optional<BeanConstructorImpl> optImpl = isNameTypeList(nameAndType);
-    if (optImpl.isPresent()) {
-      return new BeanMakerImpl(factoryClass, factoryName, optImpl.get());
-    }
-    Optional<List<Class<?>>> optTypeList = isTypeList(nameAndType);
-    if (optTypeList.isEmpty()) {
-      throw new IllegalArgumentException("Expected pairs of names and types, or just types with names in byte code, but got: " + Arrays.toString(nameAndType));
-    }
-
-    Method method;
-    try {
-      method = factoryClass.getMethod(factoryName, optTypeList.get().toArray(Class[]::new));
-    } catch (NoSuchMethodException e) {
-      throw new IllegalArgumentException("No method with name \"" + factoryName + "\" found in " + factoryClass + " with types " + optTypeList.get());
-    }
-
-    return new BeanMakerImpl(factoryClass, factoryName, findParameters(factoryClass, method));
-  }
-
-
-  private static BeanConstructor findParameters(Class<?> beanClass, Executable executable) {
-    return findParametersIfPossible(beanClass, executable).orElseThrow(
-        () -> new IllegalArgumentException("No parameters found for method \"" + executable + "\" in " + beanClass)
-    );
-  }
-
-
-  private static Optional<BeanConstructor> findParametersIfPossible(Class<?> beanClass, Executable executable) {
-    boolean namesAreKnown = true;
-
-    for (Parameter parameter : executable.getParameters()) {
-      if (!parameter.isNamePresent()) {
-        System.getLogger("io.setl.beantester").log(
-            Level.WARNING,
-            "Parameter name not present in \"" + executable + "\" for \"" + beanClass + "\". Remember to compile with \"-parameters\" enabled."
-        );
-        namesAreKnown = false;
-        break;
-      }
-    }
-
-    if (namesAreKnown) {
-      // found it
-      List<String> names = new ArrayList<>();
-      List<Class<?>> types = new ArrayList<>();
-
-      for (Parameter parameter : executable.getParameters()) {
-        names.add(parameter.getName());
-        types.add(parameter.getType());
-      }
-
-      return Optional.of(new BeanConstructorImpl(names, types));
-    }
-
-    return Optional.empty();
+    return BeanMakerFactory.beanMaker(factoryClass, factoryName, nameAndType);
   }
 
 
@@ -324,11 +202,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser ignored(Collection<String> names) {
-    return propertyInformation -> {
-      if (names.contains(propertyInformation.name())) {
-        propertyInformation.ignored(true);
-      }
-    };
+    return new Ignored(names, true);
   }
 
 
@@ -352,47 +226,12 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser ignoredExcept(Collection<String> names) {
-    return propertyInformation -> {
-      if (!names.contains(propertyInformation.name())) {
-        propertyInformation.ignored(true);
-      }
-    };
+    return new Ignored(names, false);
   }
 
 
   public static PropertyCustomiser ignoredExcept(String... propertyNames) {
     return ignoredExcept(Arrays.asList(propertyNames));
-  }
-
-
-  private static Optional<BeanConstructorImpl> isNameTypeList(Object[] args) {
-    if (args.length % 2 != 0) {
-      return Optional.empty();
-    }
-    ArrayList<String> names = new ArrayList<>(args.length / 2);
-    ArrayList<Class<?>> types = new ArrayList<>(args.length / 2);
-
-    for (int i = 0; i < args.length; i += 2) {
-      if (!(args[i] instanceof String) || !(args[i + 1] instanceof Class<?>)) {
-        return Optional.empty();
-      }
-      names.add((String) args[i]);
-      types.add((Class<?>) args[i + 1]);
-    }
-
-    return Optional.of(new BeanConstructorImpl(names, types));
-  }
-
-
-  private static Optional<List<Class<?>>> isTypeList(Object[] args) {
-    ArrayList<Class<?>> types = new ArrayList<>(args.length);
-    for (Object arg : args) {
-      if (!(arg instanceof Class<?>)) {
-        return Optional.empty();
-      }
-      types.add((Class<?>) arg);
-    }
-    return Optional.of(types);
   }
 
 
@@ -415,23 +254,7 @@ public class Specs {
    * @param factoryName  the name of the factory method in the factory class
    */
   public static BeanMaker namedBeanMaker(Class<?> factoryClass, String factoryName) {
-    // Find the methods
-    Method[] methods = factoryClass.getMethods();
-    Method method = null;
-    for (Method m : methods) {
-      if (m.getName().equals(factoryName)) {
-        if (method != null) {
-          throw new IllegalArgumentException("Multiple methods with name \"" + factoryName + "\" found in " + factoryClass);
-        }
-        method = m;
-      }
-    }
-    if (method == null) {
-      throw new IllegalArgumentException("No method with name \"" + factoryName + "\" found in " + factoryClass);
-    }
-
-    BeanConstructor parameters = findParameters(factoryClass, method);
-    return new BeanMakerImpl(factoryClass, factoryName, parameters.names(), parameters.types());
+    return BeanMakerFactory.namedBeanMaker(factoryClass, factoryName);
   }
 
 
@@ -449,11 +272,7 @@ public class Specs {
    */
 
   public static PropertyCustomiser notNull(Collection<String> names) {
-    return propertyInformation -> {
-      if (names.contains(propertyInformation.name())) {
-        propertyInformation.nullable(false);
-      }
-    };
+    return new Nullable(names, false);
   }
 
 
@@ -490,11 +309,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser notSignificant(Collection<String> names) {
-    return propertyInformation -> {
-      if (names.contains(propertyInformation.name())) {
-        propertyInformation.significant(false);
-      }
-    };
+    return new Significance(names, false);
   }
 
 
@@ -518,11 +333,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser nullable(Collection<String> names) {
-    return propertyInformation -> {
-      if (names.contains(propertyInformation.name())) {
-        propertyInformation.nullable(true);
-      }
-    };
+    return new Nullable(names, true);
   }
 
 
@@ -546,11 +357,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser significant(Collection<String> names) {
-    return propertyInformation -> {
-      if (names.contains(propertyInformation.name())) {
-        propertyInformation.significant(true);
-      }
-    };
+    return new Significance(names, true);
   }
 
 
@@ -563,11 +370,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser type(String name, Class<?> type) {
-    return propertyInformation -> {
-      if (propertyInformation.name().equals(name)) {
-        propertyInformation.type(type);
-      }
-    };
+    return new TypeSetter(name, type);
   }
 
 }

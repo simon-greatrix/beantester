@@ -16,6 +16,7 @@ public class Equals {
 
 
 
+  /** A special class that is not equal to anything. Used in checking the contract for {@code equals()}. */
   private static class NotEqualToAnything {
 
   }
@@ -23,7 +24,6 @@ public class Equals {
 
 
   private final BeanHolder holder;
-
 
   private final String[] propertyNames;
 
