@@ -1,6 +1,8 @@
 package io.setl.beantester.info;
 
 
+import static io.setl.beantester.info.specs.BeanConstructorFactory.beanConstructorIfPossible;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -193,7 +195,7 @@ class BeanDescriptionFactory {
     for (PropertyCustomiser spec : specs(PropertyCustomiser.class, specs)) {
       for (Property info : model.properties()) {
         try {
-          spec.exec(info);
+          spec.accept(info);
         } catch (Throwable e) {
           throw new IllegalStateException("Failed to customise property: " + info.name(), e);
         }
@@ -404,7 +406,7 @@ class BeanDescriptionFactory {
 
 
   private Optional<Specs.BeanConstructor> findDefaultConstructor() {
-    return Specs.beanConstructorIfPossible(beanClass);
+    return beanConstructorIfPossible(beanClass);
   }
 
 

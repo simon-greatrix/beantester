@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.basic.BasicFactories;
@@ -139,6 +140,16 @@ public class ValueFactoryRepository {
     }
 
     throw new NoSuchFactoryException("No factory found for " + type);
+  }
+
+
+  /**
+   * Get the registered classes. Used for testing.
+   *
+   * @return the registered classes
+   */
+  Set<Class<?>> getRegisteredClasses() {
+    return factories.keySet();
   }
 
 
