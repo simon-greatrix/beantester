@@ -412,29 +412,7 @@ class BeanDescriptionFactory {
   @SuppressWarnings("unchecked")
   private void findGetter(Method method) {
     // regular getter
-    String methodName = method.getName();
-    String propertyName;
-    if (
-        hasPrefix(methodName, "getIs")
-            && (
-            method.getReturnType().equals(boolean.class)
-                || method.getReturnType().equals(Boolean.class)
-        )
-    ) {
-      propertyName = stripPrefix(methodName, "is");
-    } else if (hasPrefix(methodName, "get")) {
-      propertyName = stripPrefix(methodName, "get");
-    } else if (
-        hasPrefix(methodName, "is")
-            && (
-            method.getReturnType().equals(boolean.class)
-                || method.getReturnType().equals(Boolean.class)
-        )
-    ) {
-      propertyName = stripPrefix(methodName, "is");
-    } else {
-      propertyName = methodName;
-    }
+    String propertyName = findGetterName(method);
 
     Property property = new Property(propertyName)
         .reader(SerializableLambdas.createLambda(SerializableFunction1.class, method))
@@ -443,11 +421,39 @@ class BeanDescriptionFactory {
   }
 
 
+  private String findGetterName(Method method) {
+    String methodName = method.getName();
+    if (
+        hasPrefix(methodName, "getIs")
+            && (
+            method.getReturnType().equals(boolean.class)
+                || method.getReturnType().equals(Boolean.class)
+        )
+    ) {
+      return stripPrefix(methodName, "is");
+    }
+
+    if (hasPrefix(methodName, "get")) {
+      return stripPrefix(methodName, "get");
+    }
+
+    if (
+        hasPrefix(methodName, "is")
+            && (
+            method.getReturnType().equals(boolean.class)
+                || method.getReturnType().equals(Boolean.class)
+        )
+    ) {
+      return stripPrefix(methodName, "is");
+    }
+
+    return methodName;
+  }
+
+
   /** Consider if a method is a setter. */
   @SuppressWarnings("unchecked")
   private void findSetter(Method method) {
-    String methodName = method.getName();
-
     // A setter can return the old value of a field, or the bean itself for chaining.
     Class<?> returnType = method.getReturnType();
     Class<?> valueType = method.getParameterTypes()[0];
@@ -462,27 +468,7 @@ class BeanDescriptionFactory {
       return;
     }
 
-    // A setter may start with "set".
-    String propertyName;
-    if (
-        hasPrefix(methodName, "setIs") && (
-            method.getParameterTypes()[0].equals(boolean.class)
-                || method.getParameterTypes()[0].equals(Boolean.class)
-        )
-    ) {
-      propertyName = stripPrefix(methodName, "setIs");
-    } else if (hasPrefix(methodName, "set")) {
-      propertyName = stripPrefix(methodName, "set");
-    } else if (
-        hasPrefix(methodName, "is") && (
-            method.getParameterTypes()[0].equals(boolean.class)
-                || method.getParameterTypes()[0].equals(Boolean.class)
-        )
-    ) {
-      propertyName = stripPrefix(methodName, "is");
-    } else {
-      propertyName = methodName;
-    }
+    String propertyName = getSetterName(method);
 
     Property property = new Property(propertyName)
         .nullable(parameterIsNullable(method, 0));
@@ -511,6 +497,35 @@ class BeanDescriptionFactory {
     findBeanProperties();
     beanProperties.values().removeIf(p -> !p.writable());
     return beanProperties.values();
+  }
+
+
+  private String getSetterName(Method method) {
+    String methodName = method.getName();
+
+    if (
+        hasPrefix(methodName, "setIs") && (
+            method.getParameterTypes()[0].equals(boolean.class)
+                || method.getParameterTypes()[0].equals(Boolean.class)
+        )
+    ) {
+      return stripPrefix(methodName, "setIs");
+    }
+
+    if (hasPrefix(methodName, "set")) {
+      return stripPrefix(methodName, "set");
+    }
+
+    if (
+        hasPrefix(methodName, "is") && (
+            method.getParameterTypes()[0].equals(boolean.class)
+                || method.getParameterTypes()[0].equals(Boolean.class)
+        )
+    ) {
+      return stripPrefix(methodName, "is");
+    }
+
+    return methodName;
   }
 
 }

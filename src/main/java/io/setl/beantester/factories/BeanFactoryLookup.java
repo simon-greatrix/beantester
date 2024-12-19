@@ -26,7 +26,7 @@ public class BeanFactoryLookup implements FactoryLookup {
   }
 
 
-  private Optional<ValueFactory<?>> findFactory(Class<?> clazz) {
+  private Optional<ValueFactory<?>> findFactory(Class<?> clazz, boolean logFailure) {
     try {
       BeanDescription information = BeanDescription.create(testContext, clazz);
       final BeanHolder holder = information.createHolder();
@@ -46,7 +46,9 @@ public class BeanFactoryLookup implements FactoryLookup {
         return holder.bean();
       });
     } catch (Throwable t) {
-      System.getLogger(BeanFactoryLookup.class.getName()).log(Level.ERROR, "Failed to create factory for: " + clazz, t);
+      if (logFailure) {
+        System.getLogger(BeanFactoryLookup.class.getName()).log(Level.ERROR, "Failed to create factory for: " + clazz, t);
+      }
       return Optional.empty();
     }
 
@@ -56,7 +58,7 @@ public class BeanFactoryLookup implements FactoryLookup {
   @Override
   @SuppressWarnings("unchecked")
   public <T> ValueFactory<T> getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException {
-    return findFactory(getRawType(type))
+    return findFactory(getRawType(type), true)
         .map(factory -> (ValueFactory<T>) factory)
         .orElseThrow(() -> new NoSuchFactoryException("No factory available for: " + type));
   }
@@ -65,7 +67,7 @@ public class BeanFactoryLookup implements FactoryLookup {
   @Override
   public boolean hasFactory(Type type) throws IllegalArgumentException {
     Class<?> clazz = getRawType(type);
-    return findFactory(clazz).isPresent();
+    return findFactory(clazz, false).isPresent();
   }
 
 }

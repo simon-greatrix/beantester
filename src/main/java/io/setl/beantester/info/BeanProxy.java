@@ -21,6 +21,32 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
     private final HashMap<String, Object> values = new HashMap<>();
 
 
+    private boolean handleEquals(Object proxy, Object arg) {
+      if (arg == null) {
+        return false;
+      }
+
+      if (arg == proxy) {
+        return true;
+      }
+
+      if (!beanClass.isInstance(arg)) {
+        return false;
+      }
+
+      try {
+        InvocationHandler handler = Proxy.getInvocationHandler(arg);
+        if (handler instanceof ProxyHandler other) {
+          return values.equals(other.values);
+        }
+      } catch (IllegalArgumentException e) {
+        return false;
+      }
+
+      return false;
+    }
+
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       if (readMethods.containsKey(method)) {
@@ -44,27 +70,7 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
 
       // Implementation of equals
       if (method.getName().equals("equals") && method.getParameterCount() == 1) {
-        Object arg = args[0];
-        if (arg == null) {
-          return false;
-        }
-
-        if (arg == proxy) {
-          return true;
-        }
-
-        if (!beanClass.isInstance(arg)) {
-          return false;
-        }
-
-        try {
-          InvocationHandler handler = Proxy.getInvocationHandler(arg);
-          if (handler instanceof ProxyHandler other) {
-            return values.equals(other.values);
-          }
-        } catch (IllegalArgumentException e) {
-          return false;
-        }
+        return handleEquals(proxy, args[0]);
       }
 
       // Not a supported method
