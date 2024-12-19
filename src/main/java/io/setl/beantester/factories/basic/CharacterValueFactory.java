@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Character objects.
- *
- * @author Graham Williamson
  */
 public final class CharacterValueFactory extends RandomValueFactoryBase<Character> {
 

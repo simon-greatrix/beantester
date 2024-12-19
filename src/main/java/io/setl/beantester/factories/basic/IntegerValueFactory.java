@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Integer objects.
- *
- * @author Graham Williamson
  */
 public final class IntegerValueFactory extends RandomValueFactoryBase<Integer> {
 

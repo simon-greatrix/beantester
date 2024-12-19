@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Float objects.
- *
- * @author Graham Williamson
  */
 public final class FloatValueFactory extends RandomValueFactoryBase<Float> {
 

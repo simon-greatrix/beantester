@@ -4,8 +4,6 @@ import java.io.Serial;
 
 /**
  * An exception that may be thrown when trying to get an unknown or unregistered Factory from the FactoryRepository.
- *
- * @author Graham Williamson
  */
 public class NoSuchFactoryException extends RuntimeException {
 

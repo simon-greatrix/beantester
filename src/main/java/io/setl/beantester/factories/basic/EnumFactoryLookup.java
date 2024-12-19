@@ -14,9 +14,11 @@ public class EnumFactoryLookup implements FactoryLookup {
 
   private final RandomGenerator random;
 
+
   public EnumFactoryLookup(RandomGenerator random) {
     this.random = random;
   }
+
 
   @SuppressWarnings("unchecked")
   @Override

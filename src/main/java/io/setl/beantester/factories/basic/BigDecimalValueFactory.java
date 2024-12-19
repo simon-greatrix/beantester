@@ -6,8 +6,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random BigDecimal objects.
- *
- * @author Graham Williamson
  */
 public final class BigDecimalValueFactory extends RandomValueFactoryBase<BigDecimal> {
 

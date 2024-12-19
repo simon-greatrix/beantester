@@ -4,8 +4,6 @@ import java.util.random.RandomGenerator;
 
 /**
  * Concrete Factory that creates random Long objects.
- *
- * @author Graham Williamson
  */
 public final class LongValueFactory extends RandomValueFactoryBase<Long> {
 

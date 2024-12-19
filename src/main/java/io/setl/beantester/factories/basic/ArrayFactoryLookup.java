@@ -1,6 +1,6 @@
 package io.setl.beantester.factories.basic;
 
-import static io.setl.beantester.mirror.Types.getRawType;
+import static io.setl.beantester.mirror.Executables.getRawType;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
@@ -11,7 +11,7 @@ import io.setl.beantester.factories.NoSuchFactoryException;
 import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
-import io.setl.beantester.mirror.Types;
+import io.setl.beantester.mirror.Executables;
 
 /**
  * FactoryCollection for array types.
@@ -53,7 +53,7 @@ public class ArrayFactoryLookup implements FactoryLookup {
 
 
   private Object randomArray(ValueType t, Type typeToken) {
-    Class<?> clazz = Types.getRawType(typeToken);
+    Class<?> clazz = Executables.getRawType(typeToken);
     int length = t != ValueType.RANDOM ? 1 : testContext.getRandom().nextInt(maxSize);
     ValueFactory<?> componentValueFactory = getComponentFactory(clazz);
     Object array = Array.newInstance(clazz.getComponentType(), length);

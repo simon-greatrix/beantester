@@ -9,8 +9,6 @@ import io.setl.beantester.factories.ValueType;
  * Abstract base class for a Factory that creates random objects of the specified type.
  *
  * @param <T> The data type of the object this Factory creates.
- *
- * @author Graham Williamson
  */
 public abstract class RandomValueFactoryBase<T> implements ValueFactory<T> {
 

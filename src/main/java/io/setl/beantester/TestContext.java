@@ -62,13 +62,13 @@ public class TestContext {
   }
 
 
-  public RandomGenerator getRandom() {
-    return random;
+  public ValueFactoryRepository getFactories() {
+    return valueFactoryRepository;
   }
 
 
-  public ValueFactoryRepository getFactories() {
-    return valueFactoryRepository;
+  public RandomGenerator getRandom() {
+    return random;
   }
 
 
