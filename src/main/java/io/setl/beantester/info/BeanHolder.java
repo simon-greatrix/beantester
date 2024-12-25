@@ -10,14 +10,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.factories.ValueFactory;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
 
 /**
  * The bean holder holds a bean and manages its creation.
  */
-public class BeanHolder implements ValueFactory<Object> {
+public class BeanHolder extends ValueFactory {
 
   private record CreatorData(TreeMap<String, Object> params, HashSet<String> keys) {
 
@@ -31,8 +31,6 @@ public class BeanHolder implements ValueFactory<Object> {
 
   private final HashMap<String, Object> initialValues = new HashMap<>();
 
-  private final TestContext testContext;
-
   private final LinkedHashMap<String, Object> values = new LinkedHashMap<>();
 
   private Object bean;
@@ -44,10 +42,9 @@ public class BeanHolder implements ValueFactory<Object> {
    * @param info the description of the bean
    */
   public BeanHolder(BeanDescription info) {
-    this.testContext = info.testContext();
     this.info = info;
 
-    ValueFactoryRepository vfr = info.testContext().getFactories();
+    ValueFactoryRepository vfr = TestContext.get().getFactories();
 
     // Set a value for all non-null values.
     for (Property property : info.beanCreator().properties()) {
@@ -64,7 +61,6 @@ public class BeanHolder implements ValueFactory<Object> {
 
 
   private BeanHolder(BeanHolder copy) {
-    this.testContext = copy.testContext;
     this.info = copy.info;
 
     this.initialValues.putAll(copy.initialValues);
@@ -162,7 +158,7 @@ public class BeanHolder implements ValueFactory<Object> {
     if (info == null) {
       throw new IllegalArgumentException("No property named " + name);
     }
-    return this.info.testContext().getFactories().create(type, this.info, info);
+    return TestContext.get().getFactories().create(type, this.info, info);
   }
 
 
@@ -179,7 +175,7 @@ public class BeanHolder implements ValueFactory<Object> {
 
       if (
           creatorWritable
-              && !(testContext.preferWriters() && beanWritable)
+              && !(TestContext.get().preferWriters() && beanWritable)
       ) {
         creatorKeys.add(name);
         creatorParams.put(name, values.get(name));
@@ -373,11 +369,6 @@ public class BeanHolder implements ValueFactory<Object> {
     changed.add(name);
 
     return true;
-  }
-
-
-  public TestContext testContext() {
-    return testContext;
   }
 
 

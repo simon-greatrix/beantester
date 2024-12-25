@@ -10,20 +10,17 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
   /**
    * Create BeanInformation for a specified class.
    */
-  public static BeanDescription create(TestContext testContext, Class<?> beanClass, Specs.Spec... specs) {
-    return new BeanDescriptionFactory().create(testContext, beanClass, specs);
+  public static BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
+    return new BeanDescriptionFactory().create(beanClass, specs);
   }
 
 
   private final Class<?> beanClass;
 
-  private final TestContext testContext;
-
   private BeanCreator<?> beanCreator;
 
 
-  public BeanDescription(TestContext testContext, Class<?> beanClass) {
-    this.testContext = testContext;
+  public BeanDescription(Class<?> beanClass) {
     this.beanClass = beanClass;
   }
 
@@ -51,11 +48,6 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
 
   public BeanHolder createHolder() {
     return new BeanHolder(this);
-  }
-
-
-  public TestContext testContext() {
-    return testContext;
   }
 
 

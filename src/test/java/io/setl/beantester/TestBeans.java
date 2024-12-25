@@ -2,6 +2,7 @@ package io.setl.beantester;
 
 import java.math.BigDecimal;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import io.setl.beantester.example.ApproverAccount;
@@ -21,77 +22,75 @@ import io.setl.beantester.info.Specs;
 public class TestBeans {
 
 
+  @AfterEach
+  void tearDown() {
+    TestContext.close();
+  }
+
+
   @Test
   void testApproverAccount() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, ApproverAccount.class);
+    BeanVerifier.verify(ApproverAccount.class);
   }
 
 
   @Test
   void testApproverLink() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, ApproverLink.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverLink.class, Specs.notNull("tags"));
   }
 
 
   @Test
   void testApproverManifest() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, ApproverManifest.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverManifest.class, Specs.notNull("tags"));
   }
 
 
   @Test
   void testApproverTransfer() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, ApproverTransfer.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverTransfer.class, Specs.notNull("tags"));
   }
 
 
   @Test
   void testBalanceTypeIdentifier() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, BalanceTypeIdentifier.class);
+    BeanVerifier.verify(BalanceTypeIdentifier.class);
   }
 
 
   @Test
   void testBuildableBean() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, BuildableBean.class, Specs.notNull("tags"));
+    BeanVerifier.verify(BuildableBean.class, Specs.notNull("tags"));
   }
 
 
   @Test
   void testLedgerAccount() throws Throwable {
-    TestContext testContext = new TestContext();
+    TestContext testContext = TestContext.get();
     testContext.getFactories()
-        .addFactory(BeanDescription.create(testContext, BalanceDTO.class,
+        .addFactory(BeanDescription.create(
+            BalanceDTO.class,
             Specs.beanMaker("of", String.class, BigDecimal.class)
         ));
-    BeanVerifier.verify(testContext, LedgerAccount.class);
+    BeanVerifier.verify(LedgerAccount.class);
   }
 
 
   @Test
   void testLedgerManifest() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, LedgerManifest.class);
+    BeanVerifier.verify(LedgerManifest.class);
   }
 
 
   @Test
   void testLedgerTransfer() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, LedgerTransfer.class);
+    BeanVerifier.verify(LedgerTransfer.class);
   }
 
 
   @Test
   void testPetRecord() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, PetRecord.class);
+    BeanVerifier.verify(PetRecord.class);
   }
 
 }

@@ -5,7 +5,6 @@ import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomGeneratorFactory;
 
-import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.time.RandomClock;
 import io.setl.beantester.info.BeanDescription;
@@ -16,8 +15,21 @@ import io.setl.beantester.info.Specs;
  */
 public class TestContext {
 
+  private static final RandomGeneratorFactory<?> randomFactory;
 
   private static final SplittableGenerator root;
+
+  private static final ThreadLocal<TestContext> CONTEXT = ThreadLocal.withInitial(TestContext::new);
+
+
+  public static void close() {
+    CONTEXT.remove();
+  }
+
+
+  public static TestContext get() {
+    return CONTEXT.get();
+  }
 
 
   public static RandomGenerator newRandom() {
@@ -26,37 +38,39 @@ public class TestContext {
 
 
   static {
-    SplittableGenerator generator;
+    RandomGeneratorFactory<?> factory;
     try {
       // The Javadoc for the java.util.random package says this algorithm is good when there are no special requirements.
-      generator = SplittableGenerator.of("L64X128MixRandom");
+      factory = RandomGeneratorFactory.of("L64X128MixRandom");
     } catch (IllegalArgumentException e) {
       // L64X128MixRandom is not supported, use the one with the most state bits
       // SecureRandom has MAX_VALUE stateBits.
-      generator = (SplittableGenerator) RandomGeneratorFactory.all()
+      factory = RandomGeneratorFactory.all()
           .filter(rgf -> !rgf.name().equals("SecureRandom")) // SecureRandom has MAX_VALUE stateBits.
-          .filter(RandomGeneratorFactory::isSplittable).max(Comparator.comparingInt(RandomGeneratorFactory<RandomGenerator>::stateBits))
-          .orElseThrow()
-          .create();
+          .filter(RandomGeneratorFactory::isSplittable)
+          .max(Comparator.comparingInt(RandomGeneratorFactory<RandomGenerator>::stateBits))
+          .orElseThrow();
     }
-    root = generator;
+    randomFactory = factory;
+    root = (SplittableGenerator) randomFactory.create();
   }
 
-  private final RandomClock clock;
+  private RandomClock clock;
 
-  private final RandomGenerator random;
-
-  private final ValueFactoryRepository valueFactoryRepository;
+  private ValueFactoryRepository valueFactoryRepository;
 
   private boolean preferWriters = true;
 
+  private RandomGenerator random;
+
 
   /** New instance. */
-  public TestContext() {
+  private TestContext() {
     random = newRandom();
-    clock = new RandomClock(random);
+
+    clock = new RandomClock();
     valueFactoryRepository = new ValueFactoryRepository();
-    valueFactoryRepository.loadDefaults(this);
+    valueFactoryRepository.loadDefaults();
   }
 
 
@@ -76,7 +90,7 @@ public class TestContext {
    * @param clazz        the class the factory creates
    * @param valueFactory the factory
    */
-  public void addFactory(Class<?> clazz, ValueFactory<?> valueFactory) {
+  public void addFactory(Class<?> clazz, ValueFactory valueFactory) {
     valueFactoryRepository.addFactory(clazz, valueFactory);
   }
 
@@ -88,7 +102,7 @@ public class TestContext {
    * @param propertyName the property's name
    * @param valueFactory the factory to use for just this property
    */
-  public void addFactory(Class<?> clazz, String propertyName, ValueFactory<?> valueFactory) {
+  public void addFactory(Class<?> clazz, String propertyName, ValueFactory valueFactory) {
     valueFactoryRepository.addFactory(clazz, propertyName, valueFactory);
   }
 
@@ -107,7 +121,7 @@ public class TestContext {
    * @return the bean description
    */
   public BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
-    return BeanDescription.create(this, beanClass, specs);
+    return BeanDescription.create(beanClass, specs);
   }
 
 
@@ -116,6 +130,11 @@ public class TestContext {
   }
 
 
+  /**
+   * Get the random number generator.
+   *
+   * @return the random number generator
+   */
   public RandomGenerator getRandom() {
     return random;
   }
@@ -128,6 +147,19 @@ public class TestContext {
    */
   public boolean preferWriters() {
     return preferWriters;
+  }
+
+
+  /**
+   * Change the random number generator to be a repeatable one. This allows for repeatable tests.
+   *
+   * @param seed the seed for the random number generator
+   *
+   * @return this
+   */
+  public TestContext repeatable(long seed) {
+    random = randomFactory.create(seed);
+    return this;
   }
 
 

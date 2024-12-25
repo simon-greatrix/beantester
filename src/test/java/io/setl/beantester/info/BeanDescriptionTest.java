@@ -11,8 +11,7 @@ class BeanDescriptionTest {
 
   @Test
   void testConstructor() {
-    TestContext testContext = new TestContext();
-    BeanDescription info = BeanDescription.create(testContext, BuildableBean.class);
+    BeanDescription info = BeanDescription.create(BuildableBean.class);
     System.out.println(info.toString());
     assertNotNull(info);
   }

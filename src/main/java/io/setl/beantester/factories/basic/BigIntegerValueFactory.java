@@ -1,35 +1,27 @@
 package io.setl.beantester.factories.basic;
 
 import java.math.BigInteger;
-import java.util.random.RandomGenerator;
+
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 
 /**
  * Factory for BigInteger instances.
  */
-public final class BigIntegerValueFactory extends RandomValueFactoryBase<BigInteger> {
+public class BigIntegerValueFactory extends ValueFactory {
 
-  public BigIntegerValueFactory(RandomGenerator random) throws IllegalArgumentException {
-    super(random);
-  }
-
-
-  @Override
-  protected BigInteger createPrimary() {
-    return BigInteger.ONE;
-  }
-
-
-  @Override
-  protected BigInteger createRandom() {
+  protected static BigInteger createRandom() {
     byte[] bytes = new byte[12];
-    getRandom().nextBytes(bytes);
+    TestContext.get().getRandom().nextBytes(bytes);
     return new BigInteger(bytes);
   }
 
 
-  @Override
-  protected BigInteger createSecondary() {
-    return BigInteger.TWO;
+  /**
+   * Construct a new BigInteger object factory.
+   */
+  public BigIntegerValueFactory() {
+    super(() -> BigInteger.ONE, () -> BigInteger.TWO, BigIntegerValueFactory::createRandom);
   }
 
 }

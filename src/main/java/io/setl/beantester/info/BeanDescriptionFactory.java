@@ -220,7 +220,7 @@ class BeanDescriptionFactory {
    *
    * @return the BeanInformation object
    */
-  BeanDescription create(TestContext testContext, Class<?> beanClass, Spec... specs) {
+  BeanDescription create(Class<?> beanClass, Spec... specs) {
     this.beanClass = beanClass;
 
     ArrayList<Spec> specList = new ArrayList<>();
@@ -231,7 +231,7 @@ class BeanDescriptionFactory {
         while (!resolveList.isEmpty()) {
           Spec current = resolveList.removeFirst();
           if (current instanceof Specs.ResolvingSpec resolving) {
-            resolveList.addAll(0, resolving.resolve(testContext, beanClass));
+            resolveList.addAll(0, resolving.resolve(beanClass));
           } else {
             specList.add(current);
           }
@@ -248,7 +248,7 @@ class BeanDescriptionFactory {
     applyPropertyCustomisers(creator);
 
     findBeanProperties();
-    BeanDescription information = new BeanDescription(testContext, beanClass)
+    BeanDescription information = new BeanDescription(beanClass)
         .beanCreator(creator)
         .properties(beanProperties.values());
     applyPropertyCustomisers(information);

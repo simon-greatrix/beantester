@@ -6,11 +6,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.random.RandomGenerator;
 
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.Sampler;
-import io.setl.beantester.factories.basic.RandomValueFactoryBase;
 
 /** Factory for URLs. */
-public class UrlValueFactory extends RandomValueFactoryBase<URL> {
+public class UrlValueFactory extends ValueFactory {
+
+  private static final List<String> DOMAINS = Arrays.asList(".example", ".invalid", ".test");
 
   private static final URL PRIMARY;
 
@@ -18,36 +21,13 @@ public class UrlValueFactory extends RandomValueFactoryBase<URL> {
 
   private static final URL SECONDARY;
 
-  private static final List<String> TLDS = Arrays.asList(".example", ".invalid", ".test");
 
-  static {
-    try {
-      PRIMARY = new URL("http://localhost/primary");
-      SECONDARY = new URL("http://localhost/secondary");
-    } catch (MalformedURLException e) {
-      throw new ExceptionInInitializerError(e);
-    }
-  }
-
-
-  public UrlValueFactory(RandomGenerator random) {
-    super(random);
-  }
-
-
-  @Override
-  protected URL createPrimary() {
-    return PRIMARY;
-  }
-
-
-  @Override
-  protected URL createRandom() {
-    RandomGenerator random = getRandom();
-    String scheme = Sampler.getFrom(random, SCHEMES);
-    String domain = generate(1, 2, ".");
-    String tld = Sampler.getFrom(random, TLDS);
-    String path = generate(0, 4, "/");
+  protected static URL createRandom() {
+    RandomGenerator random = TestContext.get().getRandom();
+    String scheme = Sampler.getFrom(SCHEMES);
+    String domain = generate(random, 1, 2, ".");
+    String tld = Sampler.getFrom(DOMAINS);
+    String path = generate(random, 0, 4, "/");
     if (!path.isBlank() || random.nextBoolean()) {
       path = "/" + path;
     }
@@ -60,28 +40,20 @@ public class UrlValueFactory extends RandomValueFactoryBase<URL> {
   }
 
 
-  @Override
-  protected URL createSecondary() {
-    return SECONDARY;
-  }
-
-
-  protected String generate(int min, int max, String delim) {
-    RandomGenerator random = getRandom();
+  private static String generate(RandomGenerator random, int min, int max, String delim) {
     int count = random.nextInt(min, max);
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < count; i++) {
       if (i > 0) {
         sb.append(delim);
       }
-      sb.append(word());
+      sb.append(word(random));
     }
     return sb.toString();
   }
 
 
-  private String word() {
-    RandomGenerator random = getRandom();
+  private static String word(RandomGenerator random) {
     int val = random.nextInt(1, 11881376);
     StringBuilder sb = new StringBuilder();
     while (val > 0) {
@@ -89,6 +61,21 @@ public class UrlValueFactory extends RandomValueFactoryBase<URL> {
       val /= 26;
     }
     return sb.toString();
+  }
+
+
+  static {
+    try {
+      PRIMARY = new URL("http://localhost/primary");
+      SECONDARY = new URL("http://localhost/secondary");
+    } catch (MalformedURLException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
+
+  public UrlValueFactory() {
+    super(() -> PRIMARY, () -> SECONDARY, UrlValueFactory::createRandom);
   }
 
 }

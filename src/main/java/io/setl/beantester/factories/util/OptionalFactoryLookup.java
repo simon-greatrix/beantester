@@ -14,9 +14,9 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.factories.NoSuchFactoryException;
-import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 
 
@@ -38,15 +38,7 @@ public class OptionalFactoryLookup implements FactoryLookup {
   }
 
 
-  private final TestContext context;
-
-
-  public OptionalFactoryLookup(TestContext context) {
-    this.context = context;
-  }
-
-
-  private ValueFactory<?> createOptionalPopulatingFactory(Type typeToken) {
+  private ValueFactory createOptionalPopulatingFactory(Type typeToken) {
     Class<?> rawType = getRawType(typeToken);
     return findInstanceFactory(typeToken, rawType);
   }
@@ -60,35 +52,34 @@ public class OptionalFactoryLookup implements FactoryLookup {
   }
 
 
-  @SuppressWarnings("unchecked")
-  private <T> ValueFactory<T> findInstanceFactory(Type type, Class<?> rawType) {
+  private ValueFactory findInstanceFactory(Type type, Class<?> rawType) {
     Class<?> itemType = OPTIONAL_TO_ITEM_TYPE_MAP.get(rawType);
-    ValueFactory<?> itemValueFactory = itemType == null
+    ValueFactory itemValueFactory = itemType == null
         ? findItemFactory(findFirstElementType(type))
         : findItemFactory(itemType);
 
     if (rawType.equals(Optional.class)) {
-      return (t) -> (T) Optional.ofNullable(itemValueFactory.create(t));
+      return new ValueFactory((t) -> Optional.ofNullable(itemValueFactory.create(t)));
     }
 
     if (rawType.equals(OptionalInt.class)) {
-      return (t) -> (T) OptionalInt.of((Integer) itemValueFactory.create(t));
+      return new ValueFactory((t) -> OptionalInt.of((Integer) itemValueFactory.create(t)));
     }
 
     if (rawType.equals(OptionalLong.class)) {
-      return (t) -> (T) OptionalLong.of((Long) itemValueFactory.create(t));
+      return new ValueFactory((t) -> OptionalLong.of((Long) itemValueFactory.create(t)));
     }
 
     if (rawType.equals(OptionalDouble.class)) {
-      return (t) -> (T) OptionalDouble.of((Double) itemValueFactory.create(t));
+      return new ValueFactory((t) -> OptionalDouble.of((Double) itemValueFactory.create(t)));
     }
 
     throw new IllegalArgumentException("Unknown optional type:" + type);
   }
 
 
-  private ValueFactory<?> findItemFactory(Type itemType) {
-    ValueFactoryRepository repository = context.getFactories();
+  private ValueFactory findItemFactory(Type itemType) {
+    ValueFactoryRepository repository = TestContext.get().getFactories();
     try {
       return repository.getFactory(itemType);
     } catch (NoSuchFactoryException e) {
@@ -97,10 +88,9 @@ public class OptionalFactoryLookup implements FactoryLookup {
   }
 
 
-  @SuppressWarnings("unchecked")
   @Override
-  public <T> ValueFactory<T> getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
-    return (ValueFactory<T>) createOptionalPopulatingFactory(typeToken);
+  public ValueFactory getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
+    return createOptionalPopulatingFactory(typeToken);
   }
 
 

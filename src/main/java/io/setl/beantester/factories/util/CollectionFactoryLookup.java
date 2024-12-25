@@ -1,6 +1,8 @@
 package io.setl.beantester.factories.util;
 
 
+import static io.setl.beantester.factories.ValueType.PRIMARY;
+import static io.setl.beantester.factories.ValueType.SECONDARY;
 import static io.setl.beantester.mirror.Executables.getRawType;
 
 import java.lang.reflect.ParameterizedType;
@@ -32,12 +34,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 import java.util.function.Supplier;
-import java.util.random.RandomGenerator;
 
 import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.factories.NoSuchFactoryException;
-import io.setl.beantester.factories.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
 
@@ -77,85 +78,72 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
   private final Map<Class<?>, Supplier<?>> collectionFactories = buildDefaultCollectionFactories();
 
-  private final TestContext context;
-
-  private final RandomGenerator random;
-
   private int maxSize = 8;
 
 
-  public CollectionFactoryLookup(TestContext context) {
-    this.context = context;
-    random = context.getRandom();
-  }
-
-
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private ValueFactory<?> createCollectionPopulatingFactory(Type typeToken) {
+  private ValueFactory createCollectionPopulatingFactory(Type typeToken) {
     Class<?> rawType = getRawType(typeToken);
     Supplier<Object> instanceValueFactory = findCollectionInstanceFactory(typeToken, rawType);
 
     Type itemType = findElementType(typeToken, 0);
-    ValueFactory<?> itemValueFactory = findItemFactory(itemType);
+    ValueFactory itemValueFactory = findItemFactory(itemType);
 
     if (Map.class.isAssignableFrom(rawType)) {
       return createMapPopulatingFactory(typeToken, instanceValueFactory, itemValueFactory);
 
     } else {
 
-      return (t) -> {
-        Collection collection = (Collection) instanceValueFactory.get();
-        switch (t) {
-          case PRIMARY:
-            collection.add(itemValueFactory.create(ValueType.PRIMARY));
-            break;
-          case SECONDARY:
-            collection.add(itemValueFactory.create(ValueType.PRIMARY));
-            collection.add(itemValueFactory.create(ValueType.SECONDARY));
-            break;
-          default:
-            int size = random.nextInt(maxSize);
-            for (int idx = 0; idx < size; idx++) {
-              collection.add(itemValueFactory.create(ValueType.RANDOM));
-            }
-            break;
-        }
+      Collection<Object> primary = (Collection<Object>) instanceValueFactory.get();
+      primary.add(itemValueFactory.create(PRIMARY));
 
+      Collection<Object> secondary = (Collection<Object>) instanceValueFactory.get();
+      secondary.add(itemValueFactory.create(PRIMARY));
+      secondary.add(itemValueFactory.create(SECONDARY));
+
+      Supplier<Object> random = () -> {
+        Collection<Object> collection = (Collection<Object>) instanceValueFactory.get();
+        int size = TestContext.get().getRandom().nextInt(maxSize);
+        for (int idx = 0; idx < size; idx++) {
+          collection.add(itemValueFactory.create(ValueType.RANDOM));
+        }
         return collection;
       };
+
+      return new ValueFactory(() -> primary, () -> secondary, random);
     }
   }
 
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private ValueFactory<?> createMapPopulatingFactory(Type typeToken, Supplier<Object> instanceValueFactory, ValueFactory<?> keyFactory) {
+  private ValueFactory createMapPopulatingFactory(Type typeToken, Supplier<Object> instanceValueFactory, ValueFactory keyFactory) {
     Type valueType = findElementType(typeToken, 1);
-    ValueFactory<?> valueFactory = findItemFactory(valueType);
+    ValueFactory valueFactory = findItemFactory(valueType);
 
-    return (t) -> {
+    return new ValueFactory((t) -> {
       Map map = (Map) instanceValueFactory.get();
 
       switch (t) {
         case PRIMARY:
-          map.put(keyFactory.create(ValueType.PRIMARY), valueFactory.create(ValueType.PRIMARY));
+          map.put(keyFactory.create(PRIMARY), valueFactory.create(PRIMARY));
           break;
         case SECONDARY:
-          map.put(keyFactory.create(ValueType.PRIMARY), valueFactory.create(ValueType.PRIMARY));
-          map.put(keyFactory.create(ValueType.SECONDARY), valueFactory.create(ValueType.SECONDARY));
+          map.put(keyFactory.create(PRIMARY), valueFactory.create(PRIMARY));
+          map.put(keyFactory.create(SECONDARY), valueFactory.create(SECONDARY));
           break;
         default:
-          int size = random.nextInt(maxSize);
+          int size = TestContext.get().getRandom().nextInt(maxSize);
           for (int idx = 0; idx < size; idx++) {
             map.put(keyFactory.create(t), valueFactory.create(t));
           }
           break;
       }
       return map;
-    };
+    });
   }
 
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   private <T> Supplier<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
     if (isEnumMap(type, rawType)) {
       Type keyType = findElementType(type, 0);
@@ -190,16 +178,15 @@ public class CollectionFactoryLookup implements FactoryLookup {
   }
 
 
-  private ValueFactory<?> findItemFactory(Type itemType) {
-    ValueFactoryRepository repository = context.getFactories();
+  private ValueFactory findItemFactory(Type itemType) {
+    ValueFactoryRepository repository = TestContext.get().getFactories();
     return repository.getFactory(itemType);
   }
 
 
-  @SuppressWarnings("unchecked")
   @Override
-  public <T> ValueFactory<T> getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
-    return (ValueFactory<T>) createCollectionPopulatingFactory(typeToken);
+  public ValueFactory getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
+    return createCollectionPopulatingFactory(typeToken);
   }
 
 

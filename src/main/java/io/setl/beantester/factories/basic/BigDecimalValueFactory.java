@@ -4,10 +4,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.random.RandomGenerator;
 
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
+
 /**
  * Concrete Factory that creates random BigDecimal objects.
  */
-public final class BigDecimalValueFactory extends RandomValueFactoryBase<BigDecimal> {
+public class BigDecimalValueFactory extends ValueFactory {
 
   private static final BigDecimal PRIMARY = new BigDecimal("0.1");
 
@@ -15,41 +18,25 @@ public final class BigDecimalValueFactory extends RandomValueFactoryBase<BigDeci
 
 
   /**
-   * Construct a new BigDecimal object factory.
-   *
-   * @param random A random value generator used by the Factory to generate random values.
-   *
-   * @throws IllegalArgumentException If the specified random is deemed illegal. For example, if it is null.
-   */
-  public BigDecimalValueFactory(RandomGenerator random) throws IllegalArgumentException {
-    super(random);
-  }
-
-
-  @Override
-  protected BigDecimal createPrimary() {
-    return PRIMARY;
-  }
-
-
-  /**
    * Create a new Double object.
    *
    * @return A new Double object.
    */
-  @Override
-  protected BigDecimal createRandom() {
+  protected static BigDecimal createRandom() {
     byte[] bytes = new byte[12];
-    getRandom().nextBytes(bytes);
+    RandomGenerator random = TestContext.get().getRandom();
+    random.nextBytes(bytes);
     BigInteger unscaledValue = new BigInteger(bytes);
-    int scale = getRandom().nextInt(16) - 8;
+    int scale = random.nextInt(16) - 8;
     return new BigDecimal(unscaledValue, scale);
   }
 
 
-  @Override
-  protected BigDecimal createSecondary() {
-    return SECONDARY;
+  /**
+   * Construct a new BigDecimal object factory.
+   */
+  public BigDecimalValueFactory() {
+    super(()->PRIMARY, ()->SECONDARY, BigDecimalValueFactory::createRandom);
   }
 
 }

@@ -3,14 +3,13 @@ package io.setl.beantester.factories.time;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.random.RandomGenerator;
+
+import io.setl.beantester.TestContext;
 
 /**
  * An alternative random clock that acts a little bit more like a real clock in that is intended to report increasing times.
  */
 public class RandomIncreasingClock extends Clock {
-
-  private final RandomGenerator random;
 
   private long currentTimeMillis;
 
@@ -28,13 +27,10 @@ public class RandomIncreasingClock extends Clock {
 
   /**
    * New instance.
-   *
-   * @param random the random generator
    */
-  public RandomIncreasingClock(RandomGenerator random) {
-    this.random = random;
-    zoneId = RandomClock.randomZoneId(random);
-    currentTimeMillis = RandomClock.generateMillisSinceEpoch(random);
+  public RandomIncreasingClock() {
+    zoneId = RandomClock.randomZoneId();
+    currentTimeMillis = RandomClock.generateMillisSinceEpoch();
     fixedJump = 0;
     maxRandomJump = 3_600_000; // 1 hour
     minRandomJump = -10; // could be a clock skew
@@ -66,7 +62,7 @@ public class RandomIncreasingClock extends Clock {
    */
   @Override
   public Instant instant() {
-    long newTime = currentTimeMillis + fixedJump + random.nextLong(minRandomJump, maxRandomJump);
+    long newTime = currentTimeMillis + fixedJump + TestContext.get().getRandom().nextLong(minRandomJump, maxRandomJump);
     currentTimeMillis = newTime;
     return Instant.ofEpochMilli(newTime);
   }

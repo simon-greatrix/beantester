@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.random.RandomGenerator;
 
 import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 
 /** Load the basic factories. */
@@ -22,39 +23,33 @@ public class BasicFactories {
    * @param context    the test context
    * @param repository the repository to load the factories into
    */
-  public static void load(TestContext context, ValueFactoryRepository repository) {
-    RandomGenerator random = context.getRandom();
+  public static void load(ValueFactoryRepository repository) {
+    repository.addFactory(BigDecimal.class, new BigDecimalValueFactory());
+    repository.addFactory(BigInteger.class, new BigIntegerValueFactory());
+    repository.addFactory(Boolean.class, new BooleanValueFactory());
+    repository.addFactory(Byte.class, new ByteValueFactory());
+    repository.addFactory(Character.class, new CharacterValueFactory());
+    repository.addFactory(Double.class, new DoubleValueFactory());
+    repository.addFactory(Float.class, new FloatValueFactory());
+    repository.addFactory(Integer.class, new IntegerValueFactory());
+    repository.addFactory(Long.class, new LongValueFactory());
+    repository.addFactory(Short.class, new ShortValueFactory());
+    repository.addFactory(String.class, new StringValueFactory());
+    repository.addFactory(Void.TYPE, new ValueFactory(()->null,()->null,()->null));
+    repository.addFactory(UUID.class, new ValueFactory(()->PRIMARY_UUID,()->SECONDARY_UUID,()->UUID.randomUUID()));
 
-    repository.addFactory(BigDecimal.class, new BigDecimalValueFactory(random));
-    repository.addFactory(BigInteger.class, new BigIntegerValueFactory(random));
-    repository.addFactory(Boolean.class, new BooleanValueFactory(random));
-    repository.addFactory(Byte.class, new ByteValueFactory(random));
-    repository.addFactory(Character.class, new CharacterValueFactory(random));
-    repository.addFactory(Double.class, new DoubleValueFactory(random));
-    repository.addFactory(Float.class, new FloatValueFactory(random));
-    repository.addFactory(Integer.class, new IntegerValueFactory(random));
-    repository.addFactory(Long.class, new LongValueFactory(random));
-    repository.addFactory(Short.class, new ShortValueFactory(random));
-    repository.addFactory(String.class, new StringValueFactory(random));
-    repository.addFactory(Void.TYPE, (t) -> null);
-    repository.addFactory(UUID.class, (t) -> switch (t) {
-      case PRIMARY -> PRIMARY_UUID;
-      case SECONDARY -> SECONDARY_UUID;
-      default -> UUID.randomUUID();
-    });
+    repository.addFactory(boolean.class, new BooleanValueFactory());
+    repository.addFactory(byte.class, new ByteValueFactory());
+    repository.addFactory(short.class, new ShortValueFactory());
+    repository.addFactory(int.class, new IntegerValueFactory());
+    repository.addFactory(long.class, new LongValueFactory());
+    repository.addFactory(float.class, new FloatValueFactory());
+    repository.addFactory(double.class, new DoubleValueFactory());
+    repository.addFactory(char.class, new CharacterValueFactory());
+    repository.addFactory(void.class, new ValueFactory(()->null,()->null,()->null));
 
-    repository.addFactory(boolean.class, new BooleanValueFactory(random));
-    repository.addFactory(byte.class, new ByteValueFactory(random));
-    repository.addFactory(short.class, new ShortValueFactory(random));
-    repository.addFactory(int.class, new IntegerValueFactory(random));
-    repository.addFactory(long.class, new LongValueFactory(random));
-    repository.addFactory(float.class, new FloatValueFactory(random));
-    repository.addFactory(double.class, new DoubleValueFactory(random));
-    repository.addFactory(char.class, new CharacterValueFactory(random));
-    repository.addFactory(void.class, (t) -> null);
-
-    repository.addFactoryLookup(new ArrayFactoryLookup(context));
-    repository.addFactoryLookup(new EnumFactoryLookup(random));
+    repository.addFactoryLookup(new ArrayFactoryLookup());
+    repository.addFactoryLookup(new EnumFactoryLookup());
   }
 
 }

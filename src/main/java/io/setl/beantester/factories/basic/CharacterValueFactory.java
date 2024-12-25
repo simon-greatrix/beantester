@@ -1,45 +1,19 @@
 package io.setl.beantester.factories.basic;
 
-import java.util.random.RandomGenerator;
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 
 /**
  * Concrete Factory that creates random Character objects.
  */
-public final class CharacterValueFactory extends RandomValueFactoryBase<Character> {
+public class CharacterValueFactory extends ValueFactory {
 
 
   /**
    * Construct a new Character object factory.
-   *
-   * @param random A random value generator used by the Factory to generate random values.
-   *
-   * @throws IllegalArgumentException If the specified random is deemed illegal. For example, if it is null.
    */
-  public CharacterValueFactory(RandomGenerator random) throws IllegalArgumentException {
-    super(random);
-  }
-
-
-  @Override
-  protected Character createPrimary() {
-    return 'A';
-  }
-
-
-  /**
-   * Create a new Character object.
-   *
-   * @return A new Character object.
-   */
-  @Override
-  protected Character createRandom() {
-    return (char) getRandom().nextInt(Character.MAX_VALUE);
-  }
-
-
-  @Override
-  protected Character createSecondary() {
-    return 'B';
+  public CharacterValueFactory() {
+    super(() -> 'A', () -> 'B', () -> (char) TestContext.get().getRandom().nextInt(Character.MAX_VALUE));
   }
 
 }

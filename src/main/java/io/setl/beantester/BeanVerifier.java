@@ -11,27 +11,15 @@ import io.setl.beantester.test.ReadWrite;
  */
 public class BeanVerifier {
 
-  /**
-   * Verify the bean with the given specs.
-   *
-   * @param clazz the class to verify
-   * @param specs the specifications to customise the verification
-   */
-  public static void verify(Class<?> clazz, Specs.Spec... specs) {
-    TestContext testContext = new TestContext();
-    verify(testContext, clazz, specs);
-  }
-
 
   /**
    * Verify the bean with the given specs.
    *
-   * @param testContext the test context
    * @param clazz       the class to verify
    * @param specs       the specifications to customise the verification
    */
-  public static void verify(TestContext testContext, Class<?> clazz, Specs.Spec... specs) {
-    BeanDescription info = BeanDescription.create(testContext, clazz, specs);
+  public static void verify(Class<?> clazz, Specs.Spec... specs) {
+    BeanDescription info = BeanDescription.create(clazz, specs);
 
     BeanHolder h = info.createHolder();
 

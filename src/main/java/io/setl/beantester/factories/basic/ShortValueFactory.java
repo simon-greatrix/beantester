@@ -1,44 +1,18 @@
 package io.setl.beantester.factories.basic;
 
-import java.util.random.RandomGenerator;
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 
 /**
  * Concrete Factory that creates random Short objects.
  */
-public final class ShortValueFactory extends RandomValueFactoryBase<Short> {
+public class ShortValueFactory extends ValueFactory {
 
   /**
    * Construct a new Short object factory.
-   *
-   * @param random A random value generator used by the Factory to generate random values.
-   *
-   * @throws IllegalArgumentException If the specified random is deemed illegal. For example, if it is null.
    */
-  public ShortValueFactory(RandomGenerator random) throws IllegalArgumentException {
-    super(random);
-  }
-
-
-  @Override
-  protected Short createPrimary() {
-    return (short) 1;
-  }
-
-
-  /**
-   * Create a new Short object.
-   *
-   * @return A new Short object.
-   */
-  @Override
-  protected Short createRandom() {
-    return (short) getRandom().nextInt(Short.MIN_VALUE, 1 + Short.MAX_VALUE);
-  }
-
-
-  @Override
-  protected Short createSecondary() {
-    return (short) 2;
+  public ShortValueFactory() {
+    super(() -> (short) 1, () -> (short) 2, () -> (short) TestContext.get().getRandom().nextInt(Short.MIN_VALUE, 1 + Short.MAX_VALUE));
   }
 
 }
