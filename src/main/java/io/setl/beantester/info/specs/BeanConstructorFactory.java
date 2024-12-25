@@ -51,7 +51,7 @@ public class BeanConstructorFactory {
 
     final List<Class<?>> types = optTypeList.get();
 
-    return (ResolvingSpec) (context, beanClass) -> {
+    return (ResolvingSpec) (beanClass) -> {
       Constructor<?> c;
       try {
         c = beanClass.getConstructor(types.toArray(Class<?>[]::new));

@@ -2,44 +2,19 @@ package io.setl.beantester.factories.basic;
 
 import java.util.random.RandomGenerator;
 
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
+
 
 /**
  * Concrete Factory that creates random Boolean objects.
  */
-public final class BooleanValueFactory extends RandomValueFactoryBase<Boolean> {
+public class BooleanValueFactory extends ValueFactory {
 
   /**
    * Construct a new Boolean object factory.
-   *
-   * @param random A random value generator used by the Factory to generate random values.
-   *
-   * @throws IllegalArgumentException If the specified random is deemed illegal. For example, if it is null.
    */
-  public BooleanValueFactory(RandomGenerator random) throws IllegalArgumentException {
-    super(random);
+  public BooleanValueFactory() {
+    super(()->Boolean.TRUE, ()->Boolean.FALSE, () -> TestContext.get().getRandom().nextBoolean());
   }
-
-
-  @Override
-  protected Boolean createPrimary() {
-    return Boolean.TRUE;
-  }
-
-
-  /**
-   * Create a new Boolean object.
-   *
-   * @return A new Boolean object.
-   */
-  @Override
-  protected Boolean createRandom() {
-    return getRandom().nextBoolean();
-  }
-
-
-  @Override
-  protected Boolean createSecondary() {
-    return Boolean.FALSE;
-  }
-
 }

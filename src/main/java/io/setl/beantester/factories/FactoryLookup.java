@@ -2,6 +2,8 @@ package io.setl.beantester.factories;
 
 import java.lang.reflect.Type;
 
+import io.setl.beantester.ValueFactory;
+
 
 /**
  * For looking up Factory instances.
@@ -26,7 +28,7 @@ public interface FactoryLookup {
    * @throws IllegalArgumentException If the class is deemed illegal.
    * @throws NoSuchFactoryException   If this does not contain a Factory registered against the specified class.
    */
-  <T> ValueFactory<T> getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException;
+  ValueFactory getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException;
 
 
   /**

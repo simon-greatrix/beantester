@@ -11,12 +11,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 
 class ValueFactoryRepositoryTest {
 
   @Test
   void testAllFactories() {
-    TestContext testContext = new TestContext();
+    TestContext testContext = TestContext.get();
     ValueFactoryRepository repository = testContext.getFactories();
     Set<Class<?>> limited = Set.of(Boolean.class, boolean.class, Clock.class);
     for (Class<?> cl : repository.getRegisteredClasses()) {
@@ -24,7 +25,7 @@ class ValueFactoryRepositoryTest {
         continue;
       }
 
-      ValueFactory<?> f = repository.getFactory(cl);
+      ValueFactory f = repository.getFactory(cl);
 
       Object o1 = f.create(ValueType.PRIMARY);
       Object o2 = f.create(ValueType.SECONDARY);

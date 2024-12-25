@@ -6,7 +6,7 @@ import java.lang.System.Logger.Level;
 import java.lang.reflect.Type;
 import java.util.Optional;
 
-import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.BeanHolder;
 
@@ -18,33 +18,25 @@ import io.setl.beantester.info.BeanHolder;
  */
 public class BeanFactoryLookup implements FactoryLookup {
 
-  private final TestContext testContext;
 
-
-  public BeanFactoryLookup(TestContext testContext) {
-    this.testContext = testContext;
-  }
-
-
-  private Optional<ValueFactory<?>> findFactory(Class<?> clazz, boolean logFailure) {
+  private Optional<ValueFactory> findFactory(Class<?> clazz, boolean logFailure) {
     try {
-      BeanDescription information = BeanDescription.create(testContext, clazz);
+      BeanDescription information = BeanDescription.create(clazz);
       final BeanHolder holder = information.createHolder();
 
       // Verify the bean can be manipulated properly.
       holder.bean();
 
       for (ValueType type : ValueType.values()) {
-        // See the class description for why we use nulls.
         holder.setAllProperties(type, true);
         holder.bean();
       }
 
-      return Optional.of(type -> {
+      return Optional.of(new ValueFactory((type) -> {
         // See the class description for why we use nulls.
         holder.setAllProperties(type, true);
         return holder.bean();
-      });
+      }));
     } catch (Throwable t) {
       if (logFailure) {
         System.getLogger(BeanFactoryLookup.class.getName()).log(Level.ERROR, "Failed to create factory for: " + clazz, t);
@@ -56,10 +48,8 @@ public class BeanFactoryLookup implements FactoryLookup {
 
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> ValueFactory<T> getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException {
+  public ValueFactory getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException {
     return findFactory(getRawType(type), true)
-        .map(factory -> (ValueFactory<T>) factory)
         .orElseThrow(() -> new NoSuchFactoryException("No factory available for: " + type));
   }
 

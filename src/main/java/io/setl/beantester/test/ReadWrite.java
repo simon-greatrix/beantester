@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.random.RandomGenerator;
 
+import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.ValueType;
 import io.setl.beantester.info.BeanHolder;
 
@@ -81,7 +82,7 @@ public class ReadWrite {
 
 
   private void testRandom() {
-    RandomGenerator random = holder.testContext().getRandom();
+    RandomGenerator random = TestContext.get().getRandom();
     holder.reset();
 
     int paramCount = propertyNames.length;

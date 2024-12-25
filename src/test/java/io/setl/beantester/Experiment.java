@@ -5,7 +5,6 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,17 +15,10 @@ import io.setl.beantester.example.ApproverTransfer;
 import io.setl.beantester.example.BuildableBean;
 import io.setl.beantester.example.PetRecord;
 import io.setl.beantester.info.Specs;
-import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;
-import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction3;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableLambda;
 
 public class Experiment {
-
-  public int[] doThing(Map<String,Set<Number>> j) {
-    return new int[] {23 };
-  }
-
 
   private static SerializedLambda getSerializedLambda(SerializableLambda lambda) throws ReflectiveOperationException {
     SerializedLambda serializedLambda = null;
@@ -53,17 +45,24 @@ public class Experiment {
   }
 
 
-  public <T1,T2,R> SerializableFunction2<T1,T2,R> foo(SerializableFunction2<T1, T2,R> f) {
+  public int[] doThing(Map<String, Set<Number>> j) {
+    return new int[]{23};
+  }
+
+
+  public <T1, T2, R> SerializableFunction2<T1, T2, R> foo(SerializableFunction2<T1, T2, R> f) {
     return f;
   }
 
-  public SerializableFunction2<?,?,?> foo2(SerializableFunction2<?,?,?> f) {
+
+  public SerializableFunction2<?, ?, ?> foo2(SerializableFunction2<?, ?, ?> f) {
     return f;
   }
+
 
   @Test
   void test() throws Throwable {
-    SerializableFunction2<?,?,?> f = foo(Experiment::doThing);
+    SerializableFunction2<?, ?, ?> f = foo(Experiment::doThing);
     SerializedLambda lambda = getSerializedLambda(f);
     System.out.println(lambda.getImplMethodName());
     MethodType type = MethodType.fromMethodDescriptorString(lambda.getImplMethodSignature(), getClass().getClassLoader());
@@ -73,13 +72,12 @@ public class Experiment {
 
   @Test
   void test1() throws Throwable {
-    TestContext testContext = new TestContext();
-    BeanVerifier.verify(testContext, ApproverManifest.class, Specs.notNull("tags"));
-    BeanVerifier.verify(testContext, ApproverAccount.class);
-    BeanVerifier.verify(testContext, ApproverLink.class, Specs.notNull("tags"));
-    BeanVerifier.verify(testContext, ApproverTransfer.class, Specs.notNull("tags"));
-    BeanVerifier.verify(testContext, BuildableBean.class, Specs.notNull("tags"));
-    BeanVerifier.verify(testContext, PetRecord.class);
+    BeanVerifier.verify(ApproverManifest.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverAccount.class);
+    BeanVerifier.verify(ApproverLink.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverTransfer.class, Specs.notNull("tags"));
+    BeanVerifier.verify(BuildableBean.class, Specs.notNull("tags"));
+    BeanVerifier.verify(PetRecord.class);
   }
 
 }

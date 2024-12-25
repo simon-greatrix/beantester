@@ -130,12 +130,11 @@ public class Specs {
     /**
      * Resolve the specification to a collection of other specifications.
      *
-     * @param context   the test context
      * @param beanClass the bean class the specification will be applied to
      *
      * @return the resolved specifications
      */
-    Collection<Spec> resolve(TestContext context, Class<?> beanClass);
+    Collection<Spec> resolve(Class<?> beanClass);
 
   }
 
@@ -181,7 +180,7 @@ public class Specs {
    * @param nameAndType pairs of parameter names and types (or just types if parameter names are available in the byte code)
    */
   public static ResolvingSpec beanMaker(String factoryName, Object... nameAndType) {
-    return (testContext, beanClass) -> List.of(beanMaker(beanClass, factoryName, nameAndType));
+    return (beanClass) -> List.of(beanMaker(beanClass, factoryName, nameAndType));
   }
 
 
@@ -242,7 +241,7 @@ public class Specs {
    * @param factoryName the name of the factory method in the bean class.
    */
   public static ResolvingSpec namedBeanMaker(String factoryName) {
-    return (testContext, beanClass) -> List.of(namedBeanMaker(beanClass, factoryName));
+    return (beanClass) -> List.of(namedBeanMaker(beanClass, factoryName));
   }
 
 

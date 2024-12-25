@@ -5,8 +5,8 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
-import java.util.random.RandomGenerator;
 
+import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.Sampler;
 
 /**
@@ -21,20 +21,18 @@ public class RandomClock extends Clock {
   private static final long MIN_MILLIS;
 
 
-  static long generateMillisSinceEpoch(RandomGenerator random) {
-    return random.nextLong(MIN_MILLIS, MAX_MILLIS);
+  static long generateMillisSinceEpoch() {
+    return TestContext.get().getRandom().nextLong(MIN_MILLIS, MAX_MILLIS);
   }
 
 
   /**
    * Select a random ZoneId.
    *
-   * @param random the random generator
-   *
    * @return a random ZoneId
    */
-  public static ZoneId randomZoneId(RandomGenerator random) {
-    String zoneId = Sampler.getFrom(random, ZoneId.getAvailableZoneIds());
+  public static ZoneId randomZoneId() {
+    String zoneId = Sampler.getFrom(ZoneId.getAvailableZoneIds());
     try {
       return zoneId != null ? ZoneId.of(zoneId) : ZoneId.systemDefault();
     } catch (DateTimeException e) {
@@ -51,22 +49,11 @@ public class RandomClock extends Clock {
     MAX_MILLIS = MIN_MILLIS + 0x8000000000L;
   }
 
-  private final RandomGenerator random;
-
   private Clock delegate;
 
   private ZoneId zoneId;
 
-
-  /**
-   * New instance.
-   *
-   * @param random the random generator
-   */
-  public RandomClock(RandomGenerator random) {
-    this.random = random;
-    zoneId = randomZoneId(random);
-  }
+  private boolean zoneIdUnset = true;
 
 
   /**
@@ -85,6 +72,12 @@ public class RandomClock extends Clock {
     if (d != null) {
       return d.getZone();
     }
+
+    if (zoneIdUnset) {
+      zoneId = randomZoneId();
+      zoneIdUnset = false;
+    }
+
     return zoneId;
   }
 
@@ -102,7 +95,7 @@ public class RandomClock extends Clock {
     if (d != null) {
       return d.instant();
     }
-    return Instant.ofEpochMilli(generateMillisSinceEpoch(random));
+    return Instant.ofEpochMilli(generateMillisSinceEpoch());
   }
 
 

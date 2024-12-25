@@ -16,10 +16,11 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.factories.ValueFactory;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.ValueType;
 
@@ -34,11 +35,10 @@ public class TimeFactories {
   /**
    * Load the "java.time.*" factories.
    *
-   * @param context    the test context
    * @param repository the repository to load the factories into
    */
-  public static void load(TestContext context, ValueFactoryRepository repository) {
-    new TimeFactories(context, repository).doLoad();
+  public static void load(ValueFactoryRepository repository) {
+    new TimeFactories(repository).doLoad();
   }
 
 
@@ -48,22 +48,17 @@ public class TimeFactories {
     SECONDARY_CLOCK = Clock.fixed(ZonedDateTime.of(2021, 7, 15, 12, 30, 30, 0, zoneId).toInstant(), zoneId);
   }
 
-  private final Clock clock;
-
-  private final TestContext context;
 
   private final ValueFactoryRepository repository;
 
 
-  private TimeFactories(TestContext context, ValueFactoryRepository repository) {
-    this.context = context;
+  private TimeFactories(ValueFactoryRepository repository) {
     this.repository = repository;
-    this.clock = context.clock();
   }
 
 
-  private <T> void addFactory(Class<T> clazz, ValueFactory<T> valueFactory) throws IllegalArgumentException {
-    repository.addFactory(clazz, valueFactory);
+  private <T> void addFactory(Class<T> clazz, Function<ValueType, Object> valueFactory) throws IllegalArgumentException {
+    repository.addFactory(clazz, new ValueFactory(valueFactory));
   }
 
 
@@ -74,7 +69,7 @@ public class TimeFactories {
     if (t == ValueType.SECONDARY) {
       return SECONDARY_CLOCK;
     }
-    return clock;
+    return TestContext.get().clock();
   }
 
 
@@ -95,62 +90,54 @@ public class TimeFactories {
     addFactory(YearMonth.class, newFactory(YearMonth::now));
     addFactory(ZonedDateTime.class, newFactory(ZonedDateTime::now));
 
-    addFactory(ZoneOffset.class, newZoneOffsetFactory());
-    addFactory(Period.class, newPeriodFactory());
+    repository.addFactory(ZoneOffset.class, newZoneOffsetFactory());
+    repository.addFactory(Period.class, newPeriodFactory());
 
-    final RandomGenerator random = context.getRandom();
-    addFactory(ZoneId.class, (t) -> RandomClock.randomZoneId(random));
+    addFactory(ZoneId.class, (t) -> RandomClock.randomZoneId());
 
     addFactory(Duration.class, (t) -> switch (t) {
       case PRIMARY -> Duration.ofMinutes(1);
       case SECONDARY -> Duration.ofHours(5);
-      default -> Duration.ofMillis(random.nextLong(0x1_0000_0000L) - 0x8000_0000L);
+      default -> Duration.ofMillis(TestContext.get().getRandom().nextLong(0x1_0000_0000L) - 0x8000_0000L);
     });
   }
 
 
-  private <T> ValueFactory<T> newFactory(Function<Clock, T> function) {
+  private Function<ValueType, Object> newFactory(Function<Clock, ?> function) {
     return (t) -> function.apply(clock(t));
   }
 
 
-  private ValueFactory<Period> newPeriodFactory() {
-    return (t) -> {
-      if (t == ValueType.PRIMARY) {
-        return Period.ofDays(1);
-      }
-      if (t == ValueType.SECONDARY) {
-        return Period.ofMonths(1);
-      }
-      RandomGenerator random = context.getRandom();
-      if (random.nextBoolean()) {
-        return Period.ofDays(random.nextInt(4096) - 2048);
-      } else {
-        int sign = random.nextBoolean() ? 1 : -1;
-        int years = sign * random.nextInt(8);
-        int months = sign * random.nextInt(12);
-        int days = sign * random.nextInt(32);
-        return Period.of(years, months, days).normalized();
-      }
+  private ValueFactory newPeriodFactory() {
+    Supplier<Object> random = () -> {
+      RandomGenerator randomGenerator = TestContext.get().getRandom();
+      int sign = randomGenerator.nextBoolean() ? 1 : -1;
+      int years = sign * randomGenerator.nextInt(8);
+      int months = sign * randomGenerator.nextInt(12);
+      int days = sign * randomGenerator.nextInt(32);
+      return Period.of(years, months, days).normalized();
     };
+
+    return new ValueFactory(() -> Period.ofDays(1), () -> Period.ofMonths(1), random);
   }
 
 
-  private ValueFactory<ZoneOffset> newZoneOffsetFactory() {
-    return (t) -> {
-      if (t == ValueType.PRIMARY) {
-        return ZoneOffset.UTC;
-      }
-      if (t == ValueType.SECONDARY) {
-        return ZoneOffset.ofHoursMinutes(5, 30);
-      }
-      RandomGenerator random = context.getRandom();
+  private ValueFactory newZoneOffsetFactory() {
+    ZoneOffset secondary = ZoneOffset.ofHoursMinutes(5, 30);
+    Supplier<Object> createRandomZoneOffset = () -> {
+      RandomGenerator random = TestContext.get().getRandom();
       int sign = random.nextBoolean() ? 1 : -1;
       int hours = random.nextInt(18);
       int minutes = random.nextInt(59);
       int seconds = random.nextInt(59);
       return ZoneOffset.ofHoursMinutesSeconds(sign * hours, sign * minutes, sign * seconds);
     };
+
+    return new ValueFactory(
+        () -> ZoneOffset.UTC,
+        () -> secondary,
+        createRandomZoneOffset
+    );
   }
 
 }

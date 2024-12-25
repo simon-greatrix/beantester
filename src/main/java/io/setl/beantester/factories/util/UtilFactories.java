@@ -4,11 +4,8 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import java.util.random.RandomGenerator;
 
-import io.setl.beantester.TestContext;
-import io.setl.beantester.factories.ValueFactory;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.ValueFactoryRepository;
 import io.setl.beantester.factories.basic.BooleanValueFactory;
 import io.setl.beantester.factories.basic.IntegerValueFactory;
@@ -20,28 +17,25 @@ public class UtilFactories {
   /**
    * Load the "java.util.*" factories.
    *
-   * @param context    the test context
    * @param repository the repository to load the factories into
    */
-  public static void load(TestContext context, ValueFactoryRepository repository) {
-    RandomGenerator random = context.getRandom();
-
+  public static void load(ValueFactoryRepository repository) {
     // Atomic wrappers
-    repository.addFactory(AtomicInteger.class, newFactory(new IntegerValueFactory(random), AtomicInteger::new));
-    repository.addFactory(AtomicLong.class, newFactory(new LongValueFactory(random), AtomicLong::new));
-    repository.addFactory(AtomicBoolean.class, newFactory(new BooleanValueFactory(random), AtomicBoolean::new));
+    ValueFactory intSource = new IntegerValueFactory();
+    repository.addFactory(AtomicInteger.class, new ValueFactory((t) -> new AtomicInteger((Integer) intSource.create(t))));
+
+    ValueFactory longSource = new LongValueFactory();
+    repository.addFactory(AtomicLong.class, new ValueFactory((t) -> new AtomicLong((Long) longSource.create(t))));
+
+    ValueFactory boolSource = new BooleanValueFactory();
+    repository.addFactory(AtomicBoolean.class, new ValueFactory((t) -> new AtomicBoolean((Boolean) boolSource.create(t))));
 
     // Locales
-    repository.addFactory(Locale.class, new LocaleValueFactory(context.getRandom()));
+    repository.addFactory(Locale.class, new LocaleValueFactory());
 
     // Collections and optionals
-    repository.addFactoryLookup(new CollectionFactoryLookup(context));
-    repository.addFactoryLookup(new OptionalFactoryLookup(context));
-  }
-
-
-  private static <A, N> ValueFactory<A> newFactory(ValueFactory<N> valueFactory, Function<N, A> fn) {
-    return (t) -> fn.apply(valueFactory.create(t));
+    repository.addFactoryLookup(new CollectionFactoryLookup());
+    repository.addFactoryLookup(new OptionalFactoryLookup());
   }
 
 }
