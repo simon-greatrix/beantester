@@ -21,8 +21,8 @@ import java.util.random.RandomGenerator;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
-import io.setl.beantester.factories.ValueFactoryRepository;
-import io.setl.beantester.factories.ValueType;
+import io.setl.beantester.factories.FactoryRepository;
+import io.setl.beantester.ValueType;
 
 /** Load the "java.time.*" factories. */
 public class TimeFactories {
@@ -37,7 +37,7 @@ public class TimeFactories {
    *
    * @param repository the repository to load the factories into
    */
-  public static void load(ValueFactoryRepository repository) {
+  public static void load(FactoryRepository repository) {
     new TimeFactories(repository).doLoad();
   }
 
@@ -49,16 +49,16 @@ public class TimeFactories {
   }
 
 
-  private final ValueFactoryRepository repository;
+  private final FactoryRepository repository;
 
 
-  private TimeFactories(ValueFactoryRepository repository) {
+  private TimeFactories(FactoryRepository repository) {
     this.repository = repository;
   }
 
 
   private <T> void addFactory(Class<T> clazz, Function<ValueType, Object> valueFactory) throws IllegalArgumentException {
-    repository.addFactory(clazz, new ValueFactory(valueFactory));
+    repository.addFactory(new ValueFactory(clazz, valueFactory));
   }
 
 
@@ -90,8 +90,8 @@ public class TimeFactories {
     addFactory(YearMonth.class, newFactory(YearMonth::now));
     addFactory(ZonedDateTime.class, newFactory(ZonedDateTime::now));
 
-    repository.addFactory(ZoneOffset.class, newZoneOffsetFactory());
-    repository.addFactory(Period.class, newPeriodFactory());
+    repository.addFactory(newZoneOffsetFactory());
+    repository.addFactory(newPeriodFactory());
 
     addFactory(ZoneId.class, (t) -> RandomClock.randomZoneId());
 
@@ -118,7 +118,7 @@ public class TimeFactories {
       return Period.of(years, months, days).normalized();
     };
 
-    return new ValueFactory(() -> Period.ofDays(1), () -> Period.ofMonths(1), random);
+    return new ValueFactory(Period.class, () -> Period.ofDays(1), () -> Period.ofMonths(1), random);
   }
 
 
@@ -134,6 +134,7 @@ public class TimeFactories {
     };
 
     return new ValueFactory(
+        ZoneOffset.class,
         () -> ZoneOffset.UTC,
         () -> secondary,
         createRandomZoneOffset

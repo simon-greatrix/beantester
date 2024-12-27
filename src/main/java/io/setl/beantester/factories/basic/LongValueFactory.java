@@ -12,7 +12,12 @@ public class LongValueFactory extends ValueFactory {
    * Construct a new Long object factory.
    */
   public LongValueFactory() {
-    super(() -> 1L, () -> 2L, () -> TestContext.get().getRandom().nextLong());
+    super(
+        Long.class,
+        () -> 1L,
+        () -> 2L,
+        () -> TestContext.get().getRandom().nextLong()
+    );
   }
 
 }

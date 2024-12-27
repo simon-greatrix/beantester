@@ -8,12 +8,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** A call to a bean's factory method. */
+import io.setl.beantester.AssertionException;
+
+/** A call to a bean's factory method which accepts a list of parameters and returns the bean. */
 public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<BeanMaker> {
 
   private final Method method;
 
   private final List<String> names;
+
+
+  /**
+   * Copy constructor.
+   *
+   * @param maker the bean maker to copy
+   */
+  public BeanMaker(BeanMaker maker) {
+    super(maker.properties());
+    this.method = maker.method;
+    this.names = maker.names;
+  }
 
 
   /**
@@ -23,7 +37,7 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
    */
   public BeanMaker(Specs.BeanMaker spec) {
     spec.validate();
-    names = Objects.requireNonNull(spec.names(), "parameterNames");
+    names = List.copyOf(Objects.requireNonNull(spec.names(), "parameterNames"));
     List<Class<?>> types = Objects.requireNonNull(spec.types(), "parameterTypes");
     if (names.size() != types.size()) {
       throw new IllegalArgumentException("Names and types must be the same size");
@@ -41,6 +55,8 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
       throw new IllegalArgumentException("Method must be static: " + method);
     }
 
+    BeanDescriptionFactory factory = new BeanDescriptionFactory(spec.factoryClass());
+
     for (int i = 0; i < names.size(); i++) {
       property(
           new Property(names.get(i))
@@ -48,7 +64,7 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
               .writer((a, b) -> {
                 // do nothing
               })
-              .nullable(BeanDescriptionFactory.parameterIsNullable(method, i))
+              .nullable(!factory.parameterIsNotNull(method, i))
       );
     }
   }
@@ -63,8 +79,13 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
     try {
       return method.invoke(null, args);
     } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new AssertionError("Unable to create bean via method: " + method, e);
+      throw new AssertionException("Unable to create bean via method: " + method, e);
     }
+  }
+
+
+  public BeanMaker copy() {
+    return new BeanMaker(this);
   }
 
 }

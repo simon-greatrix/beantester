@@ -21,6 +21,11 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
     private final HashMap<String, Object> values = new HashMap<>();
 
 
+    ProxyHandler(Map<String, Object> values) {
+      this.values.putAll(values);
+    }
+
+
     private boolean handleEquals(Object proxy, Object arg) {
       if (arg == null) {
         return false;
@@ -48,13 +53,20 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
 
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
       if (readMethods.containsKey(method)) {
         return values.get(readMethods.get(method));
       }
 
       if (writeMethods.containsKey(method)) {
-        values.put(writeMethods.get(method), args[0]);
+        String property = writeMethods.get(method);
+        Object value = args[0];
+        if (value == null && !properties.get(property).nullable()) {
+          throw new IllegalArgumentException("Null value for " + property);
+        }
+        values.put(property, value);
+
+        // TODO - fixme the return value is not correct - could be "this" or old value.
         return null;
       }
 
@@ -95,8 +107,9 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
    */
   public BeanProxy(Class<?> beanClass) {
     this.beanClass = beanClass;
-    for (Property property : new BeanDescriptionFactory().findAllProperties(beanClass)) {
+    for (Property property : new BeanDescriptionFactory(beanClass).findAllProperties()) {
       property(property);
+
       Optional<Method> optional = property.writeMethod();
       optional.ifPresent(method -> writeMethods.put(method, property.name()));
       optional = property.readMethod();
@@ -105,9 +118,46 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
   }
 
 
+  /**
+   * Copy constructor.
+   *
+   * @param proxy the proxy to copy
+   */
+  public BeanProxy(BeanProxy proxy) {
+    super(proxy.properties());
+    this.beanClass = proxy.beanClass;
+    this.readMethods.putAll(proxy.readMethods);
+    this.writeMethods.putAll(proxy.writeMethods);
+  }
+
+
   @Override
-  public Object apply(Map<String, Object> stringObjectMap) {
-    return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, new ProxyHandler());
+  public Object apply(Map<String, Object> values) {
+    // Verify no unknown properties
+    for (var e : values.entrySet()) {
+      Property property = property(e.getKey());
+      if (property == null) {
+        throw new IllegalArgumentException("Value specified for unknown property: " + e.getKey());
+      }
+      if (e.getValue() == null && !property.nullable()) {
+        throw new IllegalArgumentException("Null value for " + e.getKey());
+      }
+    }
+
+    // Verify all not-null are set
+    for (Property property : properties()) {
+      if (!(property.nullable() || values.get(property.name()) == null)) {
+        throw new IllegalArgumentException("Missing value for " + property.name());
+      }
+    }
+
+    return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, new ProxyHandler(values));
+  }
+
+
+  @Override
+  public BeanProxy copy() {
+    return new BeanProxy(this);
   }
 
 }

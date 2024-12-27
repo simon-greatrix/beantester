@@ -3,6 +3,7 @@ package io.setl.beantester.info;
 import java.util.Collection;
 import java.util.Map;
 
+import io.setl.beantester.AssertionException;
 import io.setl.beantester.info.Specs.BuilderMethods;
 
 /**
@@ -16,9 +17,11 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
   /**
    * New instance.
    *
+   * @param beanClass      the class being built by the builder
    * @param builderMethods the methods to create the builder and the bean
    */
   public BeanBuilder(
+      Class<?> beanClass,
       BuilderMethods builderMethods
   ) {
     this.builderMethods = builderMethods;
@@ -30,11 +33,22 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       throw new IllegalStateException("Failed to create builder", e);
     }
 
-    Collection<Property> foundProperties = new BeanDescriptionFactory().findWritableProperties(builderClass);
+    Collection<Property> foundProperties = new BeanDescriptionFactory(builderClass).findWritableProperties();
 
     for (Property property : foundProperties) {
       property(property);
     }
+  }
+
+
+  /**
+   * Copy constructor.
+   *
+   * @param beanBuilder the bean builder to copy
+   */
+  public BeanBuilder(BeanBuilder beanBuilder) {
+    super(beanBuilder.properties());
+    this.builderMethods = beanBuilder.builderMethods;
   }
 
 
@@ -44,7 +58,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       Object builder = build(values);
       return builderMethods.build().exec(builder);
     } catch (Throwable t) {
-      throw new AssertionError("Failed to build bean", t);
+      throw new AssertionException("Failed to build bean", t);
     }
   }
 
@@ -67,6 +81,12 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       }
     }
     return builder;
+  }
+
+
+  @Override
+  public BeanCreator<BeanBuilder> copy() {
+    return new BeanBuilder(this);
   }
 
 }

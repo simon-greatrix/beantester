@@ -1,7 +1,5 @@
 package io.setl.beantester.factories.basic;
 
-import java.util.random.RandomGenerator;
-
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 
@@ -15,6 +13,12 @@ public class BooleanValueFactory extends ValueFactory {
    * Construct a new Boolean object factory.
    */
   public BooleanValueFactory() {
-    super(()->Boolean.TRUE, ()->Boolean.FALSE, () -> TestContext.get().getRandom().nextBoolean());
+    super(
+        Boolean.class,
+        () -> Boolean.TRUE,
+        () -> Boolean.FALSE,
+        () -> TestContext.get().getRandom().nextBoolean()
+    );
   }
+
 }

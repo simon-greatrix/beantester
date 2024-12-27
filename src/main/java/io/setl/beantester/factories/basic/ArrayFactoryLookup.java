@@ -7,10 +7,10 @@ import java.lang.reflect.Type;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
+import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.factories.NoSuchFactoryException;
-import io.setl.beantester.factories.ValueFactoryRepository;
-import io.setl.beantester.factories.ValueType;
+import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.mirror.Executables;
 
 /**
@@ -22,7 +22,7 @@ public class ArrayFactoryLookup implements FactoryLookup {
 
 
   private ValueFactory getComponentFactory(Class<?> clazz) {
-    ValueFactoryRepository repository = TestContext.get().getFactories();
+    FactoryRepository repository = TestContext.get().getFactories();
     return repository.getFactory(clazz.getComponentType());
   }
 
@@ -30,6 +30,7 @@ public class ArrayFactoryLookup implements FactoryLookup {
   @Override
   public ValueFactory getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
     return new ValueFactory(
+        typeToken,
         () -> randomArray(ValueType.PRIMARY, typeToken),
         () -> randomArray(ValueType.SECONDARY, typeToken),
         () -> randomArray(ValueType.RANDOM, typeToken)

@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import io.setl.beantester.TestContext;
 import io.setl.beantester.info.Specs.BeanCreatorSpec;
 import io.setl.beantester.info.Specs.BuilderMethods;
 import io.setl.beantester.info.Specs.NewProperty;
@@ -67,7 +66,20 @@ class BeanDescriptionFactory {
 
 
   /**
-   * Does an annotation indicate that a parameter is nullable? The annotation must be named either "NotNull" or "NonNull" (ignoring case).
+   * Does an annotation indicate that a parameter is not null? The annotation must be named either "NotNull" or "NonNull" (ignoring case).
+   *
+   * @param a the annotation
+   *
+   * @return true if the annotation indicates that the parameter is not null
+   */
+  private static boolean isNotNull(Annotation a) {
+    String simpleName = a.annotationType().getSimpleName();
+    return simpleName.equalsIgnoreCase("NotNull") || simpleName.equalsIgnoreCase("NonNull");
+  }
+
+
+  /**
+   * Does an annotation indicate that a parameter is nullable? The annotation must be named either "Nullable" and is only relevant if the default is not null.
    *
    * @param a the annotation
    *
@@ -75,49 +87,7 @@ class BeanDescriptionFactory {
    */
   private static boolean isNullable(Annotation a) {
     String simpleName = a.annotationType().getSimpleName();
-    return simpleName.equalsIgnoreCase("NotNull") || simpleName.equalsIgnoreCase("NonNull");
-  }
-
-
-  /**
-   * Ascertain whether a parameter is nullable.
-   *
-   * @param executable the method or constructor
-   * @param index      the parameter's index
-   *
-   * @return true if no not-null nor non-null annotations are present
-   */
-  static boolean parameterIsNullable(Executable executable, int index) {
-    if (executable.getParameterTypes()[index].isPrimitive()) {
-      return false;
-    }
-    Annotation[][] annotations = executable.getParameterAnnotations();
-    for (Annotation a : annotations[index]) {
-      if (isNullable(a)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-
-  /**
-   * Ascertain whether a method's return value is nullable.
-   *
-   * @param method the method
-   *
-   * @return true if no not-null nor non-null annotations are present
-   */
-  static boolean returnValueIsNullable(Method method) {
-    if (method.getReturnType().isPrimitive()) {
-      return false;
-    }
-    for (Annotation a : method.getAnnotations()) {
-      if (isNullable(a)) {
-        return false;
-      }
-    }
-    return true;
+    return simpleName.equalsIgnoreCase("Nullable");
   }
 
 
@@ -172,17 +142,22 @@ class BeanDescriptionFactory {
   }
 
 
+  /** The bean's class. */
+  private final Class<?> beanClass;
+
   /** Properties on the bean. */
   private final TreeMap<String, Property> beanProperties = new TreeMap<>();
-
-  /** The bean's class. */
-  private Class<?> beanClass;
 
   /** Creator for the bean. */
   private BeanCreator<?> creator;
 
   /** Specs used in creating the bean and property information. */
   private Spec[] specs;
+
+
+  public BeanDescriptionFactory(Class<?> beanClass) {
+    this.beanClass = beanClass;
+  }
 
 
   private void applyPropertyCustomisers(Model<?> model) {
@@ -214,15 +189,11 @@ class BeanDescriptionFactory {
   /**
    * Create a BeanInformation object.
    *
-   * @param testContext the test context
-   * @param beanClass   the class of the bean
-   * @param specs       the specs to use
+   * @param specs the specs to use
    *
    * @return the BeanInformation object
    */
-  BeanDescription create(Class<?> beanClass, Spec... specs) {
-    this.beanClass = beanClass;
-
+  BeanDescription create(Spec... specs) {
     ArrayList<Spec> specList = new ArrayList<>();
     for (Spec spec : specs) {
       if (spec instanceof Specs.ResolvingSpec) {
@@ -258,15 +229,37 @@ class BeanDescriptionFactory {
 
 
   /**
+   * Check if a class or its package has a "not null" annotation.
+   *
+   * @return true if the class has a "not null" annotation
+   */
+  boolean defaultIsNotNull() {
+    for (Annotation a : beanClass.getAnnotations()) {
+      if (isNotNull(a)) {
+        return true;
+      }
+    }
+
+    Package pack = beanClass.getPackage();
+    if (pack != null) {
+      for (Annotation a : pack.getAnnotations()) {
+        if (isNotNull(a)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+
+  /**
    * Find the testable properties of a class. A testable property is one that has both a getter and a setter. Note that this will not find properties that
    * are set via the creator.
    *
-   * @param beanClass the class to find the writable properties of
-   *
    * @return a collection of writable properties
    */
-  Collection<Property> findAllProperties(Class<?> beanClass) {
-    this.beanClass = beanClass;
+  Collection<Property> findAllProperties() {
     this.specs = new Spec[0];
     beanProperties.clear();
     findBeanProperties();
@@ -331,14 +324,14 @@ class BeanDescriptionFactory {
     // Does the bean have a builder specifier?
     Optional<Specs.BuilderMethods> optBuilder = firstSpec(Specs.BuilderMethods.class, specs);
     if (optBuilder.isPresent()) {
-      creator = new BeanBuilder(optBuilder.get());
+      creator = new BeanBuilder(beanClass, optBuilder.get());
       return;
     }
 
     // Look for paired "builder" and "build" methods
     optBuilder = findDefaultBuilder();
     if (optBuilder.isPresent()) {
-      creator = new BeanBuilder(optBuilder.get());
+      creator = new BeanBuilder(beanClass, optBuilder.get());
       return;
     }
 
@@ -418,7 +411,7 @@ class BeanDescriptionFactory {
 
     Property property = new Property(propertyName)
         .reader(SerializableLambdas.createLambda(SerializableFunction1.class, method))
-        .nullable(returnValueIsNullable(method));
+        .nullable(!returnValueIsNotNull(method));
     Property.merge(beanProperties, property);
   }
 
@@ -473,7 +466,7 @@ class BeanDescriptionFactory {
     String propertyName = getSetterName(method);
 
     Property property = new Property(propertyName)
-        .nullable(parameterIsNullable(method, 0));
+        .nullable(!parameterIsNotNull(method, 0));
 
     if (method.getReturnType().equals(void.class)) {
       property.writer(SerializableLambdas.createLambda(SerializableConsumer2.class, method));
@@ -488,12 +481,9 @@ class BeanDescriptionFactory {
   /**
    * Find the writable properties of a class.
    *
-   * @param beanClass the class to find the writable properties of
-   *
    * @return a collection of writable properties
    */
-  Collection<Property> findWritableProperties(Class<?> beanClass) {
-    this.beanClass = beanClass;
+  Collection<Property> findWritableProperties() {
     this.specs = new Spec[0];
     beanProperties.clear();
     findBeanProperties();
@@ -528,6 +518,71 @@ class BeanDescriptionFactory {
     }
 
     return methodName;
+  }
+
+
+  /**
+   * Ascertain whether a parameter is not null.
+   *
+   * @param executable the method or constructor
+   * @param index      the parameter's index
+   *
+   * @return true if a not-null or non-null is present
+   */
+  boolean parameterIsNotNull(Executable executable, int index) {
+    // Primitive types are never null
+    if (executable.getParameterTypes()[index].isPrimitive()) {
+      return true;
+    }
+
+    boolean defaultIsNotNull = defaultIsNotNull();
+    Annotation[][] annotations = executable.getParameterAnnotations();
+    for (Annotation a : annotations[index]) {
+      if (defaultIsNotNull) {
+        // Must be explicitly nullable
+        if (isNullable(a)) {
+          return false;
+        }
+      } else {
+        // Check if not-null
+        if (isNotNull(a)) {
+          return true;
+        }
+      }
+    }
+
+    return defaultIsNotNull;
+  }
+
+
+  /**
+   * Ascertain whether a method's return value is "not null".
+   *
+   * @param method the method
+   *
+   * @return true if not-null or non-null annotations are present
+   */
+  boolean returnValueIsNotNull(Method method) {
+    // primitive types are never null
+    if (method.getReturnType().isPrimitive()) {
+      return true;
+    }
+
+    boolean defaultIsNotNull = defaultIsNotNull();
+
+    for (Annotation a : method.getAnnotations()) {
+      if (defaultIsNotNull) {
+        if (isNullable(a)) {
+          return false;
+        }
+      } else {
+        if (isNotNull(a)) {
+          return true;
+        }
+      }
+    }
+
+    return defaultIsNotNull;
   }
 
 }

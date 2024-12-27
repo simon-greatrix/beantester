@@ -7,10 +7,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
-import io.setl.beantester.factories.ValueFactoryRepository;
-import io.setl.beantester.factories.ValueType;
+import io.setl.beantester.factories.FactoryRepository;
+import io.setl.beantester.ValueType;
 
 /**
  * Load the file factories.
@@ -43,9 +42,9 @@ public class FileFactories {
    *
    * @param repository the repository to load the factories into
    */
-  public static void load(ValueFactoryRepository repository) {
-    repository.addFactory(File.class, new ValueFactory(FileFactories::generateTempFile));
-    repository.addFactory(Path.class, new ValueFactory(FileFactories::generateTempPath));
+  public static void load(FactoryRepository repository) {
+    repository.addFactory(new ValueFactory(File.class, FileFactories::generateTempFile));
+    repository.addFactory(new ValueFactory(Path.class, FileFactories::generateTempPath));
   }
 
 

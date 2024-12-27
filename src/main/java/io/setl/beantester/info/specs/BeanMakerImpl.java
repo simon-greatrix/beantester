@@ -9,6 +9,14 @@ import io.setl.beantester.info.Specs.BeanMaker;
 /** A simple implementation of BeanMaker. */
 public record BeanMakerImpl(Class<?> factoryClass, String factoryName, List<String> names, List<Class<?>> types) implements BeanMaker {
 
+  /**
+   * New instance.
+   *
+   * @param factoryClass the class containing the factory method
+   * @param factoryName  the name of the factory method
+   * @param names        the names of the parameters
+   * @param types        the types of the parameters
+   */
   public BeanMakerImpl(Class<?> factoryClass, String factoryName, List<String> names, List<Class<?>> types) {
     this.factoryClass = factoryClass;
     this.factoryName = factoryName;
@@ -17,6 +25,13 @@ public record BeanMakerImpl(Class<?> factoryClass, String factoryName, List<Stri
   }
 
 
+  /**
+   * New instance.
+   *
+   * @param factoryClass the class containing the factory method
+   * @param factoryName  the name of the factory method
+   * @param constructor  the constructor
+   */
   public BeanMakerImpl(Class<?> factoryClass, String factoryName, BeanConstructor constructor) {
     this(factoryClass, factoryName, constructor.names(), constructor.types());
   }

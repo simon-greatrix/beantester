@@ -12,7 +12,12 @@ public class FloatValueFactory extends ValueFactory {
    * Construct a new Float object factory.
    */
   public FloatValueFactory() {
-    super(() -> 1f, () -> 1.25f, () -> (float) TestContext.get().getRandom().nextGaussian());
+    super(
+        Float.class,
+        () -> 1f,
+        () -> 1.25f,
+        () -> (float) TestContext.get().getRandom().nextGaussian()
+    );
   }
 
 

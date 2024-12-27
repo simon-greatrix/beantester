@@ -21,7 +21,7 @@ public class BigIntegerValueFactory extends ValueFactory {
    * Construct a new BigInteger object factory.
    */
   public BigIntegerValueFactory() {
-    super(() -> BigInteger.ONE, () -> BigInteger.TWO, BigIntegerValueFactory::createRandom);
+    super(BigInteger.class, () -> BigInteger.ONE, () -> BigInteger.TWO, BigIntegerValueFactory::createRandom);
   }
 
 }

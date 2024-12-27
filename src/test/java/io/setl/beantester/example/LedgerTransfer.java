@@ -7,6 +7,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nonnull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
 
 /** The proposed outcome of a transfer. */

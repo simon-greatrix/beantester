@@ -27,7 +27,7 @@ public class EnumFactoryLookup implements FactoryLookup {
     }
     Enum<?> primary = enumConstants[0];
     Enum<?> secondary = enumConstants[Math.min(1, enumConstants.length - 1)];
-    return new ValueFactory(() -> primary, () -> secondary, () -> enumConstants[TestContext.get().getRandom().nextInt(enumConstants.length)]);
+    return new ValueFactory(type, () -> primary, () -> secondary, () -> enumConstants[TestContext.get().getRandom().nextInt(enumConstants.length)]);
   }
 
 

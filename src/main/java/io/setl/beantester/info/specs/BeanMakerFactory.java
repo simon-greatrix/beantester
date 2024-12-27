@@ -12,11 +12,16 @@ import java.util.Optional;
 import io.setl.beantester.info.Specs.BeanConstructor;
 import io.setl.beantester.info.Specs.BeanMaker;
 
+/** Factory for creating bean makers. */
 public class BeanMakerFactory {
 
   /**
    * Create a bean maker referencing a method in the specified class. The method must be static, have a unique name and have been compiled with the '-parameter'
    * option so the parameter names are available.
+   *
+   * @param factoryClass the class that contains the factory methods
+   * @param factoryName  the name of the factory method in the factory class
+   * @param nameAndType  pairs of names and types (or just types if the names are available in the byte code)
    */
   public static BeanMaker beanMaker(Class<?> factoryClass, String factoryName, Object... nameAndType) {
     Optional<BeanConstructorImpl> optImpl = isNameTypeList(nameAndType);

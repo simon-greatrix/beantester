@@ -13,7 +13,12 @@ public class CharacterValueFactory extends ValueFactory {
    * Construct a new Character object factory.
    */
   public CharacterValueFactory() {
-    super(() -> 'A', () -> 'B', () -> (char) TestContext.get().getRandom().nextInt(Character.MAX_VALUE));
+    super(
+        Character.class,
+        () -> 'A',
+        () -> 'B',
+        () -> (char) TestContext.get().getRandom().nextInt(Character.MAX_VALUE)
+    );
   }
 
 }

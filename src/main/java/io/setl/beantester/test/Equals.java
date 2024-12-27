@@ -6,21 +6,19 @@ import java.util.TreeSet;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import io.setl.beantester.factories.ValueType;
+import io.setl.beantester.AssertionException;
+import io.setl.beantester.ValueType;
 import io.setl.beantester.info.BeanHolder;
 
 /** Test the {@code equals()} and {@code hashCode()} methods of a bean. */
 public class Equals {
 
-  private static final NotEqualToAnything NOT_EQUAL_TO_ANYTHING = new NotEqualToAnything();
-
-
-
-  /** A special class that is not equal to anything. Used in checking the contract for {@code equals()}. */
-  private static class NotEqualToAnything {
-
-  }
-
+  private static final Object NOT_EQUAL_TO_ANYTHING = new Object() {
+    @Override
+    public String toString() {
+      return "NOT_EQUAL_TO_ANYTHING";
+    }
+  };
 
 
   private final BeanHolder holder;
@@ -67,19 +65,19 @@ public class Equals {
     if (isSignificant && didChange) {
       // changed a significant property, so must not be equal now
       if (beanBefore.equals(beanAfter)) {
-        throw new AssertionError(
+        throw new AssertionException(
             holder.getBeanClass() + ".equals() is not consistent with setting " + change);
       }
     } else {
       // either did not change, or was not significant, so must be equal
       if (!beanBefore.equals(beanAfter)) {
         String msg = didChange ? " returned false after changing non-significant " : " returned false after not changing ";
-        throw new AssertionError(holder.getBeanClass() + ".equals() " + msg + " " + change);
+        throw new AssertionException(holder.getBeanClass() + ".equals() " + msg + " " + change);
       }
 
       if (testHashCode && beanBefore.hashCode() != beanAfter.hashCode()) {
         String msg = didChange ? " returned different value after changing non-significant " : " returned different value after not changing ";
-        throw new AssertionError(holder.getBeanClass() + ".hashCode() " + msg + " " + change);
+        throw new AssertionException(holder.getBeanClass() + ".hashCode() " + msg + " " + change);
       }
     }
   }
@@ -136,7 +134,7 @@ public class Equals {
         Object bean1 = holder.bean();
         Object bean2 = holder.bean();
         if (!bean1.equals(bean2)) {
-          throw new AssertionError(holder.getBeanClass() + ".equals() is not reflexive");
+          throw new AssertionException(holder.getBeanClass() + ".equals() is not reflexive");
         }
 
         Object valueBefore = holder.readActual(propertyName);
@@ -160,33 +158,33 @@ public class Equals {
   private void verifyBaseEquality(Object beanBefore, Object otherBean) {
     // A bean is never equal to null
     if (beanBefore.equals(null)) {
-      throw new AssertionError(holder.getBeanClass() + ".equals(null) should return false");
+      throw new AssertionException(holder.getBeanClass() + ".equals(null) should return false");
     }
 
     // A bean is never equal to an incompatible class
     if (beanBefore.equals(NOT_EQUAL_TO_ANYTHING)) {
-      throw new AssertionError(holder.getBeanClass() + ".equals(<Incompatible Class>) should return false");
+      throw new AssertionException(holder.getBeanClass() + ".equals(<Incompatible Class>) should return false");
     }
 
     // A bean is always equal to itself
     if (!beanBefore.equals(beanBefore)) {
-      throw new AssertionError(holder.getBeanClass() + ".equals() is not identity reflexive");
+      throw new AssertionException(holder.getBeanClass() + ".equals() is not identity reflexive");
     }
 
     // A bean is always equal to a bean with the same property values
     if (!beanBefore.equals(otherBean)) {
-      throw new AssertionError(holder.getBeanClass() + ".equals() is not reflexive");
+      throw new AssertionException(holder.getBeanClass() + ".equals() is not reflexive");
     }
 
     if (testHashCode) {
       // hashCode() must return the same value for the same object
       if (beanBefore.hashCode() != beanBefore.hashCode()) {
-        throw new AssertionError(holder.getBeanClass() + ".hashCode() is not consistent");
+        throw new AssertionException(holder.getBeanClass() + ".hashCode() is not consistent");
       }
 
       // hashCode() must return the same value for an equal object
       if (beanBefore.hashCode() != otherBean.hashCode()) {
-        throw new AssertionError(holder.getBeanClass() + ".hashCode() is not consistent with equals()");
+        throw new AssertionException(holder.getBeanClass() + ".hashCode() is not consistent with equals()");
       }
     }
   }

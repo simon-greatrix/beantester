@@ -1,3 +1,5 @@
+import java.time.Instant
+
 plugins {
   id 'java'
   id 'java-library'
@@ -129,7 +131,7 @@ tasks.register('writeBuildProperties', WriteProperties) {
   property("project.name", project.name)
   property("project.group", project.group)
   property("project.version", project.version)
-  property("buildTime", java.time.Instant.now())
+  property("buildTime", Instant.now())
 
   pluginManager.withPlugin("com.palantir.git-version") {
     def gitDetails = versionDetails()

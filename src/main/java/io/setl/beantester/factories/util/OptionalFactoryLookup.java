@@ -17,7 +17,7 @@ import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.factories.NoSuchFactoryException;
-import io.setl.beantester.factories.ValueFactoryRepository;
+import io.setl.beantester.factories.FactoryRepository;
 
 
 /**
@@ -59,19 +59,19 @@ public class OptionalFactoryLookup implements FactoryLookup {
         : findItemFactory(itemType);
 
     if (rawType.equals(Optional.class)) {
-      return new ValueFactory((t) -> Optional.ofNullable(itemValueFactory.create(t)));
+      return new ValueFactory(Optional.class, (t) -> Optional.ofNullable(itemValueFactory.create(t)));
     }
 
     if (rawType.equals(OptionalInt.class)) {
-      return new ValueFactory((t) -> OptionalInt.of((Integer) itemValueFactory.create(t)));
+      return new ValueFactory(OptionalInt.class, (t) -> OptionalInt.of((Integer) itemValueFactory.create(t)));
     }
 
     if (rawType.equals(OptionalLong.class)) {
-      return new ValueFactory((t) -> OptionalLong.of((Long) itemValueFactory.create(t)));
+      return new ValueFactory(OptionalLong.class, (t) -> OptionalLong.of((Long) itemValueFactory.create(t)));
     }
 
     if (rawType.equals(OptionalDouble.class)) {
-      return new ValueFactory((t) -> OptionalDouble.of((Double) itemValueFactory.create(t)));
+      return new ValueFactory(OptionalDouble.class, (t) -> OptionalDouble.of((Double) itemValueFactory.create(t)));
     }
 
     throw new IllegalArgumentException("Unknown optional type:" + type);
@@ -79,7 +79,7 @@ public class OptionalFactoryLookup implements FactoryLookup {
 
 
   private ValueFactory findItemFactory(Type itemType) {
-    ValueFactoryRepository repository = TestContext.get().getFactories();
+    FactoryRepository repository = TestContext.get().getFactories();
     try {
       return repository.getFactory(itemType);
     } catch (NoSuchFactoryException e) {

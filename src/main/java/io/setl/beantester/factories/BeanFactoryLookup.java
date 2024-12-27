@@ -7,6 +7,7 @@ import java.lang.reflect.Type;
 import java.util.Optional;
 
 import io.setl.beantester.ValueFactory;
+import io.setl.beantester.ValueType;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.BeanHolder;
 
@@ -32,11 +33,14 @@ public class BeanFactoryLookup implements FactoryLookup {
         holder.bean();
       }
 
-      return Optional.of(new ValueFactory((type) -> {
-        // See the class description for why we use nulls.
-        holder.setAllProperties(type, true);
-        return holder.bean();
-      }));
+      return Optional.of(new ValueFactory(
+          clazz,
+          (type) -> {
+            // See the class description for why we use nulls.
+            holder.setAllProperties(type, true);
+            return holder.bean();
+          }
+      ));
     } catch (Throwable t) {
       if (logFailure) {
         System.getLogger(BeanFactoryLookup.class.getName()).log(Level.ERROR, "Failed to create factory for: " + clazz, t);

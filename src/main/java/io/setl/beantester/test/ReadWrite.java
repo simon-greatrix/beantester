@@ -8,7 +8,7 @@ import java.util.TreeSet;
 import java.util.random.RandomGenerator;
 
 import io.setl.beantester.TestContext;
-import io.setl.beantester.factories.ValueType;
+import io.setl.beantester.ValueType;
 import io.setl.beantester.info.BeanHolder;
 
 /** Test that all the properties can be written and read correctly. */

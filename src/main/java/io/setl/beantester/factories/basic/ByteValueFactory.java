@@ -17,7 +17,7 @@ public class ByteValueFactory extends ValueFactory {
    * Construct a new Byte object factory.
    */
   public ByteValueFactory() {
-    super(() -> PRIMARY, () -> SECONDARY, () -> (byte) TestContext.get().getRandom().nextInt(256));
+    super(Byte.class, () -> PRIMARY, () -> SECONDARY, () -> (byte) TestContext.get().getRandom().nextInt(256));
   }
 
 }
