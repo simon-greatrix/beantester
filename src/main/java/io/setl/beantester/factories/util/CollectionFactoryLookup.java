@@ -1,8 +1,8 @@
 package io.setl.beantester.factories.util;
 
 
-import static io.setl.beantester.factories.ValueType.PRIMARY;
-import static io.setl.beantester.factories.ValueType.SECONDARY;
+import static io.setl.beantester.ValueType.PRIMARY;
+import static io.setl.beantester.ValueType.SECONDARY;
 import static io.setl.beantester.mirror.Executables.getRawType;
 
 import java.lang.reflect.ParameterizedType;
@@ -37,10 +37,10 @@ import java.util.function.Supplier;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
+import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryLookup;
+import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.factories.NoSuchFactoryException;
-import io.setl.beantester.factories.ValueFactoryRepository;
-import io.setl.beantester.factories.ValueType;
 
 
 /**
@@ -110,7 +110,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
         return collection;
       };
 
-      return new ValueFactory(() -> primary, () -> secondary, random);
+      return new ValueFactory(typeToken, () -> primary, () -> secondary, random);
     }
   }
 
@@ -120,28 +120,35 @@ public class CollectionFactoryLookup implements FactoryLookup {
     Type valueType = findElementType(typeToken, 1);
     ValueFactory valueFactory = findItemFactory(valueType);
 
-    return new ValueFactory((t) -> {
-      Map map = (Map) instanceValueFactory.get();
+    return new ValueFactory(
+        typeToken,
+        (t) -> {
+          Map map = (Map) instanceValueFactory.get();
 
-      switch (t) {
-        case PRIMARY:
-          map.put(keyFactory.create(PRIMARY), valueFactory.create(PRIMARY));
-          break;
-        case SECONDARY:
-          map.put(keyFactory.create(PRIMARY), valueFactory.create(PRIMARY));
-          map.put(keyFactory.create(SECONDARY), valueFactory.create(SECONDARY));
-          break;
-        default:
-          int size = TestContext.get().getRandom().nextInt(maxSize);
-          for (int idx = 0; idx < size; idx++) {
-            map.put(keyFactory.create(t), valueFactory.create(t));
+          switch (t) {
+            case PRIMARY:
+              map.put(keyFactory.create(PRIMARY), valueFactory.create(PRIMARY));
+              break;
+            case SECONDARY:
+              map.put(keyFactory.create(PRIMARY), valueFactory.create(PRIMARY));
+              map.put(keyFactory.create(SECONDARY), valueFactory.create(SECONDARY));
+              break;
+            default:
+              int size = TestContext.get().getRandom().nextInt(maxSize);
+              for (int idx = 0; idx < size; idx++) {
+                map.put(keyFactory.create(t), valueFactory.create(t));
+              }
+              break;
           }
-          break;
-      }
-      return map;
-    });
+          return map;
+        }
+    );
   }
 
+  @SuppressWarnings("unchecked")
+  private static <E extends Enum<E>> Class<E> enumType(Type type) {
+    return (Class<E>) type;
+  }
 
   @SuppressWarnings({"unchecked"})
   private <T> Supplier<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
@@ -179,7 +186,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
 
   private ValueFactory findItemFactory(Type itemType) {
-    ValueFactoryRepository repository = TestContext.get().getFactories();
+    FactoryRepository repository = TestContext.get().getFactories();
     return repository.getFactory(itemType);
   }
 

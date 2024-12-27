@@ -15,8 +15,10 @@ import io.setl.beantester.info.Specs.BeanConstructor;
 import io.setl.beantester.info.Specs.ResolvingSpec;
 import io.setl.beantester.info.Specs.Spec;
 
+/**
+ * Factory for creating bean constructors.
+ */
 public class BeanConstructorFactory {
-
 
   /**
    * Specify to construct a bean using the public constructor with the lowest number of arguments for which the parameter names are known.

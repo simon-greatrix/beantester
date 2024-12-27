@@ -14,7 +14,7 @@ public class LocaleValueFactory extends ValueFactory {
 
 
   public LocaleValueFactory() {
-    super(() -> Locale.UK, () -> Locale.FRANCE, () -> Sampler.getFrom(locales));
+    super(Locale.class, () -> Locale.UK, () -> Locale.FRANCE, () -> Sampler.getFrom(locales));
   }
 
 }

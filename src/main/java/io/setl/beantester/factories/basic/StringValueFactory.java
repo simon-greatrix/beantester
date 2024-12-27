@@ -12,7 +12,7 @@ public class StringValueFactory extends ValueFactory {
    * Construct a new String object factory.
    */
   public StringValueFactory() {
-    super(() -> "x", () -> "y", () -> Long.toString(TestContext.get().getRandom().nextLong() & Long.MAX_VALUE, Character.MAX_RADIX));
+    super(String.class, () -> "x", () -> "y", () -> Long.toString(TestContext.get().getRandom().nextLong() & Long.MAX_VALUE, Character.MAX_RADIX));
   }
 
 }

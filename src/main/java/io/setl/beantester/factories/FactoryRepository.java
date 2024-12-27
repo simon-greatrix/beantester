@@ -8,21 +8,23 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.setl.beantester.ValueFactory;
+import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.basic.BasicFactories;
 import io.setl.beantester.factories.io.FileFactories;
 import io.setl.beantester.factories.net.NetFactories;
 import io.setl.beantester.factories.time.TimeFactories;
 import io.setl.beantester.factories.util.UtilFactories;
 import io.setl.beantester.info.BeanDescription;
+import io.setl.beantester.info.BeanHolder;
 import io.setl.beantester.info.Property;
 import io.setl.beantester.mirror.Executables;
 
 /**
  * Repository for value factories in the current test context.
  */
-public class ValueFactoryRepository {
+public class FactoryRepository {
 
-  private final HashMap<Class<?>, ValueFactory> factories = new HashMap<>();
+  private final HashMap<Type, ValueFactory> factories = new HashMap<>();
 
   private final List<FactoryLookup> factoryLookups = new ArrayList<>();
 
@@ -35,11 +37,10 @@ public class ValueFactoryRepository {
    * Add the specified Factory to the collection. If a Factory is already registered against the specified class, the existing registered Factory will be
    * replaced with the Factory you specify here.
    *
-   * @param clazz        The type of objects the Factory creates.
    * @param valueFactory The Factory to add to the repository.
    */
-  public void addFactory(Class<?> clazz, ValueFactory valueFactory) {
-    factories.put(Objects.requireNonNull(clazz), Objects.requireNonNull(valueFactory));
+  public void addFactory(ValueFactory valueFactory) {
+    factories.put(valueFactory.getType(), Objects.requireNonNull(valueFactory));
   }
 
 
@@ -50,8 +51,14 @@ public class ValueFactoryRepository {
    * @param description The bean description
    */
   public void addFactory(BeanDescription description) {
-    ValueFactory valueFactory = description.createHolder();
-    addFactory(description.beanClass(), valueFactory);
+    BeanHolder holder = description.createHolder();
+    ValueFactory valueFactory = new ValueFactory(
+        description.beanClass(),
+        () -> holder.create(ValueType.PRIMARY),
+        () -> holder.create(ValueType.SECONDARY),
+        () -> holder.create(ValueType.RANDOM)
+    );
+    addFactory(valueFactory);
   }
 
 
@@ -148,7 +155,7 @@ public class ValueFactoryRepository {
    *
    * @return the registered classes
    */
-  Set<Class<?>> getRegisteredClasses() {
+  Set<Type> getRegisteredClasses() {
     return factories.keySet();
   }
 

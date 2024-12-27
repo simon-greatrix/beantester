@@ -37,10 +37,10 @@ public class ApproverAccount {
    * @param assetId     the asset
    */
   public ApproverAccount(
-      String domain,
-      String participant,
-      String account,
-      String assetId
+      @Nonnull String domain,
+      @Nonnull String participant,
+      @Nonnull String account,
+      @Nonnull String assetId
   ) {
     this.account = account;
     this.domain = domain;

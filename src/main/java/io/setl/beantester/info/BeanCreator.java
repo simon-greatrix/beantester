@@ -11,4 +11,11 @@ public interface BeanCreator<B extends BeanCreator<B> & Model<B>> extends
                                                                   Function<Map<String, Object>, Object>,
                                                                   Model<B> {
 
+  /**
+   * Create a copy of this creator.
+   *
+   * @return a copy
+   */
+  BeanCreator<B> copy();
+
 }

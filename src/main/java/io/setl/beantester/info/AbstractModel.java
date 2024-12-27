@@ -14,6 +14,24 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
   protected final TreeMap<String, Property> properties = new TreeMap<>();
 
 
+  /** Default constructor. */
+  public AbstractModel() {
+    // do nothing
+  }
+
+
+  /**
+   * Copy constructor.
+   *
+   * @param properties the properties to copy
+   */
+  protected AbstractModel(Collection<Property> properties) {
+    for (Property p : properties) {
+      this.properties.put(p.name(), new Property(p));
+    }
+  }
+
+
   @Override
   public Collection<Property> properties() {
     return properties.values();

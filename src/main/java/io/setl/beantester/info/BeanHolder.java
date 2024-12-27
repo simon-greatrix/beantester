@@ -9,15 +9,15 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import io.setl.beantester.AssertionException;
 import io.setl.beantester.TestContext;
-import io.setl.beantester.ValueFactory;
-import io.setl.beantester.factories.ValueFactoryRepository;
-import io.setl.beantester.factories.ValueType;
+import io.setl.beantester.ValueType;
+import io.setl.beantester.factories.FactoryRepository;
 
 /**
  * The bean holder holds a bean and manages its creation.
  */
-public class BeanHolder extends ValueFactory {
+public class BeanHolder {
 
   private record CreatorData(TreeMap<String, Object> params, HashSet<String> keys) {
 
@@ -43,20 +43,7 @@ public class BeanHolder extends ValueFactory {
    */
   public BeanHolder(BeanDescription info) {
     this.info = info;
-
-    ValueFactoryRepository vfr = TestContext.get().getFactories();
-
-    // Set a value for all non-null values.
-    for (Property property : info.beanCreator().properties()) {
-      if (!property.nullable()) {
-        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
-      }
-    }
-    for (Property property : info.properties()) {
-      if (!property.nullable()) {
-        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
-      }
-    }
+    resetInitialValues();
   }
 
 
@@ -76,10 +63,9 @@ public class BeanHolder extends ValueFactory {
    * @return the bean instance
    */
   public Object bean() {
-    buildBean();
-    Object built = bean;
     bean = null;
-    return built;
+    buildBean();
+    return bean;
   }
 
 
@@ -122,7 +108,7 @@ public class BeanHolder extends ValueFactory {
       try {
         return Optional.of(builder.build(createData.params));
       } catch (Throwable e) {
-        throw new AssertionError("Failed to create builder for class " + info.beanClass(), e);
+        throw new AssertionException("Failed to create builder for class " + info.beanClass(), e);
       }
     }
 
@@ -135,7 +121,6 @@ public class BeanHolder extends ValueFactory {
   }
 
 
-  @Override
   public Object create(ValueType type) {
     setAllProperties(type, true);
     return bean();
@@ -234,6 +219,19 @@ public class BeanHolder extends ValueFactory {
 
 
   /**
+   * Is a property readable? A property can be readable only in the bean.
+   *
+   * @param name the property name
+   *
+   * @return true if the property is readable, false otherwise
+   */
+  public boolean isReadable(String name) {
+    Property info = this.info.property(name);
+    return info != null && info.readable();
+  }
+
+
+  /**
    * Is the property significant for equality testing? This must be set explicitly.
    *
    * @param name the property name
@@ -273,7 +271,6 @@ public class BeanHolder extends ValueFactory {
     if (info != null) {
       isIgnored = isIgnored || info.ignored();
       isWritable = isWritable || info.writable();
-      isReadable = isReadable || info.readable();
     }
 
     return isWritable && isReadable && !isIgnored;
@@ -331,6 +328,24 @@ public class BeanHolder extends ValueFactory {
     bean = null;
     values.clear();
     changed.clear();
+    resetInitialValues();
+  }
+
+
+  private void resetInitialValues() {
+    FactoryRepository vfr = TestContext.get().getFactories();
+
+    // Set a value for all non-null values.
+    for (Property property : info.beanCreator().properties()) {
+      if (!property.nullable()) {
+        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
+      }
+    }
+    for (Property property : info.properties()) {
+      if (!property.nullable()) {
+        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
+      }
+    }
   }
 
 
@@ -385,7 +400,7 @@ public class BeanHolder extends ValueFactory {
     Object actual = readActual(propertyName);
     Object expected = readExpected(propertyName);
     if (!Objects.equals(actual, expected)) {
-      throw new AssertionError("Class " + info.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
     }
   }
 

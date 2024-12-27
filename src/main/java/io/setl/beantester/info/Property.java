@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.mirror.Executables;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer2;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction1;
@@ -33,7 +34,19 @@ public class Property {
 
   private Type inferredType = null;
 
+  /** Behaviour when the property is set to null. */
+  private NullBehaviour nullBehaviour;
+
+  /** Value if the property is set to null. Requires null-behaviour of "VALUE". */
+  private Object nullValue;
+
   private boolean nullable = true;
+
+  /** Behaviour when the property is omitted. */
+  private NullBehaviour omittedBehaviour;
+
+  /** Value if the property is set omitted. Requires omitted-behaviour of "VALUE", and a builder pattern. */
+  private Object omittedValue;
 
   private SerializableFunction1<?, ?> reader;
 
@@ -172,6 +185,52 @@ public class Property {
 
 
   /**
+   * How does the property behave when set to null?.
+   *
+   * @return the behaviour
+   */
+  public NullBehaviour nullBehaviour() {
+    return nullBehaviour;
+  }
+
+
+  /**
+   * Set the null-behaviour for this property.
+   *
+   * @param nullBehaviour the new null-behaviour
+   *
+   * @return this
+   */
+  public Property nullBehaviour(NullBehaviour nullBehaviour) {
+    this.nullBehaviour = nullBehaviour;
+    return this;
+  }
+
+
+  /**
+   * What value should be used when the property is set to null?.
+   *
+   * @return the value - note that the value cannot be null, so null indicates unknown.
+   */
+  public Object nullValue() {
+    return nullValue;
+  }
+
+
+  /**
+   * What value should be used when the property is set to null?.
+   *
+   * @param nullValue the non-null value to use
+   *
+   * @return this;
+   */
+  public Property nullValue(Object nullValue) {
+    this.nullValue = Objects.requireNonNull(nullValue);
+    return this;
+  }
+
+
+  /**
    * Can this property be null? If not set explicitly, this will be inferred from the annotations on the read and write methods.
    *
    * @param nullable true if the property can be null, false otherwise
@@ -191,6 +250,33 @@ public class Property {
    */
   public boolean nullable() {
     return nullable;
+  }
+
+
+  /**
+   * What is the behaviour when the property is omitted on a builder?.
+   *
+   * @return the behaviour when the property is omitted
+   */
+  public NullBehaviour omittedBehaviour() {
+    return omittedBehaviour;
+  }
+
+
+  public Property omittedBehaviour(NullBehaviour omittedBehaviour) {
+    this.omittedBehaviour = omittedBehaviour;
+    return this;
+  }
+
+
+  public Object omittedValue() {
+    return omittedValue;
+  }
+
+
+  public Property omittedValue(Object omittedValue) {
+    this.omittedValue = omittedValue;
+    return this;
   }
 
 

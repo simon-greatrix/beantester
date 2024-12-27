@@ -2,16 +2,20 @@ package io.setl.beantester.info;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import io.setl.beantester.TestContext;
+import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.info.specs.BeanConstructorFactory;
 import io.setl.beantester.info.specs.BeanMakerFactory;
 import io.setl.beantester.info.specs.Ignored;
 import io.setl.beantester.info.specs.Nullable;
+import io.setl.beantester.info.specs.OnNull;
+import io.setl.beantester.info.specs.OnOmitted;
 import io.setl.beantester.info.specs.Significance;
 import io.setl.beantester.info.specs.TypeSetter;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction0;
@@ -59,7 +63,7 @@ public class Specs {
 
 
 
-  /** Use a method to create a bean. */
+  /** Use a static method to create a bean directly. The method takes all the required parameters for the bean. */
   public interface BeanMaker extends BeanConstructor {
 
     /** The class that contains the method. */
@@ -333,6 +337,58 @@ public class Specs {
    */
   public static PropertyCustomiser nullable(Collection<String> names) {
     return new Nullable(names, true);
+  }
+
+
+  /** Specify what properties do when they are set to null. */
+  public static PropertyCustomiser onNull(NullBehaviour behaviour, Collection<String> names) {
+    HashMap<String, NullBehaviour> map = new HashMap<>();
+    for (String n : names) {
+      map.put(n, behaviour);
+    }
+    return new OnNull(map);
+  }
+
+
+  /** Specify what properties do when they are set to null. */
+  public static PropertyCustomiser onNull(NullBehaviour behaviour, String... names) {
+    HashMap<String, NullBehaviour> map = new HashMap<>();
+    for (String n : names) {
+      map.put(n, behaviour);
+    }
+    return new OnNull(map);
+  }
+
+
+  /** Specify what properties do when they are set to null. */
+  public static PropertyCustomiser onNull(Map<String, NullBehaviour> behaviour) {
+    return new OnNull(Map.copyOf(behaviour));
+  }
+
+
+  /** Specify what properties do when they are omitted. */
+  public static PropertyCustomiser onOmitted(Map<String, NullBehaviour> behaviour) {
+    return new OnOmitted(behaviour);
+  }
+
+
+  /** Specify what properties do when they are omitted. */
+  public static PropertyCustomiser onOmitted(NullBehaviour behaviour, Collection<String> names) {
+    HashMap<String, NullBehaviour> map = new HashMap<>();
+    for (String n : names) {
+      map.put(n, behaviour);
+    }
+    return new OnOmitted(map);
+  }
+
+
+  /** Specify what properties do when they are omitted. */
+  public static PropertyCustomiser onOmitted(NullBehaviour behaviour, String... names) {
+    HashMap<String, NullBehaviour> map = new HashMap<>();
+    for (String n : names) {
+      map.put(n, behaviour);
+    }
+    return new OnOmitted(map);
   }
 
 

@@ -1,7 +1,5 @@
 package io.setl.beantester.info;
 
-import io.setl.beantester.TestContext;
-
 /**
  * Defines an object that provides information about a JavaBean.
  */
@@ -11,7 +9,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
    * Create BeanInformation for a specified class.
    */
   public static BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
-    return new BeanDescriptionFactory().create(beanClass, specs);
+    return new BeanDescriptionFactory(beanClass).create(specs);
   }
 
 
@@ -22,6 +20,18 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
 
   public BeanDescription(Class<?> beanClass) {
     this.beanClass = beanClass;
+  }
+
+
+  /**
+   * Copy constructor.
+   *
+   * @param beanDescription the description to copy
+   */
+  public BeanDescription(BeanDescription beanDescription) {
+    super(beanDescription.properties());
+    this.beanClass = beanDescription.beanClass;
+    this.beanCreator = beanDescription.beanCreator.copy();
   }
 
 
@@ -40,7 +50,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
   }
 
 
-  public BeanDescription beanCreator(BeanCreator beanCreator) {
+  public BeanDescription beanCreator(BeanCreator<?> beanCreator) {
     this.beanCreator = beanCreator;
     return this;
   }

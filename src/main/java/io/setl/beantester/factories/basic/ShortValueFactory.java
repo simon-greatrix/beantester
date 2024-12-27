@@ -12,7 +12,12 @@ public class ShortValueFactory extends ValueFactory {
    * Construct a new Short object factory.
    */
   public ShortValueFactory() {
-    super(() -> (short) 1, () -> (short) 2, () -> (short) TestContext.get().getRandom().nextInt(Short.MIN_VALUE, 1 + Short.MAX_VALUE));
+    super(
+        Short.class,
+        () -> (short) 1,
+        () -> (short) 2,
+        () -> (short) TestContext.get().getRandom().nextInt(Short.MIN_VALUE, 1 + Short.MAX_VALUE)
+    );
   }
 
 }

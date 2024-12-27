@@ -5,7 +5,7 @@ import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomGeneratorFactory;
 
-import io.setl.beantester.factories.ValueFactoryRepository;
+import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.factories.time.RandomClock;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.Specs;
@@ -24,6 +24,7 @@ public class TestContext {
 
   public static void close() {
     CONTEXT.remove();
+    ValueFactory.STACK.remove();
   }
 
 
@@ -57,7 +58,9 @@ public class TestContext {
 
   private RandomClock clock;
 
-  private ValueFactoryRepository valueFactoryRepository;
+  private boolean factoriesAreInitialized = false;
+
+  private FactoryRepository factoryRepository;
 
   private boolean preferWriters = true;
 
@@ -69,8 +72,7 @@ public class TestContext {
     random = newRandom();
 
     clock = new RandomClock();
-    valueFactoryRepository = new ValueFactoryRepository();
-    valueFactoryRepository.loadDefaults();
+    factoryRepository = new FactoryRepository();
   }
 
 
@@ -80,18 +82,17 @@ public class TestContext {
    * @param description a bean description from which a factory is created
    */
   public void addFactory(BeanDescription description) {
-    valueFactoryRepository.addFactory(description);
+    getFactories().addFactory(description);
   }
 
 
   /**
    * Convenience method to add a factory to the repository.
    *
-   * @param clazz        the class the factory creates
    * @param valueFactory the factory
    */
-  public void addFactory(Class<?> clazz, ValueFactory valueFactory) {
-    valueFactoryRepository.addFactory(clazz, valueFactory);
+  public void addFactory(ValueFactory valueFactory) {
+    getFactories().addFactory(valueFactory);
   }
 
 
@@ -103,7 +104,7 @@ public class TestContext {
    * @param valueFactory the factory to use for just this property
    */
   public void addFactory(Class<?> clazz, String propertyName, ValueFactory valueFactory) {
-    valueFactoryRepository.addFactory(clazz, propertyName, valueFactory);
+    getFactories().addFactory(clazz, propertyName, valueFactory);
   }
 
 
@@ -125,8 +126,17 @@ public class TestContext {
   }
 
 
-  public ValueFactoryRepository getFactories() {
-    return valueFactoryRepository;
+  /**
+   * Get all the factories that are available.
+   *
+   * @return the factory repository
+   */
+  public FactoryRepository getFactories() {
+    if (!factoriesAreInitialized) {
+      factoriesAreInitialized = true;
+      factoryRepository.loadDefaults();
+    }
+    return factoryRepository;
   }
 
 

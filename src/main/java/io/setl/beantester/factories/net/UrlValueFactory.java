@@ -75,7 +75,7 @@ public class UrlValueFactory extends ValueFactory {
 
 
   public UrlValueFactory() {
-    super(() -> PRIMARY, () -> SECONDARY, UrlValueFactory::createRandom);
+    super(URL.class, () -> PRIMARY, () -> SECONDARY, UrlValueFactory::createRandom);
   }
 
 }

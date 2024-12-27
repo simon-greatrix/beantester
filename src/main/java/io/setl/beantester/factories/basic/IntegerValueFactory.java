@@ -12,7 +12,12 @@ public class IntegerValueFactory extends ValueFactory {
    * Construct a new Integer object factory.
    */
   public IntegerValueFactory() {
-    super(() -> 1, () -> 2, () -> TestContext.get().getRandom().nextInt());
+    super(
+        Integer.class,
+        () -> 1,
+        () -> 2,
+        () -> TestContext.get().getRandom().nextInt()
+    );
   }
 
 }

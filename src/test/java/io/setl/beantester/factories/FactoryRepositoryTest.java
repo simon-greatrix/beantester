@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.lang.reflect.Type;
 import java.time.Clock;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,19 +13,16 @@ import org.junit.jupiter.api.Test;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
+import io.setl.beantester.ValueType;
 
-class ValueFactoryRepositoryTest {
+class FactoryRepositoryTest {
 
   @Test
   void testAllFactories() {
     TestContext testContext = TestContext.get();
-    ValueFactoryRepository repository = testContext.getFactories();
+    FactoryRepository repository = testContext.getFactories();
     Set<Class<?>> limited = Set.of(Boolean.class, boolean.class, Clock.class);
-    for (Class<?> cl : repository.getRegisteredClasses()) {
-      if (Void.class.equals(cl) || void.class.equals(cl)) {
-        continue;
-      }
-
+    for (Type cl : repository.getRegisteredClasses()) {
       ValueFactory f = repository.getFactory(cl);
 
       Object o1 = f.create(ValueType.PRIMARY);

@@ -9,6 +9,8 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+import io.setl.beantester.AssertionException;
+
 /**
  * A collection of functional interfaces that are serializable and can be used to create lambdas from method references.
  */
@@ -215,7 +217,7 @@ public class SerializableLambdas {
     } catch (Error error) {
       throw error;
     } catch (Throwable exception) {
-      throw new AssertionError("Internal error converting \"" + handle + "\" to \"" + lambdaType + "\"", exception);
+      throw new AssertionException("Internal error converting \"" + handle + "\" to \"" + lambdaType + "\"", exception);
     }
   }
 

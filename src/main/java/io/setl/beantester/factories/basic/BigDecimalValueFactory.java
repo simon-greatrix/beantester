@@ -36,7 +36,7 @@ public class BigDecimalValueFactory extends ValueFactory {
    * Construct a new BigDecimal object factory.
    */
   public BigDecimalValueFactory() {
-    super(()->PRIMARY, ()->SECONDARY, BigDecimalValueFactory::createRandom);
+    super(BigDecimal.class, () -> PRIMARY, () -> SECONDARY, BigDecimalValueFactory::createRandom);
   }
 
 }
