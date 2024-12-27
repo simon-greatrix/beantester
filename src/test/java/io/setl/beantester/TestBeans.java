@@ -11,7 +11,6 @@ import io.setl.beantester.example.ApproverManifest;
 import io.setl.beantester.example.ApproverTransfer;
 import io.setl.beantester.example.BalanceDTO;
 import io.setl.beantester.example.BalanceTypeIdentifier;
-import io.setl.beantester.example.BuildableBean;
 import io.setl.beantester.example.LedgerAccount;
 import io.setl.beantester.example.LedgerManifest;
 import io.setl.beantester.example.LedgerTransfer;
@@ -36,31 +35,25 @@ public class TestBeans {
 
   @Test
   void testApproverLink() throws Throwable {
-    BeanVerifier.verify(ApproverLink.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverLink.class);
   }
 
 
   @Test
   void testApproverManifest() throws Throwable {
-    BeanVerifier.verify(ApproverManifest.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverManifest.class);
   }
 
 
   @Test
   void testApproverTransfer() throws Throwable {
-    BeanVerifier.verify(ApproverTransfer.class, Specs.notNull("tags"));
+    BeanVerifier.verify(ApproverTransfer.class);
   }
 
 
   @Test
   void testBalanceTypeIdentifier() throws Throwable {
     BeanVerifier.verify(BalanceTypeIdentifier.class);
-  }
-
-
-  @Test
-  void testBuildableBean() throws Throwable {
-    BeanVerifier.verify(BuildableBean.class, Specs.notNull("tags"));
   }
 
 

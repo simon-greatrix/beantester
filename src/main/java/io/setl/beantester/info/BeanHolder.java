@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -34,6 +35,8 @@ public class BeanHolder {
   private final LinkedHashMap<String, Object> values = new LinkedHashMap<>();
 
   private Object bean;
+
+  private boolean preferWriters = TestContext.get().preferWriters();
 
 
   /**
@@ -143,7 +146,7 @@ public class BeanHolder {
     if (info == null) {
       throw new IllegalArgumentException("No property named " + name);
     }
-    return TestContext.get().getFactories().create(type, this.info, info);
+    return TestContext.get().getFactories().create(type, this.info.beanClass(), info);
   }
 
 
@@ -158,9 +161,10 @@ public class BeanHolder {
       Property infoCreator = info.beanCreator().property(name);
       boolean creatorWritable = infoCreator != null && infoCreator.writable();
 
+      // We set this property in the creator unless we are preferring writers and it is bean-writable.
       if (
           creatorWritable
-              && !(TestContext.get().preferWriters() && beanWritable)
+              && !(preferWriters && beanWritable)
       ) {
         creatorKeys.add(name);
         creatorParams.put(name, values.get(name));
@@ -194,6 +198,38 @@ public class BeanHolder {
   }
 
 
+  /**
+   * Find all the properties that can be set via the creator or by a bean setter.
+   *
+   * @return the set of property names
+   */
+  public Set<String> getSwitchableProperties() {
+    Set<String> set = new HashSet<>();
+    for (Property beanProperty : info.properties()) {
+      if (beanProperty.writable()) {
+        Property creatorProperty = info.beanCreator().property(beanProperty.name());
+        if (creatorProperty != null && creatorProperty.writable()) {
+          set.add(beanProperty.name());
+        }
+      }
+    }
+
+    return set;
+  }
+
+
+  /**
+   * Is there an expected value? Useful for testing nulls.
+   *
+   * @param name the property name
+   *
+   * @return true if there is an expected value, false otherwise
+   */
+  public boolean hasExpected(String name) {
+    return values.containsKey(name) || initialValues.containsKey(name);
+  }
+
+
   public BeanDescription information() {
     return info;
   }
@@ -210,11 +246,11 @@ public class BeanHolder {
     Property info = this.info.property(name);
 
     //The property is only nullable if it is nullable everywhere.
-    if (info != null && !info.nullable()) {
+    if (info != null && info.notNull()) {
       return false;
     }
     info = this.info.beanCreator().property(name);
-    return info == null || info.nullable();
+    return info == null || !info.notNull();
   }
 
 
@@ -295,6 +331,29 @@ public class BeanHolder {
 
 
   /**
+   * Does this bean prefer writers or creators?.
+   *
+   * @return true if the bean prefers writers, false otherwise
+   */
+  public boolean preferWriters() {
+    return preferWriters;
+  }
+
+
+  /**
+   * Set whether this bean prefers writers or creators.
+   *
+   * @param prefer true if the bean prefers writers, false otherwise
+   *
+   * @return this
+   */
+  public BeanHolder preferWriters(boolean prefer) {
+    preferWriters = prefer;
+    return this;
+  }
+
+
+  /**
    * Read the actual value of a property. Note that this may trigger bean creation.
    *
    * @param name the property name
@@ -312,7 +371,7 @@ public class BeanHolder {
    *
    * @param name the property name
    *
-   * @return the expected value
+   * @return the expected value (null can indicate an expected null or no value)
    */
   public Object readExpected(String name) {
     Object o = values.get(name);
@@ -324,11 +383,12 @@ public class BeanHolder {
 
 
   /** Reset all the property values. */
-  public void reset() {
+  public BeanHolder reset() {
     bean = null;
     values.clear();
     changed.clear();
     resetInitialValues();
+    return this;
   }
 
 
@@ -337,13 +397,14 @@ public class BeanHolder {
 
     // Set a value for all non-null values.
     for (Property property : info.beanCreator().properties()) {
-      if (!property.nullable()) {
-        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
+      if (property.notNull()) {
+        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
       }
     }
+
     for (Property property : info.properties()) {
-      if (!property.nullable()) {
-        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, info, property));
+      if (property.notNull()) {
+        initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
       }
     }
   }
@@ -355,7 +416,7 @@ public class BeanHolder {
    * @param type     the value type
    * @param useNulls true if nullable properties should be set to null
    */
-  public void setAllProperties(ValueType type, boolean useNulls) {
+  public BeanHolder setAllProperties(ValueType type, boolean useNulls) {
     for (String propertyName : getPropertyNames()) {
       if (useNulls && isNullable(propertyName)) {
         setProperty(propertyName, null);
@@ -363,6 +424,7 @@ public class BeanHolder {
         setProperty(propertyName, createValue(type, propertyName));
       }
     }
+    return this;
   }
 
 
@@ -375,8 +437,16 @@ public class BeanHolder {
    * @return true if the property value was changed, false otherwise
    */
   public boolean setProperty(String name, Object value) {
-    if (Objects.equals(readExpected(name), value)) {
-      return false;
+    if (value != null) {
+      if (Objects.equals(readExpected(name), value)) {
+        // Non-null value is the same as the expected value - so no change
+        return false;
+      }
+    } else {
+      if (hasExpected(name) && readExpected(name) == null) {
+        // Null value is the same as the expected value - so no change
+        return false;
+      }
     }
 
     values.remove(name);

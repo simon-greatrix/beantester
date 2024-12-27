@@ -138,7 +138,15 @@ class BeanDescriptionFactory {
    * @return the name with the prefix removed
    */
   private static String stripPrefix(String name, String prefix) {
-    return Character.toLowerCase(name.charAt(prefix.length())) + name.substring(prefix.length() + 1);
+    String stripped = name.substring(prefix.length());
+
+    // For names like "getURL" if th first two characters are uppercase, then don't change the case of the first character.
+    if (stripped.length() >= 2 && Character.isUpperCase(stripped.charAt(0)) && Character.isUpperCase(stripped.charAt(1))) {
+      return stripped;
+    }
+
+    // Flip case of first character
+    return Character.toLowerCase(stripped.charAt(0)) + stripped.substring(1);
   }
 
 
@@ -157,6 +165,9 @@ class BeanDescriptionFactory {
 
   public BeanDescriptionFactory(Class<?> beanClass) {
     this.beanClass = beanClass;
+    if (Modifier.isAbstract(beanClass.getModifiers()) && !beanClass.isInterface()) {
+      throw new IllegalArgumentException("Cannot create a bean description for an abstract class: " + beanClass);
+    }
   }
 
 
@@ -270,15 +281,17 @@ class BeanDescriptionFactory {
   /** Find the bean's properties. This only finds properties that have getters and setters, not those are in the builder or the constructor. */
   private void findBeanProperties() {
     Method[] methods = beanClass.getMethods();
+
     for (Method method : methods) {
       if (
           Modifier.isStatic(method.getModifiers())
-              || Modifier.isAbstract(method.getModifiers())
               || !Modifier.isPublic(method.getModifiers())
               || method.getDeclaringClass().equals(Object.class)
       ) {
         continue;
       }
+
+      // Can only have abstract methods in an interface
 
       // A method with no parameters and a return value is a getter of some kind.
       if (method.getParameterCount() == 0 && !method.getReturnType().equals(void.class)) {
@@ -411,7 +424,7 @@ class BeanDescriptionFactory {
 
     Property property = new Property(propertyName)
         .reader(SerializableLambdas.createLambda(SerializableFunction1.class, method))
-        .nullable(!returnValueIsNotNull(method));
+        .notNull(returnValueIsNotNull(method));
     Property.merge(beanProperties, property);
   }
 
@@ -455,6 +468,7 @@ class BeanDescriptionFactory {
     if (
         !(
             returnType.equals(void.class)
+                || returnType.equals(Void.class)
                 || returnType.equals(valueType)
                 || returnType.equals(beanClass)
         )
@@ -466,7 +480,7 @@ class BeanDescriptionFactory {
     String propertyName = getSetterName(method);
 
     Property property = new Property(propertyName)
-        .nullable(!parameterIsNotNull(method, 0));
+        .notNull(parameterIsNotNull(method, 0));
 
     if (method.getReturnType().equals(void.class)) {
       property.writer(SerializableLambdas.createLambda(SerializableConsumer2.class, method));

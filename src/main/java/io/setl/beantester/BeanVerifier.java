@@ -24,6 +24,7 @@ public class BeanVerifier {
 
     NullRules.inferNullBehaviour(info);
     NullRules.inferOmittedBehaviour(info);
+    NullRules.validate(info);
 
     BeanHolder h = info.createHolder();
 

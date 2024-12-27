@@ -19,6 +19,7 @@ class FactoryRepositoryTest {
 
   @Test
   void testAllFactories() {
+    TestContext.close();
     TestContext testContext = TestContext.get();
     FactoryRepository repository = testContext.getFactories();
     Set<Class<?>> limited = Set.of(Boolean.class, boolean.class, Clock.class);

@@ -61,7 +61,7 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
               .writer((a, b) -> {
                 // do nothing
               })
-              .nullable(!factory.parameterIsNotNull(constructor, i))
+              .notNull(factory.parameterIsNotNull(constructor, i))
       );
     }
   }

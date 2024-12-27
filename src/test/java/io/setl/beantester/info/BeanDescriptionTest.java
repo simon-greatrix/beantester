@@ -1,17 +1,16 @@
 package io.setl.beantester.info;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
-import io.setl.beantester.TestContext;
-import io.setl.beantester.example.BuildableBean;
+import io.setl.beantester.example.ApproverManifest;
 
 class BeanDescriptionTest {
 
   @Test
   void testConstructor() {
-    BeanDescription info = BeanDescription.create(BuildableBean.class);
+    BeanDescription info = BeanDescription.create(ApproverManifest.class);
     System.out.println(info.toString());
     assertNotNull(info);
   }

@@ -1,11 +1,20 @@
 package io.setl.beantester.info;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueType;
+import io.setl.beantester.factories.FactoryRepository;
 
 
 /**
@@ -52,41 +61,97 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
     }
 
 
+    private Object handleSetter(Object proxy, Method method, Object[] args) {
+      String property = writeMethods.get(method);
+      Object value = args[0];
+
+      if (value == null && properties.get(property).notNull()) {
+        throw new IllegalArgumentException("Null value for " + property);
+      }
+      Object oldValue = values.put(property, value);
+
+      Class<?> returnType = method.getReturnType();
+      if (returnType.equals(void.class) || returnType.equals(Void.class)) {
+        return null;
+      }
+
+      Class<?> argType = method.getParameterTypes()[0];
+      if (argType.equals(returnType)) {
+        return oldValue;
+      }
+
+      if (returnType.equals(beanClass)) {
+        return proxy;
+      }
+
+      throw new IllegalArgumentException("Invalid return type for " + method + " in " + beanClass);
+    }
+
+
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) {
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      Optional<Object> result = invokeStandard(proxy, method, args);
+      if (result.isPresent()) {
+        return result.get();
+      }
+
+      // If it is a "default" method, invoke it.
+      if (!Modifier.isAbstract(method.getModifiers())) {
+        return invokeDefault(proxy, method, args);
+      }
+
       if (readMethods.containsKey(method)) {
         return values.get(readMethods.get(method));
       }
 
       if (writeMethods.containsKey(method)) {
-        String property = writeMethods.get(method);
-        Object value = args[0];
-        if (value == null && !properties.get(property).nullable()) {
-          throw new IllegalArgumentException("Null value for " + property);
-        }
-        values.put(property, value);
-
-        // TODO - fixme the return value is not correct - could be "this" or old value.
-        return null;
+        return handleSetter(proxy, method, args);
       }
 
+      throw new UnsupportedOperationException("Method not supported: " + method);
+    }
+
+
+    private Object invokeDefault(Object proxy, Method method, Object[] args) throws Throwable {
+      return MethodHandles
+          .lookup()
+          .findSpecial(
+              beanClass,
+              method.getName(),
+              MethodType.methodType(method.getReturnType(), method.getParameterTypes()),
+              beanClass
+          )
+          .bindTo(proxy)
+          .invokeWithArguments(args);
+    }
+
+
+    /**
+     * Invoke a method from Object.
+     *
+     * @param proxy  the proxy object
+     * @param method the method to invoke
+     * @param args   the arguments
+     *
+     * @return the result of the invocation, or empty if not a standard method
+     */
+    private Optional<Object> invokeStandard(Object proxy, Method method, Object[] args) {
       // Implementation of toString
       if (method.getName().equals("toString") && method.getParameterCount() == 0) {
-        return "BeanProxy for " + beanClass.getName();
+        return Optional.of("BeanProxy for " + beanClass.getName());
       }
 
       // Implementation of hashCode
       if (method.getName().equals("hashCode") && method.getParameterCount() == 0) {
-        return values.hashCode();
+        return Optional.of(values.hashCode());
       }
 
       // Implementation of equals
       if (method.getName().equals("equals") && method.getParameterCount() == 1) {
-        return handleEquals(proxy, args[0]);
+        return Optional.of(handleEquals(proxy, args[0]));
       }
 
-      // Not a supported method
-      throw new UnsupportedOperationException("Method not supported: " + method);
+      return Optional.empty();
     }
 
   }
@@ -139,19 +204,31 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
       if (property == null) {
         throw new IllegalArgumentException("Value specified for unknown property: " + e.getKey());
       }
-      if (e.getValue() == null && !property.nullable()) {
+      if (e.getValue() == null && property.notNull()) {
         throw new IllegalArgumentException("Null value for " + e.getKey());
       }
     }
 
-    // Verify all not-null are set
+    // Verify all not-null are set to null
+    ArrayList<Property> notNullValues = new ArrayList<>();
     for (Property property : properties()) {
-      if (!(property.nullable() || values.get(property.name()) == null)) {
-        throw new IllegalArgumentException("Missing value for " + property.name());
+      if (property.notNull()) {
+        if (values.get(property.name()) == null && values.containsKey(property.name())) {
+          throw new IllegalArgumentException("Null value for " + property.name());
+        }
+        notNullValues.add(property);
       }
     }
 
-    return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, new ProxyHandler(values));
+    ProxyHandler handler = new ProxyHandler(values);
+
+    // Add missing not-null values
+    FactoryRepository vfr = TestContext.get().getFactories();
+    for (Property property : notNullValues) {
+      handler.values.put(property.name(), vfr.create(ValueType.PRIMARY, beanClass, property));
+    }
+
+    return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, handler);
   }
 
 
