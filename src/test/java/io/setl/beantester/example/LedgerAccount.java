@@ -54,19 +54,19 @@ public final class LedgerAccount implements BalanceData {
     }
 
 
-    public LedgerAccountBuilder accountId(String accountId) {
+    public LedgerAccountBuilder accountId(@Nonnull String accountId) {
       this.accountId = accountId;
       return this;
     }
 
 
-    public LedgerAccountBuilder accountType(String type) {
+    public LedgerAccountBuilder accountType(@Nonnull String type) {
       this.type = type;
       return this;
     }
 
 
-    public LedgerAccountBuilder assetId(String assetId) {
+    public LedgerAccountBuilder assetId(@Nonnull String assetId) {
       this.assetId = assetId;
       return this;
     }
@@ -198,7 +198,7 @@ public final class LedgerAccount implements BalanceData {
     }
 
 
-    public LedgerAccountBuilder lastSettledAt(Instant lastSettledAt) {
+    public LedgerAccountBuilder lastSettledAt(@Nonnull Instant lastSettledAt) {
       this.lastSettledAt = lastSettledAt;
       return this;
     }

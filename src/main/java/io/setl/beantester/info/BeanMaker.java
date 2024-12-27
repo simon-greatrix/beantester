@@ -64,7 +64,7 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
               .writer((a, b) -> {
                 // do nothing
               })
-              .nullable(!factory.parameterIsNotNull(method, i))
+              .notNull(factory.parameterIsNotNull(method, i))
       );
     }
   }

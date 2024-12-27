@@ -310,18 +310,6 @@ public class Executables {
   }
 
 
-  private static <T> T runFinder(SerializableLambda lambda, Callable<T> finder) {
-    try {
-      return finder.call();
-    } catch (IllegalArgumentException e) {
-      throw e;
-
-    } catch (Exception e) {
-      throw new IllegalArgumentException("cannot find method for " + lambda, e);
-    }
-  }
-
-
   private Executables() {
 
   }

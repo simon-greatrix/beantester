@@ -18,6 +18,11 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;
 public class Property {
 
 
+  private static <T> T coalesce(T a, T b) {
+    return a != null ? a : b;
+  }
+
+
   static void merge(Map<String, Property> map, Property update) {
     map.compute(update.name(), (k, v) -> {
       if (v == null) {
@@ -28,11 +33,17 @@ public class Property {
   }
 
 
+  /** Name of this property. */
   private final String name;
 
+  /** Is this property completely ignored during testing? */
   private boolean ignored = false;
 
+  /** Inferred type of this property. Can be overridden by an explicit type. */
   private Type inferredType = null;
+
+  /** Can this property be null? */
+  private boolean notNull = false;
 
   /** Behaviour when the property is set to null. */
   private NullBehaviour nullBehaviour;
@@ -40,34 +51,43 @@ public class Property {
   /** Value if the property is set to null. Requires null-behaviour of "VALUE". */
   private Object nullValue;
 
-  private boolean nullable = true;
-
   /** Behaviour when the property is omitted. */
   private NullBehaviour omittedBehaviour;
 
   /** Value if the property is set omitted. Requires omitted-behaviour of "VALUE", and a builder pattern. */
   private Object omittedValue;
 
+  /** Read function for this property. */
   private SerializableFunction1<?, ?> reader;
 
+  /** Is this property significant for equals and hash-code testing? */
   private boolean significant = true;
 
+  /** Explicit type of this property (null if not set). */
   private Type type;
 
+  /** Write function for this property. A writer that returns a value. */
   private SerializableFunction2<Object, Object, Object> writer1;
 
+  /** Write function for this property. A writer with a void return. */
   private SerializableConsumer2<Object, Object> writer2;
 
 
   /**
-   * Create a copy of a property information instance.
+   * Create a new instance of a property information instance.
    *
+   * @param name     the name of the new property
    * @param original the original instance
    */
-  public Property(Property original) {
-    this.name = original.name;
+  public Property(String name, Property original) {
     this.ignored = original.ignored;
-    this.nullable = original.nullable;
+    this.inferredType = original.inferredType;
+    this.name = Objects.requireNonNull(name);
+    this.notNull = original.notNull;
+    this.nullBehaviour = original.nullBehaviour;
+    this.nullValue = original.nullValue;
+    this.omittedBehaviour = original.omittedBehaviour;
+    this.omittedValue = original.omittedValue;
     this.reader = original.reader;
     this.significant = original.significant;
     this.type = original.type;
@@ -77,19 +97,29 @@ public class Property {
 
 
   /**
+   * Create a copy of a property information instance.
+   *
+   * @param original the original instance
+   */
+  Property(Property original) {
+    this(original.name, original);
+  }
+
+
+  /**
    * Merge two property information instances. The update instance takes precedence.
    *
    * @param original the original instance
    * @param update   the instance to update with
    */
-  public Property(Property original, Property update) {
+  private Property(Property original, Property update) {
     if (!original.name.equals(update.name)) {
       throw new IllegalArgumentException("Names must match");
     }
     this.name = original.name;
 
-    this.reader = update.reader != null ? update.reader : original.reader;
-    this.type = update.type != null ? update.type : original.type;
+    this.reader = coalesce(update.reader, original.reader);
+    this.type = coalesce(update.type, original.type);
     if (update.writer1 != null || update.writer2 != null) {
       this.writer1 = update.writer1;
       this.writer2 = update.writer2;
@@ -99,10 +129,8 @@ public class Property {
     }
 
     this.ignored = update.ignored || original.ignored;
+    this.notNull = original.notNull || update.notNull;
     this.significant = original.significant || update.significant;
-
-    // We care more about nullable being false than true, so we 'and' the values.
-    this.nullable = original.nullable && update.nullable;
   }
 
 
@@ -115,25 +143,6 @@ public class Property {
       String name
   ) {
     this.name = Objects.requireNonNull(name);
-  }
-
-
-  /**
-   * Copy all the settings, except the name, from another property information instance.
-   *
-   * @param original the original instance
-   *
-   * @return this
-   */
-  public Property copyFrom(Property original) {
-    this.ignored = original.ignored;
-    this.nullable = original.nullable;
-    this.reader = original.reader;
-    this.significant = original.significant;
-    this.type = original.type;
-    this.writer1 = original.writer1;
-    this.writer2 = original.writer2;
-    return this;
   }
 
 
@@ -185,6 +194,29 @@ public class Property {
 
 
   /**
+   * Can this property be null? If not set explicitly, this will be inferred from the annotations on the read and write methods.
+   *
+   * @param notNull true if the property cannot be null, false otherwise
+   *
+   * @return this
+   */
+  public Property notNull(boolean notNull) {
+    this.notNull = notNull;
+    return this;
+  }
+
+
+  /**
+   * Can this property be null?.
+   *
+   * @return true if the property cannot be null, false otherwise
+   */
+  public boolean notNull() {
+    return notNull;
+  }
+
+
+  /**
    * How does the property behave when set to null?.
    *
    * @return the behaviour
@@ -227,29 +259,6 @@ public class Property {
   public Property nullValue(Object nullValue) {
     this.nullValue = Objects.requireNonNull(nullValue);
     return this;
-  }
-
-
-  /**
-   * Can this property be null? If not set explicitly, this will be inferred from the annotations on the read and write methods.
-   *
-   * @param nullable true if the property can be null, false otherwise
-   *
-   * @return this
-   */
-  public Property nullable(boolean nullable) {
-    this.nullable = nullable;
-    return this;
-  }
-
-
-  /**
-   * Can this property be null?.
-   *
-   * @return true if the property can be null, false otherwise
-   */
-  public boolean nullable() {
-    return nullable;
   }
 
 

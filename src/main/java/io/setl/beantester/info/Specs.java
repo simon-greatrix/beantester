@@ -13,7 +13,7 @@ import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.info.specs.BeanConstructorFactory;
 import io.setl.beantester.info.specs.BeanMakerFactory;
 import io.setl.beantester.info.specs.Ignored;
-import io.setl.beantester.info.specs.Nullable;
+import io.setl.beantester.info.specs.NotNull;
 import io.setl.beantester.info.specs.OnNull;
 import io.setl.beantester.info.specs.OnOmitted;
 import io.setl.beantester.info.specs.Significance;
@@ -275,7 +275,7 @@ public class Specs {
    */
 
   public static PropertyCustomiser notNull(Collection<String> names) {
-    return new Nullable(names, false);
+    return new NotNull(names, true);
   }
 
 
@@ -336,7 +336,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser nullable(Collection<String> names) {
-    return new Nullable(names, true);
+    return new NotNull(names, false);
   }
 
 

@@ -42,10 +42,10 @@ public class ApproverAccount {
       @Nonnull String account,
       @Nonnull String assetId
   ) {
-    this.account = account;
-    this.domain = domain;
-    this.participant = participant;
-    this.assetId = assetId;
+    this.account = Objects.requireNonNull(account);
+    this.domain = Objects.requireNonNull(domain);
+    this.participant = Objects.requireNonNull(participant);
+    this.assetId = Objects.requireNonNull(assetId);
   }
 
 

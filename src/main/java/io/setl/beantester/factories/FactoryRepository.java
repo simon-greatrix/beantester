@@ -87,13 +87,13 @@ public class FactoryRepository {
   /**
    * Create a candidate value for the specified property.
    *
-   * @param bean     the bean's information
+   * @param type     the type of value to create
+   * @param beanClass     the bean's class
    * @param property the property's information
    *
    * @return the candidate value
    */
-  public Object create(ValueType type, BeanDescription bean, Property property) {
-    Class<?> beanClass = bean.beanClass();
+  public Object create(ValueType type, Class<?> beanClass, Property property) {
     String propertyName = property.name();
     ValueFactory factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
     if (factory == null) {

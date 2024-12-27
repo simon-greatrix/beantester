@@ -6,29 +6,29 @@ import io.setl.beantester.info.Property;
 import io.setl.beantester.info.Specs.PropertyCustomiser;
 
 /** A specification that sets the nullability of a collection of properties. */
-public class Nullable implements PropertyCustomiser {
+public class NotNull implements PropertyCustomiser {
 
   private final Collection<String> names;
 
-  private final boolean nullable;
+  private final boolean notNull;
 
 
   /**
    * New instance.
    *
    * @param names       property's names
-   * @param nullable true if properties are nullable
+   * @param notNull true if properties are not null
    */
-  public Nullable(Collection<String> names, boolean nullable) {
+  public NotNull(Collection<String> names, boolean notNull) {
     this.names = names;
-    this.nullable = nullable;
+    this.notNull = notNull;
   }
 
 
   @Override
   public void accept(Property property) {
     if (names.contains(property.name())) {
-      property.nullable(nullable);
+      property.notNull(notNull);
     }
   }
 
