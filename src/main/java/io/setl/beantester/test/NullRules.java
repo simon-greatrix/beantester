@@ -65,7 +65,8 @@ public class NullRules {
           holder.bean();
         } catch (Throwable e) {
           check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.ERROR);
-          modelProperty.nullBehaviour(NullBehaviour.ERROR);
+          modelProperty.nullBehaviour(NullBehaviour.ERROR)
+              .nullValue(e);
           continue;
         }
 
@@ -163,7 +164,9 @@ public class NullRules {
       } catch (Throwable e) {
         // Record behaviour when property is omitted.
         check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.ERROR);
-        original.beanCreator().property(name).omittedBehaviour(NullBehaviour.ERROR);
+        original.beanCreator().property(name)
+            .omittedBehaviour(NullBehaviour.ERROR)
+            .omittedValue(e);
         continue;
       } finally {
         // Restore the property and continue.
@@ -206,8 +209,12 @@ public class NullRules {
     } else {
       // nullable so not allowed to error on null
       if (property.nullBehaviour() == NullBehaviour.ERROR) {
+        Object v = property.nullValue();
+        Throwable thrown = v instanceof Throwable ? (Throwable) v : null;
         throw new AssertionException(
-            "Class " + beanClass + " : " + type + " property \"" + property.name() + "\" is nullable but throws an error when set to null.");
+            "Class " + beanClass + " : " + type + " property \"" + property.name() + "\" is nullable but throws an error when set to null.",
+            thrown
+        );
       }
     }
 

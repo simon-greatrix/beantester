@@ -412,17 +412,13 @@ public class BeanHolder {
 
 
   private void setCreatorData() {
-    LinkedHashMap<String, Object> creatorParams = new LinkedHashMap<>();
-    for (var entry : initialValues.entrySet()) {
-      if (!values.containsKey(entry.getKey())) {
-        creatorParams.put(entry.getKey(), entry.getValue());
-      }
-    }
+    LinkedHashMap<String, Object> creatorParams = new LinkedHashMap<>(initialValues);
 
     HashSet<String> creatorKeys = new HashSet<>();
 
     for (var entry : values.entrySet()) {
       String name = entry.getKey();
+
       Property beanProperty = info.property(name);
       boolean beanWritable = beanProperty != null && beanProperty.writable();
 
@@ -434,6 +430,7 @@ public class BeanHolder {
           creatorWritable && !(preferWriters && beanWritable)
       ) {
         creatorKeys.add(name);
+        creatorParams.remove(name);
         creatorParams.put(name, entry.getValue());
       }
     }
