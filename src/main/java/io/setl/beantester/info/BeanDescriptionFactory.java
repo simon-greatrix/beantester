@@ -235,6 +235,21 @@ class BeanDescriptionFactory {
         .properties(beanProperties.values());
     applyPropertyCustomisers(information);
 
+    // harmonise the creator and the bean properties
+    for (Property beanProperty : information.properties()) {
+      Property creatorProperty = information.beanCreator().property(beanProperty.name());
+      if (creatorProperty == null) {
+        continue;
+      }
+
+      boolean value = beanProperty.ignored() || creatorProperty.ignored();
+      beanProperty.ignored(value);
+      creatorProperty.ignored(value);
+
+      value = beanProperty.notNull() || creatorProperty.notNull();
+      beanProperty.notNull(value);
+      creatorProperty.notNull(value);
+    }
     return information;
   }
 

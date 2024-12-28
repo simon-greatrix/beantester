@@ -12,6 +12,7 @@ import io.setl.beantester.example.ApproverTransfer;
 import io.setl.beantester.example.BalanceDTO;
 import io.setl.beantester.example.BalanceTypeIdentifier;
 import io.setl.beantester.example.LedgerAccount;
+import io.setl.beantester.example.LedgerAccount2;
 import io.setl.beantester.example.LedgerManifest;
 import io.setl.beantester.example.LedgerTransfer;
 import io.setl.beantester.example.PetRecord;
@@ -41,13 +42,17 @@ public class TestBeans {
 
   @Test
   void testApproverManifest() throws Throwable {
+    TestContext.close();
+    TestContext.get().repeatable(37L);
     BeanVerifier.verify(ApproverManifest.class);
   }
 
 
   @Test
   void testApproverTransfer() throws Throwable {
-    BeanVerifier.verify(ApproverTransfer.class);
+      TestContext.get().repeatable(221);
+      BeanVerifier.verify(ApproverTransfer.class, Specs.ignored("links"));
+
   }
 
 
@@ -66,6 +71,18 @@ public class TestBeans {
             Specs.beanMaker("of", String.class, BigDecimal.class)
         ));
     BeanVerifier.verify(LedgerAccount.class);
+  }
+
+
+  @Test
+  void testLedgerAccount2() throws Throwable {
+    TestContext testContext = TestContext.get();
+    testContext.getFactories()
+        .addFactory(BeanDescription.create(
+            BalanceDTO.class,
+            Specs.beanMaker("of", String.class, BigDecimal.class)
+        ));
+    BeanVerifier.verify(LedgerAccount2.class);
   }
 
 

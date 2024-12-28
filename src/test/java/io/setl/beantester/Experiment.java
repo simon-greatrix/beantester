@@ -12,7 +12,6 @@ import io.setl.beantester.example.ApproverAccount;
 import io.setl.beantester.example.ApproverLink;
 import io.setl.beantester.example.ApproverManifest;
 import io.setl.beantester.example.ApproverTransfer;
-import io.setl.beantester.example.BuildableBean;
 import io.setl.beantester.example.PetRecord;
 import io.setl.beantester.info.Specs;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;

@@ -18,4 +18,13 @@ public interface BeanCreator<B extends BeanCreator<B> & Model<B>> extends
    */
   BeanCreator<B> copy();
 
+  /**
+   * Perform validation on the builder.
+   *
+   * @param beanDescription the bean description to validate. This will use the bean creator;
+   */
+  default void validate(BeanDescription beanDescription) {
+    // do nothing
+  }
+
 }

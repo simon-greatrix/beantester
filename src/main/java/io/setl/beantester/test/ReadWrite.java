@@ -69,6 +69,7 @@ public class ReadWrite {
 
             holder.reset();
 
+            // Note that setting a property does not start the creation process, so this does not test re-setting a property.
             holder.setProperty(name1, value1);
             holder.setProperty(name2, value2);
 
