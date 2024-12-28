@@ -87,9 +87,9 @@ public class FactoryRepository {
   /**
    * Create a candidate value for the specified property.
    *
-   * @param type     the type of value to create
-   * @param beanClass     the bean's class
-   * @param property the property's information
+   * @param type      the type of value to create
+   * @param beanClass the bean's class
+   * @param property  the property's information
    *
    * @return the candidate value
    */
@@ -112,12 +112,9 @@ public class FactoryRepository {
    */
   public ValueFactory getFactory(Type type) {
     // First check the factories map
-    ValueFactory factory;
-    if (type instanceof Class<?> clazz) {
-      factory = factories.get(clazz);
-      if (factory != null) {
-        return factory;
-      }
+    ValueFactory factory = factories.get(type);
+    if (factory != null) {
+      return factory;
     }
 
     // Now try the lookups, most recently added first
@@ -126,9 +123,7 @@ public class FactoryRepository {
       FactoryLookup lookup = factoryLookups.get(p);
       if (lookup.hasFactory(type)) {
         factory = lookup.getFactory(type);
-        if (type instanceof Class<?> clazz) {
-          factories.put(clazz, factory);
-        }
+        factories.put(type, factory);
         return factory;
       }
     }
@@ -136,9 +131,7 @@ public class FactoryRepository {
     // Finally, try the bean factory lookup
     if (beanFactoryLookup.hasFactory(type)) {
       factory = beanFactoryLookup.getFactory(type);
-      if (type instanceof Class<?> clazz) {
-        factories.put(clazz, factory);
-      }
+      factories.put(type, factory);
       return factory;
     }
 

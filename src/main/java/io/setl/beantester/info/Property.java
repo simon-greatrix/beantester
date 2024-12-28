@@ -36,13 +36,13 @@ public class Property {
   /** Name of this property. */
   private final String name;
 
-  /** Is this property completely ignored during testing? */
+  /** Is this property completely ignored during testing?. */
   private boolean ignored = false;
 
   /** Inferred type of this property. Can be overridden by an explicit type. */
   private Type inferredType = null;
 
-  /** Can this property be null? */
+  /** Can this property be null?. */
   private boolean notNull = false;
 
   /** Behaviour when the property is set to null. */
@@ -60,7 +60,7 @@ public class Property {
   /** Read function for this property. */
   private SerializableFunction1<?, ?> reader;
 
-  /** Is this property significant for equals and hash-code testing? */
+  /** Is this property significant for equals and hash-code testing?. */
   private boolean significant = true;
 
   /** Explicit type of this property (null if not set). */

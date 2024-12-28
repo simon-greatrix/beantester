@@ -1,8 +1,6 @@
 package io.setl.beantester.example;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +16,7 @@ import lombok.ToString;
 @Data
 @SuppressFBWarnings(value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
     justification = "Lombok generated code")
-public final class LedgerAccount implements BalanceData {
+public final class LedgerAccount {
 
   /**
    * Builder for accounts.
@@ -26,11 +24,11 @@ public final class LedgerAccount implements BalanceData {
   @ToString
   public static class LedgerAccountBuilder {
 
-    private final ArrayList<BalanceDTO> balances = new ArrayList<>();
-
     private String accountId;
 
     private String assetId;
+
+    private List<BalanceDTO> balances;
 
     private long defId;
 
@@ -54,61 +52,26 @@ public final class LedgerAccount implements BalanceData {
     }
 
 
-    public LedgerAccountBuilder accountId(@Nonnull String accountId) {
+    public LedgerAccountBuilder accountId(String accountId) {
       this.accountId = accountId;
       return this;
     }
 
 
-    public LedgerAccountBuilder accountType(@Nonnull String type) {
+    public LedgerAccountBuilder accountType(String type) {
       this.type = type;
       return this;
     }
 
 
-    public LedgerAccountBuilder assetId(@Nonnull String assetId) {
+    public LedgerAccountBuilder assetId(String assetId) {
       this.assetId = assetId;
       return this;
     }
 
 
     /**
-     * Add a balance.
-     *
-     * @param balance the balance
-     *
-     * @return this
-     */
-    public LedgerAccountBuilder balance(BalanceDTO balance) {
-      if (balance != null) {
-        this.balances.add(balance);
-      }
-      return this;
-    }
-
-
-    public LedgerAccountBuilder balance(String label, BigDecimal balance) {
-      this.balances.add(BalanceDTO.of(label, balance));
-      return this;
-    }
-
-
-    /**
-     * Add a balance.
-     *
-     * @param id      the balance type identifier
-     * @param balance the amount
-     *
-     * @return this
-     */
-    public LedgerAccountBuilder balance(BalanceTypeIdentifier id, BigDecimal balance) {
-      this.balances.add(BalanceDTO.of(id, balance));
-      return this;
-    }
-
-
-    /**
-     * Add a collection of balances.
+     * Override the collection of balances. This replaces all existing balances.
      *
      * @param balances the balances to add
      *
@@ -116,7 +79,7 @@ public final class LedgerAccount implements BalanceData {
      */
     public LedgerAccountBuilder balances(Collection<? extends BalanceDTO> balances) {
       if (balances != null) {
-        balances.forEach(this::balance);
+        this.balances = List.copyOf(balances);
       }
       return this;
     }
@@ -198,7 +161,7 @@ public final class LedgerAccount implements BalanceData {
     }
 
 
-    public LedgerAccountBuilder lastSettledAt(@Nonnull Instant lastSettledAt) {
+    public LedgerAccountBuilder lastSettledAt(Instant lastSettledAt) {
       this.lastSettledAt = lastSettledAt;
       return this;
     }

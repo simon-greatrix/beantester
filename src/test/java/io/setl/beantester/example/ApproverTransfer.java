@@ -10,6 +10,7 @@ import java.util.Set;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -42,8 +43,8 @@ public final class ApproverTransfer {
   private final int index;
 
   /** Links that constitute this transfer. */
-  @Singular(ignoreNullCollections = false)
-  @Nonnull
+  @Singular(ignoreNullCollections = true)
+  @Nullable
   private final List<ApproverLink> links;
 
   /** The 'to' account. */

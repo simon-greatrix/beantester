@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import io.setl.beantester.AssertionException;
+import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
@@ -20,22 +21,26 @@ import io.setl.beantester.factories.FactoryRepository;
  */
 public class BeanHolder {
 
-  private record CreatorData(TreeMap<String, Object> params, HashSet<String> keys) {
+  private record CreatorData(LinkedHashMap<String, Object> params, HashSet<String> keys) {
 
   }
 
 
 
-  private final HashSet<String> changed = new HashSet<>();
-
   private final BeanDescription info;
 
   private final HashMap<String, Object> initialValues = new HashMap<>();
 
+  /** The property values (may be inconsistent with the bean). */
   private final LinkedHashMap<String, Object> values = new LinkedHashMap<>();
 
+  /** The current bean. */
   private Object bean;
 
+  /** Creator data used in creating the current bean. */
+  private CreatorData creatorData;
+
+  /** Whether to prefer writers to creators. */
   private boolean preferWriters = TestContext.get().preferWriters();
 
 
@@ -54,7 +59,6 @@ public class BeanHolder {
     this.info = copy.info;
 
     this.initialValues.putAll(copy.initialValues);
-    this.changed.addAll(copy.changed);
     this.values.putAll(copy.values);
     this.bean = null;
   }
@@ -73,7 +77,7 @@ public class BeanHolder {
 
 
   private void buildBean() {
-    CreatorData creatorData = creatorData();
+    setCreatorData();
 
     if (bean == null || !creatorData.keys.isEmpty()) {
       try {
@@ -107,9 +111,9 @@ public class BeanHolder {
    */
   public Optional<Object> builder() {
     if (info.beanCreator() instanceof BeanBuilder builder) {
-      CreatorData createData = creatorData();
+      setCreatorData();
       try {
-        return Optional.of(builder.build(createData.params));
+        return Optional.of(builder.build(creatorData.params));
       } catch (Throwable e) {
         throw new AssertionException("Failed to create builder for class " + info.beanClass(), e);
       }
@@ -147,30 +151,6 @@ public class BeanHolder {
       throw new IllegalArgumentException("No property named " + name);
     }
     return TestContext.get().getFactories().create(type, this.info.beanClass(), info);
-  }
-
-
-  private CreatorData creatorData() {
-    TreeMap<String, Object> creatorParams = new TreeMap<>(initialValues);
-    HashSet<String> creatorKeys = new HashSet<>();
-
-    for (String name : changed) {
-      Property infoBean = info.property(name);
-      boolean beanWritable = infoBean != null && infoBean.writable();
-
-      Property infoCreator = info.beanCreator().property(name);
-      boolean creatorWritable = infoCreator != null && infoCreator.writable();
-
-      // We set this property in the creator unless we are preferring writers and it is bean-writable.
-      if (
-          creatorWritable
-              && !(preferWriters && beanWritable)
-      ) {
-        creatorKeys.add(name);
-        creatorParams.put(name, values.get(name));
-      }
-    }
-    return new CreatorData(creatorParams, creatorKeys);
   }
 
 
@@ -362,7 +342,11 @@ public class BeanHolder {
    */
   public Object readActual(String name) {
     buildBean();
-    return info.property(name).read(bean);
+    Property property = info.property(name);
+    if (property == null) {
+      throw new IllegalArgumentException("Class " + getBeanClass() + " : No property named " + name);
+    }
+    return property.read(bean);
   }
 
 
@@ -386,7 +370,6 @@ public class BeanHolder {
   public BeanHolder reset() {
     bean = null;
     values.clear();
-    changed.clear();
     resetInitialValues();
     return this;
   }
@@ -395,7 +378,7 @@ public class BeanHolder {
   private void resetInitialValues() {
     FactoryRepository vfr = TestContext.get().getFactories();
 
-    // Set a value for all non-null values.
+    // Set a value for all non-null values (including ignored ones)
     for (Property property : info.beanCreator().properties()) {
       if (property.notNull()) {
         initialValues.put(property.name(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
@@ -428,6 +411,36 @@ public class BeanHolder {
   }
 
 
+  private void setCreatorData() {
+    LinkedHashMap<String, Object> creatorParams = new LinkedHashMap<>();
+    for (var entry : initialValues.entrySet()) {
+      if (!values.containsKey(entry.getKey())) {
+        creatorParams.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    HashSet<String> creatorKeys = new HashSet<>();
+
+    for (var entry : values.entrySet()) {
+      String name = entry.getKey();
+      Property beanProperty = info.property(name);
+      boolean beanWritable = beanProperty != null && beanProperty.writable();
+
+      Property creatorProperty = info.beanCreator().property(name);
+      boolean creatorWritable = creatorProperty != null && creatorProperty.writable();
+
+      // We set this property in the creator unless we are preferring writers and it is bean-writable.
+      if (
+          creatorWritable && !(preferWriters && beanWritable)
+      ) {
+        creatorKeys.add(name);
+        creatorParams.put(name, entry.getValue());
+      }
+    }
+    creatorData = new CreatorData(creatorParams, creatorKeys);
+  }
+
+
   /**
    * Set the property value. Note that this does not invoke the setter methods.
    *
@@ -451,7 +464,6 @@ public class BeanHolder {
 
     values.remove(name);
     values.put(name, value);
-    changed.add(name);
 
     return true;
   }
@@ -470,8 +482,120 @@ public class BeanHolder {
     Object actual = readActual(propertyName);
     Object expected = readExpected(propertyName);
     if (!Objects.equals(actual, expected)) {
-      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
+      // Expected does not equal actual, but it could be a result of null or omitted handling. In either case, expected will be null.
+      if (expected != null) {
+        // Different values and not a special case, so failure.
+        throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" is \"" + actual + "\" expected \"" + expected + "\".");
+      }
+
+      // Pass to appropriate special case handler
+      if (hasExpected(propertyName)) {
+        // We explicitly set it to null
+        verifyExpectedNull(propertyName, actual);
+      } else {
+        // We omitted it
+        verifyOmitted(propertyName, actual);
+      }
+
     }
+  }
+
+
+  /** Handle special case where we explicitly set a property to null, but the actual value was not null. */
+  private void verifyExpectedNull(String propertyName, Object actual) {
+    // How did we set it?
+    Property property;
+    if (creatorData.keys.contains(propertyName)) {
+      // We set it in the creator, so must be a creator property
+      property = info.beanCreator().property(propertyName);
+    } else {
+      property = info.property(propertyName);
+    }
+
+    if (property == null || property.ignored()) {
+      return;
+    }
+
+    // Does the behaviour match the property?
+    NullBehaviour behaviour = property.nullBehaviour();
+
+    if (behaviour == NullBehaviour.NULL) {
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was set to null and has on-null behaviour of "
+          + behaviour + " but actual value was: " + actual);
+    }
+
+    if (behaviour == NullBehaviour.ERROR) {
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was set to null and has on-null behaviour of "
+          + behaviour + " but did not throw an exception and actual value was: " + actual);
+    }
+
+    if (behaviour == NullBehaviour.VALUE) {
+      // Could be OK
+      Object expected = property.nullValue();
+      if (!Objects.equals(expected, actual)) {
+        // Sadly, not OK
+        throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was set to null and has on-null behaviour of "
+            + behaviour + " but actual value was: " + actual + " expected: " + expected);
+      }
+
+      // OK - either are values are equal or the values was not specified.
+      return;
+    }
+
+    // Behaviour not specified or was NOT_READABLE.
+    if (behaviour != null) {
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was set to null and has on-null behaviour of "
+          + behaviour + " but actual value was: " + actual);
+    }
+
+    // No behavior specified, so we can't check.
+    throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName
+        + "\" was set to null with no on-null behaviour specified, but actual value was: " + actual);
+  }
+
+
+  /** Value was never set, but somehow had a non-null value. */
+  private void verifyOmitted(String propertyName, Object actual) {
+    Property property = info.property(propertyName);
+    if (property == null || property.ignored()) {
+      // It's not something we check
+      return;
+    }
+
+    NullBehaviour behaviour = property.omittedBehaviour();
+
+    if (behaviour == NullBehaviour.NULL) {
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was omitted and has on-omitted behaviour of "
+          + behaviour + " but actual value was: " + actual);
+    }
+
+    if (behaviour == NullBehaviour.ERROR) {
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was omitted and has on-omitted behaviour of "
+          + behaviour + " but did not throw an exception and actual value was: " + actual);
+    }
+
+    if (behaviour == NullBehaviour.VALUE) {
+      // Could be OK
+      Object expected = property.omittedValue();
+      if (!Objects.equals(expected, actual)) {
+        // Sadly, not OK
+        throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was omitted and has on-omitted behaviour of "
+            + behaviour + " but actual value was: " + actual + " expected: " + expected);
+      }
+
+      // OK - either are values are equal or the values was not specified.
+      return;
+    }
+
+    // Behaviour not specified or was NOT_READABLE.
+    if (behaviour != null) {
+      throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName + "\" was omitted and has on-omitted behaviour of "
+          + behaviour + " but actual value was: " + actual);
+    }
+
+    // No behavior specified, so we can't check.
+    throw new AssertionException("Class " + info.beanClass() + ": Property \"" + propertyName
+        + "\" was omitted and has no on-omitted behaviour specified, but actual value was: " + actual);
   }
 
 }
