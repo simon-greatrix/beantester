@@ -3,7 +3,7 @@ package io.setl.beantester.info.specs;
 import io.setl.beantester.info.Property;
 import io.setl.beantester.info.Specs.PropertyCustomiser;
 
-/** A specification that sets the type of a property. */
+/** A specification that sets a property's type. */
 public class TypeSetter implements PropertyCustomiser {
 
   private final String name;
@@ -25,8 +25,8 @@ public class TypeSetter implements PropertyCustomiser {
 
   @Override
   public void accept(Property property) {
-    if (property.name().equals(name)) {
-      property.type(type);
+    if (property.getName().equals(name)) {
+      property.setType(type);
     }
   }
 

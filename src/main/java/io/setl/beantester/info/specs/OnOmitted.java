@@ -24,8 +24,8 @@ public class OnOmitted implements PropertyCustomiser {
 
   @Override
   public void accept(Property property) {
-    if (behaviours.containsKey(property.name())) {
-      property.omittedBehaviour(behaviours.get(property.name()));
+    if (behaviours.containsKey(property.getName())) {
+      property.setOmittedBehaviour(behaviours.get(property.getName()));
     }
   }
 

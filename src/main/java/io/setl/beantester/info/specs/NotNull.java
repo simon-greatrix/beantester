@@ -27,8 +27,8 @@ public class NotNull implements PropertyCustomiser {
 
   @Override
   public void accept(Property property) {
-    if (names.contains(property.name())) {
-      property.notNull(notNull);
+    if (names.contains(property.getName())) {
+      property.setNotNull(notNull);
     }
   }
 

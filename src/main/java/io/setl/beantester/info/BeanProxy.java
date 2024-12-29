@@ -1,6 +1,5 @@
 package io.setl.beantester.info;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationHandler;
@@ -65,7 +64,7 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
       String property = writeMethods.get(method);
       Object value = args[0];
 
-      if (value == null && properties.get(property).notNull()) {
+      if (value == null && properties.get(property).isNotNull()) {
         throw new IllegalArgumentException("Null value for " + property);
       }
       Object oldValue = values.put(property, value);
@@ -173,12 +172,12 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
   public BeanProxy(Class<?> beanClass) {
     this.beanClass = beanClass;
     for (Property property : new BeanDescriptionFactory(beanClass).findAllProperties()) {
-      property(property);
+      setProperty(property);
 
-      Optional<Method> optional = property.writeMethod();
-      optional.ifPresent(method -> writeMethods.put(method, property.name()));
-      optional = property.readMethod();
-      optional.ifPresent(method -> readMethods.put(method, property.name()));
+      Optional<Method> optional = property.getWriteMethod();
+      optional.ifPresent(method -> writeMethods.put(method, property.getName()));
+      optional = property.getReadMethod();
+      optional.ifPresent(method -> readMethods.put(method, property.getName()));
     }
   }
 
@@ -189,7 +188,7 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
    * @param proxy the proxy to copy
    */
   public BeanProxy(BeanProxy proxy) {
-    super(proxy.properties());
+    super(proxy.getProperties());
     this.beanClass = proxy.beanClass;
     this.readMethods.putAll(proxy.readMethods);
     this.writeMethods.putAll(proxy.writeMethods);
@@ -200,21 +199,21 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
   public Object apply(Map<String, Object> values) {
     // Verify no unknown properties
     for (var e : values.entrySet()) {
-      Property property = property(e.getKey());
+      Property property = getProperty(e.getKey());
       if (property == null) {
         throw new IllegalArgumentException("Value specified for unknown property: " + e.getKey());
       }
-      if (e.getValue() == null && property.notNull()) {
+      if (e.getValue() == null && property.isNotNull()) {
         throw new IllegalArgumentException("Null value for " + e.getKey());
       }
     }
 
     // Verify all not-null are set to null
     ArrayList<Property> notNullValues = new ArrayList<>();
-    for (Property property : properties()) {
-      if (property.notNull()) {
-        if (values.get(property.name()) == null && values.containsKey(property.name())) {
-          throw new IllegalArgumentException("Null value for " + property.name());
+    for (Property property : getProperties()) {
+      if (property.isNotNull()) {
+        if (values.get(property.getName()) == null && values.containsKey(property.getName())) {
+          throw new IllegalArgumentException("Null value for " + property.getName());
         }
         notNullValues.add(property);
       }
@@ -225,7 +224,7 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
     // Add missing not-null values
     FactoryRepository vfr = TestContext.get().getFactories();
     for (Property property : notNullValues) {
-      handler.values.put(property.name(), vfr.create(ValueType.PRIMARY, beanClass, property));
+      handler.values.put(property.getName(), vfr.create(ValueType.PRIMARY, beanClass, property));
     }
 
     return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, handler);

@@ -163,7 +163,7 @@ class BeanDescriptionFactory {
   private Spec[] specs;
 
 
-  public BeanDescriptionFactory(Class<?> beanClass) {
+  BeanDescriptionFactory(Class<?> beanClass) {
     this.beanClass = beanClass;
     if (Modifier.isAbstract(beanClass.getModifiers()) && !beanClass.isInterface()) {
       throw new IllegalArgumentException("Cannot create a bean description for an abstract class: " + beanClass);
@@ -179,11 +179,11 @@ class BeanDescriptionFactory {
 
     // customise props
     for (PropertyCustomiser spec : specs(PropertyCustomiser.class, specs)) {
-      for (Property info : model.properties()) {
+      for (Property info : model.getProperties()) {
         try {
           spec.accept(info);
         } catch (Throwable e) {
-          throw new IllegalStateException("Failed to customise property: " + info.name(), e);
+          throw new IllegalStateException("Failed to customise property: " + info.getName(), e);
         }
       }
     }
@@ -192,7 +192,7 @@ class BeanDescriptionFactory {
     boolean isCreator = model instanceof BeanCreator<?>;
     for (NewProperty spec : specs(NewProperty.class, specs)) {
       Optional<Property> optProperty = spec.get(isCreator);
-      optProperty.ifPresent(model::property);
+      optProperty.ifPresent(model::setProperty);
     }
   }
 
@@ -231,24 +231,24 @@ class BeanDescriptionFactory {
 
     findBeanProperties();
     BeanDescription information = new BeanDescription(beanClass)
-        .beanCreator(creator)
-        .properties(beanProperties.values());
+        .setBeanCreator(creator)
+        .setProperties(beanProperties.values());
     applyPropertyCustomisers(information);
 
     // harmonise the creator and the bean properties
-    for (Property beanProperty : information.properties()) {
-      Property creatorProperty = information.beanCreator().property(beanProperty.name());
+    for (Property beanProperty : information.getProperties()) {
+      Property creatorProperty = information.getBeanCreator().getProperty(beanProperty.getName());
       if (creatorProperty == null) {
         continue;
       }
 
-      boolean value = beanProperty.ignored() || creatorProperty.ignored();
-      beanProperty.ignored(value);
-      creatorProperty.ignored(value);
+      boolean value = beanProperty.isIgnored() || creatorProperty.isIgnored();
+      beanProperty.setIgnored(value);
+      creatorProperty.setIgnored(value);
 
-      value = beanProperty.notNull() || creatorProperty.notNull();
-      beanProperty.notNull(value);
-      creatorProperty.notNull(value);
+      value = beanProperty.isNotNull() || creatorProperty.isNotNull();
+      beanProperty.setNotNull(value);
+      creatorProperty.setNotNull(value);
     }
     return information;
   }
@@ -280,10 +280,10 @@ class BeanDescriptionFactory {
 
 
   /**
-   * Find the testable properties of a class. A testable property is one that has both a getter and a setter. Note that this will not find properties that
-   * are set via the creator.
+   * Find the properties of a class. A property will have either a getter or a setter. Note that this will not find properties that
+   * are set via the creator and do not have a getter on the bean.
    *
-   * @return a collection of writable properties
+   * @return a collection of properties
    */
   Collection<Property> findAllProperties() {
     this.specs = new Spec[0];
@@ -298,6 +298,7 @@ class BeanDescriptionFactory {
     Method[] methods = beanClass.getMethods();
 
     for (Method method : methods) {
+      // Don't want static, public or Object methods
       if (
           Modifier.isStatic(method.getModifiers())
               || !Modifier.isPublic(method.getModifiers())
@@ -305,8 +306,6 @@ class BeanDescriptionFactory {
       ) {
         continue;
       }
-
-      // Can only have abstract methods in an interface
 
       // A method with no parameters and a return value is a getter of some kind.
       if (method.getParameterCount() == 0 && !method.getReturnType().equals(void.class)) {
@@ -331,7 +330,7 @@ class BeanDescriptionFactory {
     // Does the bean have a specific creator?
     Optional<BeanCreatorSpec> optCreator = firstSpec(BeanCreatorSpec.class, specs);
     if (optCreator.isPresent()) {
-      creator = optCreator.get().creator();
+      creator = optCreator.get().getCreator();
       return;
     }
 
@@ -413,13 +412,13 @@ class BeanDescriptionFactory {
     // We have both methods, so return them
     return Optional.of(new BuilderMethods() {
       @Override
-      public SerializableFunction1<Object, Object> build() {
+      public SerializableFunction1<Object, Object> getBuildFunction() {
         return buildLambda;
       }
 
 
       @Override
-      public SerializableFunction0<Object> builder() {
+      public SerializableFunction0<Object> getBuilderSupplier() {
         return builderLambda;
       }
     });
@@ -439,22 +438,13 @@ class BeanDescriptionFactory {
 
     Property property = new Property(propertyName)
         .reader(SerializableLambdas.createLambda(SerializableFunction1.class, method))
-        .notNull(returnValueIsNotNull(method));
+        .setNotNull(returnValueIsNotNull(method));
     Property.merge(beanProperties, property);
   }
 
 
   private String findGetterName(Method method) {
     String methodName = method.getName();
-    if (
-        hasPrefix(methodName, "getIs")
-            && (
-            method.getReturnType().equals(boolean.class)
-                || method.getReturnType().equals(Boolean.class)
-        )
-    ) {
-      return stripPrefix(methodName, "is");
-    }
 
     if (hasPrefix(methodName, "get")) {
       return stripPrefix(methodName, "get");
@@ -495,12 +485,12 @@ class BeanDescriptionFactory {
     String propertyName = getSetterName(method);
 
     Property property = new Property(propertyName)
-        .notNull(parameterIsNotNull(method, 0));
+        .setNotNull(parameterIsNotNull(method, 0));
 
-    if (method.getReturnType().equals(void.class)) {
-      property.writer(SerializableLambdas.createLambda(SerializableConsumer2.class, method));
+    if (returnType.equals(void.class)) {
+      property.setWriter(SerializableLambdas.createLambda(SerializableConsumer2.class, method));
     } else {
-      property.writer(SerializableLambdas.createLambda(SerializableFunction2.class, method));
+      property.setWriter(SerializableLambdas.createLambda(SerializableFunction2.class, method));
     }
 
     Property.merge(beanProperties, property);
@@ -516,22 +506,13 @@ class BeanDescriptionFactory {
     this.specs = new Spec[0];
     beanProperties.clear();
     findBeanProperties();
-    beanProperties.values().removeIf(p -> !p.writable());
+    beanProperties.values().removeIf(p -> !p.isWritable());
     return beanProperties.values();
   }
 
 
   private String getSetterName(Method method) {
     String methodName = method.getName();
-
-    if (
-        hasPrefix(methodName, "setIs") && (
-            method.getParameterTypes()[0].equals(boolean.class)
-                || method.getParameterTypes()[0].equals(Boolean.class)
-        )
-    ) {
-      return stripPrefix(methodName, "setIs");
-    }
 
     if (hasPrefix(methodName, "set")) {
       return stripPrefix(methodName, "set");

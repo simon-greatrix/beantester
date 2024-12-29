@@ -18,9 +18,9 @@ public class BigDecimalValueFactory extends ValueFactory {
 
 
   /**
-   * Create a new Double object.
+   * Create a new BigDecimal object.
    *
-   * @return A new Double object.
+   * @return A new BigDecimal object.
    */
   protected static BigDecimal createRandom() {
     byte[] bytes = new byte[12];

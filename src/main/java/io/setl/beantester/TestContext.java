@@ -5,6 +5,9 @@ import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomGeneratorFactory;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.factories.time.RandomClock;
 import io.setl.beantester.info.BeanDescription;
@@ -56,14 +59,24 @@ public class TestContext {
     root = (SplittableGenerator) randomFactory.create();
   }
 
+  @Getter
+  @Setter
   private RandomClock clock;
 
   private boolean factoriesAreInitialized = false;
 
-  private FactoryRepository factoryRepository;
+  private final FactoryRepository factories;
 
+  @Getter @Setter
   private boolean preferWriters = true;
 
+  /**
+   * -- GETTER --
+   *  Get the random number generator.
+   *
+   * @return the random number generator
+   */
+  @Getter
   private RandomGenerator random;
 
 
@@ -72,7 +85,7 @@ public class TestContext {
     random = newRandom();
 
     clock = new RandomClock();
-    factoryRepository = new FactoryRepository();
+    factories = new FactoryRepository();
   }
 
 
@@ -108,11 +121,6 @@ public class TestContext {
   }
 
 
-  public RandomClock clock() {
-    return clock;
-  }
-
-
   /**
    * Create a {@code BeanDescription} for the specified class.
    *
@@ -134,29 +142,9 @@ public class TestContext {
   public FactoryRepository getFactories() {
     if (!factoriesAreInitialized) {
       factoriesAreInitialized = true;
-      factoryRepository.loadDefaults();
+      factories.loadDefaults();
     }
-    return factoryRepository;
-  }
-
-
-  /**
-   * Get the random number generator.
-   *
-   * @return the random number generator
-   */
-  public RandomGenerator getRandom() {
-    return random;
-  }
-
-
-  /**
-   * If a property can be set on creation and via a writer, do we prefer to create a new bean or update the existing one?.
-   *
-   * @return true if we prefer updating the existing bean, false if we prefer creating a new bean.
-   */
-  public boolean preferWriters() {
-    return preferWriters;
+    return factories;
   }
 
 
@@ -167,14 +155,8 @@ public class TestContext {
    *
    * @return this
    */
-  public TestContext repeatable(long seed) {
+  public TestContext setRepeatable(long seed) {
     random = randomFactory.create(seed);
-    return this;
-  }
-
-
-  public TestContext setPreferWriters(boolean preferWriters) {
-    this.preferWriters = preferWriters;
     return this;
   }
 

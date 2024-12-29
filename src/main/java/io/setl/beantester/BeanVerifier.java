@@ -22,7 +22,7 @@ public class BeanVerifier {
   public static void verify(Class<?> clazz, Specs.Spec... specs) {
     BeanDescription info = BeanDescription.create(clazz, specs);
 
-    info.beanCreator().validate(info);
+    info.getBeanCreator().validate(info);
 
     NullRules.inferNullBehaviour(info);
     NullRules.inferOmittedBehaviour(info);

@@ -11,7 +11,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.concurrent.Callable;
 
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer0;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer1;

@@ -103,8 +103,8 @@ public class ReadWrite {
 
 
   private void testToString() {
-    Objects.requireNonNull(holder.bean().toString());
-    Optional<Object> builder = holder.builder();
+    Objects.requireNonNull(holder.newBean().toString());
+    Optional<Object> builder = holder.createBuilder();
     builder.ifPresent(o -> Objects.requireNonNull(o.toString()));
   }
 

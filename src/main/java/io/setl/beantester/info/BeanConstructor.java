@@ -23,7 +23,7 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
    * @param beanConstructor the bean constructor to copy
    */
   public BeanConstructor(BeanConstructor beanConstructor) {
-    super(beanConstructor.properties());
+    super(beanConstructor.getProperties());
     this.constructor = beanConstructor.constructor;
     this.names = beanConstructor.names;
   }
@@ -37,8 +37,8 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
    */
   public BeanConstructor(Class<?> beanClass, Specs.BeanConstructor spec) {
     spec.validate();
-    names = List.copyOf(Objects.requireNonNull(spec.names(), "parameterNames"));
-    List<Class<?>> types = Objects.requireNonNull(spec.types(), "parameterTypes");
+    names = List.copyOf(Objects.requireNonNull(spec.getNames(), "parameterNames"));
+    List<Class<?>> types = Objects.requireNonNull(spec.getTypes(), "parameterTypes");
     if (names.size() != types.size()) {
       throw new IllegalArgumentException("Names and types must be the same size");
     }
@@ -55,13 +55,13 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
     BeanDescriptionFactory factory = new BeanDescriptionFactory(beanClass);
 
     for (int i = 0; i < names.size(); i++) {
-      property(
+      setProperty(
           new Property(names.get(i))
-              .type(types.get(i))
-              .writer((a, b) -> {
+              .setType(types.get(i))
+              .setWriter((a, b) -> {
                 // do nothing
               })
-              .notNull(factory.parameterIsNotNull(constructor, i))
+              .setNotNull(factory.parameterIsNotNull(constructor, i))
       );
     }
   }

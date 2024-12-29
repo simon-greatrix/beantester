@@ -24,7 +24,7 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
    * @param maker the bean maker to copy
    */
   public BeanMaker(BeanMaker maker) {
-    super(maker.properties());
+    super(maker.getProperties());
     this.method = maker.method;
     this.names = maker.names;
   }
@@ -37,16 +37,16 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
    */
   public BeanMaker(Specs.BeanMaker spec) {
     spec.validate();
-    names = List.copyOf(Objects.requireNonNull(spec.names(), "parameterNames"));
-    List<Class<?>> types = Objects.requireNonNull(spec.types(), "parameterTypes");
+    names = List.copyOf(Objects.requireNonNull(spec.getNames(), "parameterNames"));
+    List<Class<?>> types = Objects.requireNonNull(spec.getTypes(), "parameterTypes");
     if (names.size() != types.size()) {
       throw new IllegalArgumentException("Names and types must be the same size");
     }
 
     try {
-      method = spec.factoryClass().getMethod(spec.factoryName(), types.toArray(Class[]::new));
+      method = spec.getFactoryClass().getMethod(spec.getFactoryName(), types.toArray(Class[]::new));
     } catch (NoSuchMethodException e) {
-      throw new IllegalArgumentException("No method with name \"" + spec.factoryName() + "\" found for " + spec.factoryClass() + " with types " + types);
+      throw new IllegalArgumentException("No method with name \"" + spec.getFactoryName() + "\" found for " + spec.getFactoryClass() + " with types " + types);
     }
     if (!method.trySetAccessible()) {
       throw new IllegalArgumentException("Method is not accessible: " + method);
@@ -55,16 +55,16 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
       throw new IllegalArgumentException("Method must be static: " + method);
     }
 
-    BeanDescriptionFactory factory = new BeanDescriptionFactory(spec.factoryClass());
+    BeanDescriptionFactory factory = new BeanDescriptionFactory(spec.getFactoryClass());
 
     for (int i = 0; i < names.size(); i++) {
-      property(
+      setProperty(
           new Property(names.get(i))
-              .type(types.get(i))
-              .writer((a, b) -> {
+              .setType(types.get(i))
+              .setWriter((a, b) -> {
                 // do nothing
               })
-              .notNull(factory.parameterIsNotNull(method, i))
+              .setNotNull(factory.parameterIsNotNull(method, i))
       );
     }
   }

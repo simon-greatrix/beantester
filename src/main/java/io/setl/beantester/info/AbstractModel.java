@@ -27,22 +27,22 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
    */
   protected AbstractModel(Collection<Property> properties) {
     for (Property p : properties) {
-      this.properties.put(p.name(), new Property(p));
+      this.properties.put(p.getName(), new Property(p));
     }
   }
 
 
   @Override
-  public Collection<Property> properties() {
+  public Collection<Property> getProperties() {
     return properties.values();
   }
 
 
   @Override
   @SuppressWarnings("unchecked")
-  public M properties(Collection<Property> newProperties) {
+  public M setProperties(Collection<Property> newProperties) {
     for (Property property : newProperties) {
-      properties.put(property.name(), property);
+      properties.put(property.getName(), property);
     }
     return (M) this;
   }
@@ -50,14 +50,14 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
 
   @Override
   @SuppressWarnings("unchecked")
-  public M property(Property property) {
-    properties.put(property.name(), property);
+  public M setProperty(Property property) {
+    properties.put(property.getName(), property);
     return (M) this;
   }
 
 
   @Override
-  public Property property(String name) {
+  public Property getProperty(String name) {
     if (name != null) {
       return properties.get(name);
     }
@@ -66,7 +66,7 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
 
 
   @Override
-  public Set<String> propertyNames() {
+  public Set<String> getPropertyNames() {
     return properties.keySet();
   }
 

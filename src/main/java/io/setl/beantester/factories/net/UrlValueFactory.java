@@ -17,6 +17,7 @@ public class UrlValueFactory extends ValueFactory {
 
   private static final URL PRIMARY;
 
+  @SuppressWarnings("HttpUrlsUsage")
   private static final List<String> SCHEMES = Arrays.asList("http://", "https://", "ftp://");
 
   private static final URL SECONDARY;

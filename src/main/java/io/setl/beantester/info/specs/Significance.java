@@ -27,8 +27,8 @@ public class Significance implements PropertyCustomiser {
 
   @Override
   public void accept(Property property) {
-    if (names.contains(property.name())) {
-      property.significant(significant);
+    if (names.contains(property.getName())) {
+      property.setSignificant(significant);
     }
   }
 

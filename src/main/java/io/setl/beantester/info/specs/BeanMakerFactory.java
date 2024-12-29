@@ -68,7 +68,7 @@ public class BeanMakerFactory {
     }
 
     BeanConstructor parameters = findParameters(factoryClass, method);
-    return new BeanMakerImpl(factoryClass, factoryName, parameters.names(), parameters.types());
+    return new BeanMakerImpl(factoryClass, factoryName, parameters.getNames(), parameters.getTypes());
   }
 
 }

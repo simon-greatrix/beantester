@@ -1,8 +1,12 @@
 package io.setl.beantester.info;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Defines an object that provides information about a JavaBean.
  */
+@Getter
 public class BeanDescription extends AbstractModel<BeanDescription> {
 
   /**
@@ -15,6 +19,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
 
   private final Class<?> beanClass;
 
+  @Setter
   private BeanCreator<?> beanCreator;
 
 
@@ -29,30 +34,9 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
    * @param beanDescription the description to copy
    */
   public BeanDescription(BeanDescription beanDescription) {
-    super(beanDescription.properties());
+    super(beanDescription.getProperties());
     this.beanClass = beanDescription.beanClass;
     this.beanCreator = beanDescription.beanCreator.copy();
-  }
-
-
-  /**
-   * Get the type of bean this object contains information about.
-   *
-   * @return The type of bean this object contains information about.
-   */
-  public Class<?> beanClass() {
-    return beanClass;
-  }
-
-
-  public BeanCreator<?> beanCreator() {
-    return beanCreator;
-  }
-
-
-  public BeanDescription beanCreator(BeanCreator<?> beanCreator) {
-    this.beanCreator = beanCreator;
-    return this;
   }
 
 
@@ -65,7 +49,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
   public String toString() {
     return "BeanInformation{"
         + "beanClass=" + beanClass
-        + ", properties=" + properties()
+        + ", properties=" + getProperties()
         + ", beanCreator=" + beanCreator
         + '}';
   }
