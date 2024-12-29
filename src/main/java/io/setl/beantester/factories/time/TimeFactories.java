@@ -69,7 +69,7 @@ public class TimeFactories {
     if (t == ValueType.SECONDARY) {
       return SECONDARY_CLOCK;
     }
-    return TestContext.get().clock();
+    return TestContext.get().getClock();
   }
 
 
@@ -78,7 +78,7 @@ public class TimeFactories {
     addFactory(java.sql.Date.class, (t) -> new java.sql.Date(clock(t).millis()));
     addFactory(java.sql.Timestamp.class, (t) -> new java.sql.Timestamp(clock(t).millis()));
 
-    addFactory(Clock.class, (t) -> clock(t));
+    addFactory(Clock.class, this::clock);
     addFactory(Instant.class, (t) -> clock(t).instant());
     addFactory(LocalDate.class, newFactory(LocalDate::now));
     addFactory(LocalDateTime.class, newFactory(LocalDateTime::now));

@@ -43,14 +43,14 @@ public class TestBeans {
   @Test
   void testApproverManifest() throws Throwable {
     TestContext.close();
-    TestContext.get().repeatable(37L);
+    TestContext.get().setRepeatable(37L);
     BeanVerifier.verify(ApproverManifest.class);
   }
 
 
   @Test
   void testApproverTransfer() throws Throwable {
-      TestContext.get().repeatable(221);
+      TestContext.get().setRepeatable(221);
       BeanVerifier.verify(ApproverTransfer.class, Specs.ignored("links"));
 
   }

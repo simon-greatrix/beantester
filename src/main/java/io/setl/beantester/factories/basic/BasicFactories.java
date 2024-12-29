@@ -1,7 +1,5 @@
 package io.setl.beantester.factories.basic;
 
-import java.util.UUID;
-
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.FactoryRepository;
 

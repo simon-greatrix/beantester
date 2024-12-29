@@ -5,6 +5,9 @@ import static io.setl.beantester.mirror.Executables.getRawType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
@@ -14,8 +17,10 @@ import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.mirror.Executables;
 
 /**
- * FactoryCollection for array types.
+ * Factory for array types.
  */
+@Setter
+@Getter
 public class ArrayFactoryLookup implements FactoryLookup {
 
   private int maxSize = 8;
@@ -38,11 +43,6 @@ public class ArrayFactoryLookup implements FactoryLookup {
   }
 
 
-  public int getMaxSize() {
-    return maxSize;
-  }
-
-
   @Override
   public boolean hasFactory(Type type) {
     return getRawType(type).isArray();
@@ -60,9 +60,5 @@ public class ArrayFactoryLookup implements FactoryLookup {
     return array;
   }
 
-
-  public void setMaxSize(int maxArrayLength) {
-    this.maxSize = maxArrayLength;
-  }
 
 }

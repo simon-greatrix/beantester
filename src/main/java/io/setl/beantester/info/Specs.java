@@ -32,21 +32,21 @@ public class Specs {
   public interface BeanConstructor extends Spec {
 
     /** The constructor's parameter names. The parameter names must be unique and equal in number to the parameters. */
-    List<String> names();
+    List<String> getNames();
 
     /** The constructor's parameter types. The bean's class must have a public constructor with these exact parameter types. */
-    List<Class<?>> types();
+    List<Class<?>> getTypes();
 
     /** Validate the names and types are the same size and all non null. */
     default void validate() {
-      Objects.requireNonNull(names(), "names");
-      Objects.requireNonNull(types(), "types");
-      if (names().size() != types().size()) {
+      Objects.requireNonNull(getNames(), "names");
+      Objects.requireNonNull(getTypes(), "types");
+      if (getNames().size() != getTypes().size()) {
         throw new IllegalArgumentException("Names and types must be the same size");
       }
-      for (int i = 0; i < names().size(); i++) {
-        Objects.requireNonNull(names().get(i), "Parameter name at index " + i + " is null");
-        Objects.requireNonNull(types().get(i), "Parameter type at index " + i + " is null");
+      for (int i = 0; i < getNames().size(); i++) {
+        Objects.requireNonNull(getNames().get(i), "Parameter name at index " + i + " is null");
+        Objects.requireNonNull(getTypes().get(i), "Parameter type at index " + i + " is null");
       }
     }
 
@@ -57,7 +57,7 @@ public class Specs {
   /** A specification that provides an explicit creator for a bean. */
   public interface BeanCreatorSpec extends Spec {
 
-    BeanCreator<?> creator();
+    BeanCreator<?> getCreator();
 
   }
 
@@ -67,10 +67,10 @@ public class Specs {
   public interface BeanMaker extends BeanConstructor {
 
     /** The class that contains the method. */
-    Class<?> factoryClass();
+    Class<?> getFactoryClass();
 
     /** The name of the method that creates the bean. */
-    String factoryName();
+    String getFactoryName();
 
   }
 
@@ -82,10 +82,10 @@ public class Specs {
   public interface BuilderMethods extends Spec {
 
     /** The method invoked on the builder to create the bean. */
-    SerializableFunction1<Object, Object> build();
+    SerializableFunction1<Object, Object> getBuildFunction();
 
     /** The static method invoked to create a builder. */
-    SerializableFunction0<Object> builder();
+    SerializableFunction0<Object> getBuilderSupplier();
 
   }
 

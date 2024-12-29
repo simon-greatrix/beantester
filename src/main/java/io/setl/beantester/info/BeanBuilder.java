@@ -41,7 +41,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
 
     Class<?> builderClass;
     try {
-      builderClass = builderMethods.builder().exec().getClass();
+      builderClass = builderMethods.getBuilderSupplier().exec().getClass();
     } catch (Throwable e) {
       throw new IllegalStateException("Failed to create builder", e);
     }
@@ -49,7 +49,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
     Collection<Property> foundProperties = new BeanDescriptionFactory(builderClass).findWritableProperties();
 
     for (Property property : foundProperties) {
-      property(property);
+      setProperty(property);
     }
   }
 
@@ -60,7 +60,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
    * @param beanBuilder the bean builder to copy
    */
   public BeanBuilder(BeanBuilder beanBuilder) {
-    super(beanBuilder.properties());
+    super(beanBuilder.getProperties());
     this.beanClass = beanBuilder.beanClass;
     this.builderMethods = beanBuilder.builderMethods;
   }
@@ -70,7 +70,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
   public Object apply(Map<String, Object> values) {
     try {
       Object builder = build(values);
-      return builderMethods.build().exec(builder);
+      return builderMethods.getBuildFunction().exec(builder);
     } catch (Throwable t) {
       throw new AssertionException("Failed to build bean", t);
     }
@@ -87,12 +87,12 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
   public Object build(Map<String, Object> values) {
     Object builder;
     try {
-      builder = builderMethods.builder().exec();
+      builder = builderMethods.getBuilderSupplier().exec();
     } catch (Throwable e) {
       throw new AssertionException("Class " + beanClass + " : Failed to create builder", e);
     }
-    for (Property property : properties()) {
-      String name = property.name();
+    for (Property property : getProperties()) {
+      String name = property.getName();
       if (values.containsKey(name)) {
         property.write(builder, values.get(name));
       }
@@ -117,17 +117,17 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
     // Find all properties that can be written to in the builder and then read back from the bean.
 
     // All writable properties
-    Set<String> writable = properties().stream()
-        .filter(Property::writable)
-        .filter(not(Property::ignored))
-        .map(Property::name)
+    Set<String> writable = getProperties().stream()
+        .filter(Property::isWritable)
+        .filter(not(Property::isIgnored))
+        .map(Property::getName)
         .collect(Collectors.toSet());
 
     // Remove non-readable
-    Set<String> readable = beanDescription.properties().stream()
-        .filter(Property::readable)
-        .filter(not(Property::ignored))
-        .map(Property::name)
+    Set<String> readable = beanDescription.getProperties().stream()
+        .filter(Property::isReadable)
+        .filter(not(Property::isIgnored))
+        .map(Property::getName)
         .collect(Collectors.toSet());
 
     // Find the union of readable and writable properties
@@ -143,14 +143,14 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
     Map<String, Object> primaryValues = new HashMap<>();
     Map<String, Object> secondaryValues = new HashMap<>();
     for (String name : namesToTest) {
-      Property property = property(name);
+      Property property = getProperty(name);
       primaryValues.put(name, factories.create(ValueType.PRIMARY, beanClass, property));
       secondaryValues.put(name, factories.create(ValueType.SECONDARY, beanClass, property));
     }
 
     // Do tests
     for (String name : namesToTest) {
-      Property property = property(name);
+      Property property = getProperty(name);
       Object builder = build(primaryValues);
 
       // Write the secondary value to the builder, over-riding the primary value
@@ -159,13 +159,13 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       // Make the bean.
       Object bean;
       try {
-        bean = builderMethods.build().exec(builder);
+        bean = builderMethods.getBuildFunction().exec(builder);
       } catch (Throwable e) {
         throw new AssertionException("Class " + beanClass + " : Failed to build bean", e);
       }
 
       // Verify the property is set correctly
-      Object actual = beanDescription.property(name).read(bean);
+      Object actual = beanDescription.getProperty(name).read(bean);
       if (!Objects.equals(secondaryValues.get(name), actual)) {
         throw new AssertionException(
             "Class " + beanClass + " : Property " + name

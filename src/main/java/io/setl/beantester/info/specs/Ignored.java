@@ -26,8 +26,8 @@ public class Ignored implements PropertyCustomiser {
 
   @Override
   public void accept(Property property) {
-    if (names.contains(property.name()) == contains) {
-      property.ignored(true);
+    if (names.contains(property.getName()) == contains) {
+      property.setIgnored(true);
     }
   }
 

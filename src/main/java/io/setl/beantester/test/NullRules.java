@@ -31,14 +31,14 @@ public class NullRules {
   public static void inferNullBehaviour(BeanDescription original) {
     // Run over the creator properties first.
     BeanHolder holder = original.createHolder()
-        .preferWriters(false)
+        .setPreferWriters(false)
         .reset()
         .setAllProperties(ValueType.PRIMARY, false);
 
-    inferNullBehaviour(original.beanCreator(), "Creator", holder);
+    inferNullBehaviour(original.getBeanCreator(), "Creator", holder);
 
     // Now the bean properties.
-    holder.preferWriters(true)
+    holder.setPreferWriters(true)
         .reset()
         .setAllProperties(ValueType.PRIMARY, true);
 
@@ -47,33 +47,33 @@ public class NullRules {
 
 
   private static void inferNullBehaviour(Model<?> model, String type, BeanHolder holder) {
-    for (Property modelProperty : model.properties()) {
-      if (modelProperty.ignored()) {
+    for (Property modelProperty : model.getProperties()) {
+      if (modelProperty.isIgnored()) {
         continue;
       }
 
-      NullBehaviour current = modelProperty.nullBehaviour();
+      NullBehaviour current = modelProperty.getNullBehaviour();
 
       // record the original value so we can restore it.
-      String name = modelProperty.name();
+      String name = modelProperty.getName();
       Object originalValue = holder.readExpected(name);
 
       // Set the property to null and see what happens.
       holder.setProperty(name, null);
       try {
         try {
-          holder.bean();
+          holder.newBean();
         } catch (Throwable e) {
           check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.ERROR);
-          modelProperty.nullBehaviour(NullBehaviour.ERROR)
-              .nullValue(e);
+          modelProperty.setNullBehaviour(NullBehaviour.ERROR)
+              .setNullValue(e);
           continue;
         }
 
         // Check if the property is readable, if not we cannot check any further.
         if (!holder.isReadable(name)) {
           // Record behaviour when property is omitted.
-          modelProperty.nullBehaviour(NullBehaviour.NOT_READABLE);
+          modelProperty.setNullBehaviour(NullBehaviour.NOT_READABLE);
           continue;
         }
 
@@ -82,13 +82,13 @@ public class NullRules {
         if (value == null) {
           // Property was set to null.
           check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.NULL);
-          modelProperty.nullBehaviour(NullBehaviour.NULL);
+          modelProperty.setNullBehaviour(NullBehaviour.NULL);
         } else {
           // Property was set to a non-null value.
           check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.VALUE);
           modelProperty
-              .nullBehaviour(NullBehaviour.VALUE)
-              .nullValue(value);
+              .setNullBehaviour(NullBehaviour.VALUE)
+              .setNullValue(value);
         }
 
       } finally {
@@ -102,30 +102,30 @@ public class NullRules {
 
   private static void inferOmittedBeanBehaviour(BeanDescription original) {
     BeanHolder holder = original.createHolder();
-    for (Property property : original.properties()) {
-      String name = property.name();
-      if (property.ignored() || holder.hasExpected(name)) {
+    for (Property property : original.getProperties()) {
+      String name = property.getName();
+      if (property.isIgnored() || holder.hasExpected(name)) {
         // Either ignore or has an expected value, so was not omitted on bean creation.
         continue;
       }
 
       // If the property is not readable then we cannot check further.
-      if (!property.readable()) {
-        property.omittedBehaviour(NullBehaviour.NOT_READABLE);
+      if (!property.isReadable()) {
+        property.setOmittedBehaviour(NullBehaviour.NOT_READABLE);
         continue;
       }
 
-      NullBehaviour current = property.omittedBehaviour();
+      NullBehaviour current = property.getOmittedBehaviour();
       Object value = holder.readActual(name);
       if (value == null) {
         // Record behaviour when property is set to omitted and becomes null.
         check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.NULL);
-        property.omittedBehaviour(NullBehaviour.NULL);
+        property.setOmittedBehaviour(NullBehaviour.NULL);
       } else {
         // Record behaviour when property is omitted and takes a non-null value.
         check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.VALUE);
-        property.omittedBehaviour(NullBehaviour.VALUE)
-            .omittedValue(value);
+        property.setOmittedBehaviour(NullBehaviour.VALUE)
+            .setOmittedValue(value);
       }
     }
   }
@@ -145,37 +145,37 @@ public class NullRules {
   private static void inferOmittedCreationBehaviour(BeanDescription original) {
     // Create a copy so we can alter it safely.
     BeanDescription copyDescription = new BeanDescription(original);
-    BeanHolder holder = copyDescription.createHolder().preferWriters(false);
+    BeanHolder holder = copyDescription.createHolder().setPreferWriters(false);
 
     // Loop over the original properties as we won't be changing the original.
-    List<Property> properties = List.copyOf(original.beanCreator().properties());
+    List<Property> properties = List.copyOf(original.getBeanCreator().getProperties());
     for (Property property : properties) {
-      if (property.ignored()) {
+      if (property.isIgnored()) {
         continue;
       }
-      NullBehaviour current = property.omittedBehaviour();
+      NullBehaviour current = property.getOmittedBehaviour();
 
-      String name = property.name();
-      copyDescription.beanCreator().removeProperty(name);
+      String name = property.getName();
+      copyDescription.getBeanCreator().removeProperty(name);
       holder.reset();
 
       try {
-        holder.bean();
+        holder.newBean();
       } catch (Throwable e) {
         // Record behaviour when property is omitted.
         check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.ERROR);
-        original.beanCreator().property(name)
-            .omittedBehaviour(NullBehaviour.ERROR)
-            .omittedValue(e);
+        original.getBeanCreator().getProperty(name)
+            .setOmittedBehaviour(NullBehaviour.ERROR)
+            .setOmittedValue(e);
         continue;
       } finally {
         // Restore the property and continue.
-        copyDescription.beanCreator().property(property);
+        copyDescription.getBeanCreator().setProperty(property);
       }
 
       // If property is not readable, we cannot check further.
       if (!holder.isReadable(name)) {
-        original.beanCreator().property(name).omittedBehaviour(NullBehaviour.NOT_READABLE);
+        original.getBeanCreator().getProperty(name).setOmittedBehaviour(NullBehaviour.NOT_READABLE);
         continue;
       }
 
@@ -183,36 +183,36 @@ public class NullRules {
       if (value == null) {
         // Record behaviour when property is set to omitted and becomes null.
         check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.NULL);
-        original.beanCreator().property(name).omittedBehaviour(NullBehaviour.NULL);
+        original.getBeanCreator().getProperty(name).setOmittedBehaviour(NullBehaviour.NULL);
       } else {
         // Record behaviour when property is omitted and takes a non-null value.
         check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.VALUE);
-        original.beanCreator().property(name)
-            .omittedBehaviour(NullBehaviour.VALUE)
-            .omittedValue(value);
+        original.getBeanCreator().getProperty(name)
+            .setOmittedBehaviour(NullBehaviour.VALUE)
+            .setOmittedValue(value);
       }
     }
   }
 
 
   private static void validate(Class<?> beanClass, Property property, String type) {
-    if (property.ignored()) {
+    if (property.isIgnored()) {
       return;
     }
 
-    if (property.notNull()) {
+    if (property.isNotNull()) {
       // not-null so not allowed to be null.
-      if (property.nullBehaviour() == NullBehaviour.NULL) {
+      if (property.getNullBehaviour() == NullBehaviour.NULL) {
         throw new AssertionException(
-            "Class " + beanClass + " : " + type + " property \"" + property.name() + "\" is not-null but allows null values.");
+            "Class " + beanClass + " : " + type + " property \"" + property.getName() + "\" is not-null but allows null values.");
       }
     } else {
       // nullable so not allowed to error on null
-      if (property.nullBehaviour() == NullBehaviour.ERROR) {
-        Object v = property.nullValue();
+      if (property.getNullBehaviour() == NullBehaviour.ERROR) {
+        Object v = property.getNullValue();
         Throwable thrown = v instanceof Throwable ? (Throwable) v : null;
         throw new AssertionException(
-            "Class " + beanClass + " : " + type + " property \"" + property.name() + "\" is nullable but throws an error when set to null.",
+            "Class " + beanClass + " : " + type + " property \"" + property.getName() + "\" is nullable but throws an error when set to null.",
             thrown
         );
       }
@@ -229,12 +229,12 @@ public class NullRules {
    * @param bean the bean description
    */
   public static void validate(BeanDescription bean) {
-    for (Property property : bean.beanCreator().properties()) {
-      validate(bean.beanClass(), property, "Creator");
+    for (Property property : bean.getBeanCreator().getProperties()) {
+      validate(bean.getBeanClass(), property, "Creator");
     }
 
-    for (Property property : bean.properties()) {
-      validate(bean.beanClass(), property, "Bean");
+    for (Property property : bean.getProperties()) {
+      validate(bean.getBeanClass(), property, "Bean");
     }
   }
 

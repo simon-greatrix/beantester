@@ -103,16 +103,16 @@ public class Equals {
       for (Object value1 : values.get(name)) {
         BeanHolder copy = holder.copy();
         copy.setProperty(name, value1);
-        Object beanBefore = copy.bean();
+        Object beanBefore = copy.newBean();
 
         // Verify the basic equality contract
-        verifyBaseEquality(beanBefore, copy.bean());
+        verifyBaseEquality(beanBefore, copy.newBean());
 
         // Loop over the property values for this property and verify that changing it affects equality as required.
         for (Object value2 : values.get(name)) {
           BeanHolder copy2 = copy.copy();
           boolean didChange = copy2.setProperty(name, value2);
-          Object beanAfter = copy2.bean();
+          Object beanAfter = copy2.newBean();
 
           doTest(isSignificant, didChange, beanBefore, beanAfter, name, value1, value2);
         }
@@ -131,8 +131,8 @@ public class Equals {
     for (int i = 0; i < 5; i++) {
       for (String propertyName : propertyNames) {
         holder.setAllProperties(ValueType.RANDOM, true);
-        Object bean1 = holder.bean();
-        Object bean2 = holder.bean();
+        Object bean1 = holder.newBean();
+        Object bean2 = holder.newBean();
         if (!bean1.equals(bean2)) {
           throw new AssertionException(holder.getBeanClass() + ".equals() is not reflexive");
         }
@@ -146,7 +146,7 @@ public class Equals {
           didChange = holder.setProperty(propertyName, valueAfter);
         }
 
-        bean2 = holder.bean();
+        bean2 = holder.newBean();
         boolean isSignificant = holder.isSignificant(propertyName);
         doTest(isSignificant, didChange, bean1, bean2, propertyName, valueBefore, valueAfter);
       }
@@ -154,6 +154,7 @@ public class Equals {
   }
 
 
+  @SuppressWarnings({"EqualsWithItself", "ExpressionComparedToItself", "ConstantValue"})
   @SuppressFBWarnings("EC_NULL_ARG")
   private void verifyBaseEquality(Object beanBefore, Object otherBean) {
     // A bean is never equal to null

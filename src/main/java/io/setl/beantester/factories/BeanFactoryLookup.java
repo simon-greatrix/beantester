@@ -26,11 +26,11 @@ public class BeanFactoryLookup implements FactoryLookup {
       final BeanHolder holder = information.createHolder();
 
       // Verify the bean can be manipulated properly.
-      holder.bean();
+      holder.newBean();
 
       for (ValueType type : ValueType.values()) {
         holder.setAllProperties(type, true);
-        holder.bean();
+        holder.newBean();
       }
 
       return Optional.of(new ValueFactory(
@@ -38,7 +38,7 @@ public class BeanFactoryLookup implements FactoryLookup {
           (type) -> {
             // See the class description for why we use nulls.
             holder.setAllProperties(type, true);
-            return holder.bean();
+            return holder.newBean();
           }
       ));
     } catch (Throwable t) {

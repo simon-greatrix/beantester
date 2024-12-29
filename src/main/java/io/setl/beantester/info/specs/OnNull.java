@@ -26,8 +26,8 @@ public class OnNull implements PropertyCustomiser {
 
   @Override
   public void accept(Property property) {
-    if (behaviours.containsKey(property.name())) {
-      property.nullBehaviour(behaviours.get(property.name()));
+    if (behaviours.containsKey(property.getName())) {
+      property.setNullBehaviour(behaviours.get(property.getName()));
     }
   }
 

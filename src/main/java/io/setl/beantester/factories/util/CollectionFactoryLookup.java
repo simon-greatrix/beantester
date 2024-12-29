@@ -35,6 +35,9 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 import java.util.function.Supplier;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
@@ -78,10 +81,12 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
   private final Map<Class<?>, Supplier<?>> collectionFactories = buildDefaultCollectionFactories();
 
+  @Setter
+  @Getter
   private int maxSize = 8;
 
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   private ValueFactory createCollectionPopulatingFactory(Type typeToken) {
     Class<?> rawType = getRawType(typeToken);
     Supplier<Object> instanceValueFactory = findCollectionInstanceFactory(typeToken, rawType);
@@ -150,7 +155,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
     return (Class<E>) type;
   }
 
-  @SuppressWarnings({"unchecked"})
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private <T> Supplier<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
     if (isEnumMap(type, rawType)) {
       Type keyType = findElementType(type, 0);
@@ -162,17 +167,13 @@ public class CollectionFactoryLookup implements FactoryLookup {
       return () -> (T) EnumSet.noneOf((Class) keyType);
     }
 
-    Supplier<?> valueFactory = collectionFactories.get(rawType);
-    if (valueFactory == null) {
-      valueFactory = () -> {
-        try {
-          return rawType.getConstructor().newInstance();
-        } catch (Exception e) {
-          throw new IllegalStateException("cannot create instance for " + rawType, e);
-        }
-      };
-      collectionFactories.put(rawType, valueFactory);
-    }
+    Supplier<?> valueFactory = collectionFactories.computeIfAbsent(rawType, k -> () -> {
+      try {
+        return rawType.getConstructor().newInstance();
+      } catch (Exception e) {
+        throw new IllegalStateException("cannot create instance for " + rawType, e);
+      }
+    });
     return (Supplier<T>) valueFactory;
   }
 
@@ -194,11 +195,6 @@ public class CollectionFactoryLookup implements FactoryLookup {
   @Override
   public ValueFactory getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
     return createCollectionPopulatingFactory(typeToken);
-  }
-
-
-  public int getMaxSize() {
-    return maxSize;
   }
 
 
@@ -234,9 +230,5 @@ public class CollectionFactoryLookup implements FactoryLookup {
     return false;
   }
 
-
-  public void setMaxSize(int maxArrayLength) {
-    this.maxSize = maxArrayLength;
-  }
 
 }

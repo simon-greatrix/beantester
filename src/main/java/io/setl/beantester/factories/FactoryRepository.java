@@ -53,7 +53,7 @@ public class FactoryRepository {
   public void addFactory(BeanDescription description) {
     BeanHolder holder = description.createHolder();
     ValueFactory valueFactory = new ValueFactory(
-        description.beanClass(),
+        description.getBeanClass(),
         () -> holder.create(ValueType.PRIMARY),
         () -> holder.create(ValueType.SECONDARY),
         () -> holder.create(ValueType.RANDOM)
@@ -94,10 +94,10 @@ public class FactoryRepository {
    * @return the candidate value
    */
   public Object create(ValueType type, Class<?> beanClass, Property property) {
-    String propertyName = property.name();
+    String propertyName = property.getName();
     ValueFactory factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
     if (factory == null) {
-      factory = getFactory(property.type());
+      factory = getFactory(property.getType());
     }
     return factory.create(type);
   }

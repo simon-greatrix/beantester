@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.mirror.Executables;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer2;
@@ -24,7 +27,7 @@ public class Property {
 
 
   static void merge(Map<String, Property> map, Property update) {
-    map.compute(update.name(), (k, v) -> {
+    map.compute(update.getName(), (k, v) -> {
       if (v == null) {
         return update;
       }
@@ -33,37 +36,59 @@ public class Property {
   }
 
 
-  /** Name of this property. */
+  /**
+   * Name of this property.
+   */
+  @Getter
   private final String name;
 
   /** Is this property completely ignored during testing?. */
+  @Getter
+  @Setter
   private boolean ignored = false;
 
   /** Inferred type of this property. Can be overridden by an explicit type. */
   private Type inferredType = null;
 
-  /** Can this property be null?. */
+  /**
+   * Can this property be null? If not set explicitly it is inferred from annotations on the getter or setter methods.
+   */
+  @Getter
+  @Setter
   private boolean notNull = false;
 
-  /** Behaviour when the property is set to null. */
+  /**
+   * Behaviour when the property is set to null.
+   */
+  @Getter
+  @Setter
   private NullBehaviour nullBehaviour;
 
   /** Value if the property is set to null. Requires null-behaviour of "VALUE". */
+  @Getter
+  @Setter
   private Object nullValue;
 
   /** Behaviour when the property is omitted. */
+  @Getter
+  @Setter
   private NullBehaviour omittedBehaviour;
 
   /** Value if the property is set omitted. Requires omitted-behaviour of "VALUE", and a builder pattern. */
+  @Getter
+  @Setter
   private Object omittedValue;
 
   /** Read function for this property. */
   private SerializableFunction1<?, ?> reader;
 
   /** Is this property significant for equals and hash-code testing?. */
+  @Getter
+  @Setter
   private boolean significant = true;
 
   /** Explicit type of this property (null if not set). */
+  @Setter
   private Type type;
 
   /** Write function for this property. A writer that returns a value. */
@@ -147,29 +172,46 @@ public class Property {
 
 
   /**
-   * Set whether this property is completely ignored during testing.
+   * Get the read method if it exists.
    *
-   * @param ignored true if ignored, false otherwise
-   *
-   * @return this
+   * @return the read method if it exists
    */
-  public Property ignored(boolean ignored) {
-    this.ignored = ignored;
-    return this;
+  public Optional<Method> getReadMethod() {
+    return Optional.ofNullable(reader).map(Executables::findGetter);
   }
 
 
   /**
-   * Is this property completely ignored during testing? If a property is ignored, though if also not-null it may be set during bean creation.
-   *
-   * @return true if ignored, false otherwise
+   * Get the type of this property. If not set explicitly it will be inferred first from the writer's parameter type if available, then by the reader's return
+   * type if that is available.
    */
-  public boolean ignored() {
-    return ignored;
+  public Type getType() {
+    if (type != null) {
+      return type;
+    }
+    return inferType();
   }
 
 
-  private Type inferredType() {
+  /**
+   * Get the write method, if it exists.
+   *
+   * @return the write method, if it exists
+   */
+  public Optional<Method> getWriteMethod() {
+    if (writer1 != null) {
+      Method m = Executables.findGetter(writer1);
+      return Optional.of(m);
+    }
+    if (writer2 != null) {
+      Method m = Executables.findMethod(writer2);
+      return Optional.of(m);
+    }
+    return Optional.empty();
+  }
+
+
+  private Type inferType() {
     if (inferredType == null) {
       if (writer1 != null) {
         inferredType = Executables.findGetter(writer1).getGenericParameterTypes()[0];
@@ -184,108 +226,27 @@ public class Property {
 
 
   /**
-   * Get the name of this property.
+   * Can this property be read? To be readable a property must have a reader function.
    *
-   * @return the name of this property
+   * @return true if the property can be read, false otherwise
    */
-  public String name() {
-    return name;
+  public boolean isReadable() {
+    return reader != null;
   }
 
 
   /**
-   * Can this property be null? If not set explicitly, this will be inferred from the annotations on the read and write methods.
+   * Is this property testable? To be testable a property must be readable and writable.
    *
-   * @param notNull true if the property cannot be null, false otherwise
-   *
-   * @return this
+   * @return true if the property is testable, false otherwise
    */
-  public Property notNull(boolean notNull) {
-    this.notNull = notNull;
-    return this;
+  public boolean isTestable() {
+    return isReadable() && isWritable();
   }
 
 
-  /**
-   * Can this property be null?.
-   *
-   * @return true if the property cannot be null, false otherwise
-   */
-  public boolean notNull() {
-    return notNull;
-  }
-
-
-  /**
-   * How does the property behave when set to null?.
-   *
-   * @return the behaviour
-   */
-  public NullBehaviour nullBehaviour() {
-    return nullBehaviour;
-  }
-
-
-  /**
-   * Set the null-behaviour for this property.
-   *
-   * @param nullBehaviour the new null-behaviour
-   *
-   * @return this
-   */
-  public Property nullBehaviour(NullBehaviour nullBehaviour) {
-    this.nullBehaviour = nullBehaviour;
-    return this;
-  }
-
-
-  /**
-   * What value should be used when the property is set to null?.
-   *
-   * @return the value - note that the value cannot be null, so null indicates unknown.
-   */
-  public Object nullValue() {
-    return nullValue;
-  }
-
-
-  /**
-   * What value should be used when the property is set to null?.
-   *
-   * @param nullValue the non-null value to use
-   *
-   * @return this;
-   */
-  public Property nullValue(Object nullValue) {
-    this.nullValue = Objects.requireNonNull(nullValue);
-    return this;
-  }
-
-
-  /**
-   * What is the behaviour when the property is omitted on a builder?.
-   *
-   * @return the behaviour when the property is omitted
-   */
-  public NullBehaviour omittedBehaviour() {
-    return omittedBehaviour;
-  }
-
-
-  public Property omittedBehaviour(NullBehaviour omittedBehaviour) {
-    this.omittedBehaviour = omittedBehaviour;
-    return this;
-  }
-
-
-  public Object omittedValue() {
-    return omittedValue;
-  }
-
-
-  public Property omittedValue(Object omittedValue) {
-    this.omittedValue = omittedValue;
-    return this;
+  public boolean isWritable() {
+    return writer1 != null || writer2 != null;
   }
 
 
@@ -308,26 +269,6 @@ public class Property {
 
 
   /**
-   * Get the read method if it exists.
-   *
-   * @return the read method if it exists
-   */
-  public Optional<Method> readMethod() {
-    return Optional.ofNullable(reader).map(Executables::findGetter);
-  }
-
-
-  /**
-   * Can this property be read? To be readable a property must have a reader function.
-   *
-   * @return true if the property can be read, false otherwise
-   */
-  public boolean readable() {
-    return reader != null;
-  }
-
-
-  /**
    * Set the reader function for this property.
    *
    * @param reader the reader function
@@ -342,65 +283,31 @@ public class Property {
 
 
   /**
-   * Is this property significant for equals and hash-code testing?.
+   * Set the writer function for this property. The writer returns void.
    *
-   * @param significant true if significant, false otherwise
+   * @param writer the new writer
    *
    * @return this
    */
-  public Property significant(boolean significant) {
-    this.significant = significant;
+  public Property setWriter(SerializableConsumer2<Object, Object> writer) {
+    this.writer1 = null;
+    this.writer2 = writer;
+    inferredType = null;
     return this;
   }
 
 
   /**
-   * Is this property significant for equals and hash-code testing?.
+   * Set the writer function for this property. The writer returns something, which will be ignored. This is for writers that support chaining or return the
+   * old value of a property.
    *
-   * @return true if the property is significant, false otherwise
+   * @param writer the new writer function
    */
-  public boolean significant() {
-    return significant;
-  }
-
-
-  /**
-   * Is this property testable? To be testable a property must be readable and writable.
-   *
-   * @return true if the property is testable, false otherwise
-   */
-  public boolean testable() {
-    return readable() && writable();
-  }
-
-
-  /**
-   * Set the type of this property. This will be inferred if not set explicitly.
-   *
-   * @param type the type of this property
-   *
-   * @return this
-   */
-  public Property type(Type type) {
-    this.type = type;
+  public Property setWriter(SerializableFunction2<Object, Object, Object> writer) {
+    this.writer1 = writer;
+    this.writer2 = null;
+    inferredType = null;
     return this;
-  }
-
-
-  /**
-   * Get the type of this property. If not set explicitly it will be inferred first from the writer's parameter type if available, then by the reader's return
-   * type if that is available.
-   */
-  public Type type() {
-    if (type != null) {
-      return type;
-    }
-    return inferredType();
-  }
-
-
-  public boolean writable() {
-    return writer1 != null || writer2 != null;
   }
 
 
@@ -420,53 +327,6 @@ public class Property {
     } catch (Throwable e) {
       throw new IllegalStateException("Failed to write property " + name, e);
     }
-  }
-
-
-  /**
-   * Get the write method, if it exists.
-   *
-   * @return the write method, if it exists
-   */
-  public Optional<Method> writeMethod() {
-    if (writer1 != null) {
-      Method m = Executables.findGetter(writer1);
-      return Optional.of(m);
-    }
-    if (writer2 != null) {
-      Method m = Executables.findMethod(writer2);
-      return Optional.of(m);
-    }
-    return Optional.empty();
-  }
-
-
-  /**
-   * Set the writer function for this property. The writer returns void.
-   *
-   * @param writer the new writer
-   *
-   * @return this
-   */
-  public Property writer(SerializableConsumer2<Object, Object> writer) {
-    this.writer1 = null;
-    this.writer2 = writer;
-    inferredType = null;
-    return this;
-  }
-
-
-  /**
-   * Set the writer function for this property. The writer returns something, which will be ignored. This is for writers that support chaining or return the
-   * old value of a property.
-   *
-   * @param writer the new writer function
-   */
-  public Property writer(SerializableFunction2<Object, Object, Object> writer) {
-    this.writer1 = writer;
-    this.writer2 = null;
-    inferredType = null;
-    return this;
   }
 
 }
