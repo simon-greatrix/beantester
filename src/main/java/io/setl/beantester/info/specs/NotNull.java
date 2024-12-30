@@ -19,7 +19,7 @@ public class NotNull implements PropertyCustomiser {
    * @param names       property's names
    * @param notNull true if properties are not null
    */
-  public NotNull(Collection<String> names, boolean notNull) {
+  public NotNull(Collection<String> names, boolean contains, boolean notNull) {
     this.names = names;
     this.notNull = notNull;
   }

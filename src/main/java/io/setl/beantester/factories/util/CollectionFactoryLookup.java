@@ -69,6 +69,7 @@ public class CollectionFactoryLookup implements FactoryLookup {
     collectionFactories.put(NavigableSet.class, TreeSet::new);
 
     // Other
+    collectionFactories.put(Iterable.class, ArrayList::new);
     collectionFactories.put(Collection.class, ArrayList::new);
     collectionFactories.put(Queue.class, LinkedList::new);
     collectionFactories.put(Deque.class, LinkedList::new);

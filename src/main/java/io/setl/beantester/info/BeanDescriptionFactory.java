@@ -16,6 +16,8 @@ import java.util.TreeMap;
 
 import io.setl.beantester.info.Specs.BeanCreatorSpec;
 import io.setl.beantester.info.Specs.BuilderMethods;
+import io.setl.beantester.info.Specs.DescriptionCustomiser;
+import io.setl.beantester.info.Specs.MethodFilterSpec;
 import io.setl.beantester.info.Specs.NewProperty;
 import io.setl.beantester.info.Specs.PropertyCustomiser;
 import io.setl.beantester.info.Specs.RemoveProperty;
@@ -156,6 +158,9 @@ class BeanDescriptionFactory {
   /** Properties on the bean. */
   private final TreeMap<String, Property> beanProperties = new TreeMap<>();
 
+  /** Are we currently analyzing a builder?. */
+  private final boolean isBuilder;
+
   /** Creator for the bean. */
   private BeanCreator<?> creator;
 
@@ -163,10 +168,30 @@ class BeanDescriptionFactory {
   private Spec[] specs;
 
 
-  BeanDescriptionFactory(Class<?> beanClass) {
+  BeanDescriptionFactory(Class<?> beanClass, boolean isBuilder) {
     this.beanClass = beanClass;
+    this.isBuilder = isBuilder;
+
     if (Modifier.isAbstract(beanClass.getModifiers()) && !beanClass.isInterface()) {
       throw new IllegalArgumentException("Cannot create a bean description for an abstract class: " + beanClass);
+    }
+  }
+
+
+  private boolean acceptMethod(Method method, String prefix, boolean isSetter) {
+    Class<?> paramType = isSetter ? method.getParameterTypes()[0] : null;
+    for (MethodFilterSpec spec : specs(MethodFilterSpec.class, specs)) {
+      if (!spec.accept(isBuilder, isSetter, prefix, method.getName(), method.getReturnType(), paramType)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
+  private void applyDescriptionCustomisers(BeanDescription information) {
+    for (DescriptionCustomiser customiser : specs(DescriptionCustomiser.class, specs)) {
+      customiser.accept(information);
     }
   }
 
@@ -175,6 +200,13 @@ class BeanDescriptionFactory {
     // remove props
     for (RemoveProperty spec : specs(RemoveProperty.class, specs)) {
       model.removeProperty(spec.get());
+    }
+
+    // add props
+    boolean isCreator = model instanceof BeanCreator<?>;
+    for (NewProperty spec : specs(NewProperty.class, specs)) {
+      Optional<Property> optProperty = spec.get(isCreator);
+      optProperty.ifPresent(model::setProperty);
     }
 
     // customise props
@@ -186,13 +218,6 @@ class BeanDescriptionFactory {
           throw new IllegalStateException("Failed to customise property: " + info.getName(), e);
         }
       }
-    }
-
-    // add props
-    boolean isCreator = model instanceof BeanCreator<?>;
-    for (NewProperty spec : specs(NewProperty.class, specs)) {
-      Optional<Property> optProperty = spec.get(isCreator);
-      optProperty.ifPresent(model::setProperty);
     }
   }
 
@@ -234,6 +259,8 @@ class BeanDescriptionFactory {
         .setBeanCreator(creator)
         .setProperties(beanProperties.values());
     applyPropertyCustomisers(information);
+
+    applyDescriptionCustomisers(information);
 
     // harmonise the creator and the bean properties
     for (Property beanProperty : information.getProperties()) {
@@ -321,12 +348,6 @@ class BeanDescriptionFactory {
 
 
   private void findCreator() {
-    // Interfaces need special handling
-    if (beanClass.isInterface()) {
-      creator = new BeanProxy(beanClass);
-      return;
-    }
-
     // Does the bean have a specific creator?
     Optional<BeanCreatorSpec> optCreator = firstSpec(BeanCreatorSpec.class, specs);
     if (optCreator.isPresent()) {
@@ -352,6 +373,12 @@ class BeanDescriptionFactory {
     Optional<Specs.BuilderMethods> optBuilder = firstSpec(Specs.BuilderMethods.class, specs);
     if (optBuilder.isPresent()) {
       creator = new BeanBuilder(beanClass, optBuilder.get());
+      return;
+    }
+
+    // Interfaces need special handling
+    if (beanClass.isInterface()) {
+      creator = new BeanProxy(beanClass);
       return;
     }
 
@@ -435,6 +462,9 @@ class BeanDescriptionFactory {
   private void findGetter(Method method) {
     // regular getter
     String propertyName = findGetterName(method);
+    if (propertyName == null) {
+      return;
+    }
 
     Property property = new Property(propertyName)
         .reader(SerializableLambdas.createLambda(SerializableFunction1.class, method))
@@ -446,21 +476,21 @@ class BeanDescriptionFactory {
   private String findGetterName(Method method) {
     String methodName = method.getName();
 
-    if (hasPrefix(methodName, "get")) {
+    if (hasPrefix(methodName, "get") && acceptMethod(method, "get", false)) {
       return stripPrefix(methodName, "get");
     }
 
     if (
         hasPrefix(methodName, "is")
-            && (
-            method.getReturnType().equals(boolean.class)
-                || method.getReturnType().equals(Boolean.class)
-        )
+            && (method.getReturnType().equals(boolean.class) || method.getReturnType().equals(Boolean.class))
+            && acceptMethod(method, "is", false)
     ) {
       return stripPrefix(methodName, "is");
     }
 
-    return methodName;
+    return acceptMethod(method, "", false)
+        ? methodName
+        : null;
   }
 
 
@@ -483,6 +513,9 @@ class BeanDescriptionFactory {
     }
 
     String propertyName = getSetterName(method);
+    if (propertyName == null) {
+      return;
+    }
 
     Property property = new Property(propertyName)
         .setNotNull(parameterIsNotNull(method, 0));
@@ -514,20 +547,11 @@ class BeanDescriptionFactory {
   private String getSetterName(Method method) {
     String methodName = method.getName();
 
-    if (hasPrefix(methodName, "set")) {
+    if (hasPrefix(methodName, "set") && acceptMethod(method, "set", true)) {
       return stripPrefix(methodName, "set");
     }
 
-    if (
-        hasPrefix(methodName, "is") && (
-            method.getParameterTypes()[0].equals(boolean.class)
-                || method.getParameterTypes()[0].equals(Boolean.class)
-        )
-    ) {
-      return stripPrefix(methodName, "is");
-    }
-
-    return methodName;
+    return acceptMethod(method, "", true) ? methodName : null;
   }
 
 

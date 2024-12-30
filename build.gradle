@@ -100,10 +100,13 @@ configurations.checkstyle {
 dependencies {
   implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.0'
   implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
+  implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '4.29.2'
 
   testCompileOnly group:'org.projectlombok', name: 'lombok', version: lombokVersion
   testImplementation platform('org.junit:junit-bom:5.10.0')
   testImplementation 'org.junit.jupiter:junit-jupiter'
+
+  testImplementation group: 'io.setl.ls', name: 'ls-protobuf', version: '0.5.0'
 }
 
 java {

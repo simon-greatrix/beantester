@@ -13,7 +13,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
    * Create BeanInformation for a specified class.
    */
   public static BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
-    return new BeanDescriptionFactory(beanClass).create(specs);
+    return new BeanDescriptionFactory(beanClass, false).create(specs);
   }
 
 

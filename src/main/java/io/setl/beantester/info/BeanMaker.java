@@ -55,7 +55,7 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
       throw new IllegalArgumentException("Method must be static: " + method);
     }
 
-    BeanDescriptionFactory factory = new BeanDescriptionFactory(spec.getFactoryClass());
+    BeanDescriptionFactory factory = new BeanDescriptionFactory(method.getReturnType(), false);
 
     for (int i = 0; i < names.size(); i++) {
       setProperty(

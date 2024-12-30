@@ -13,6 +13,8 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
 
   protected final TreeMap<String, Property> properties = new TreeMap<>();
 
+  private boolean isChanged = true;
+
 
   /** Default constructor. */
   public AbstractModel() {
@@ -27,32 +29,21 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
    */
   protected AbstractModel(Collection<Property> properties) {
     for (Property p : properties) {
-      this.properties.put(p.getName(), new Property(p));
+      Property newProperty = new Property(p);
+      this.properties.put(p.getName(), newProperty);
+      newProperty.setModel(this);
     }
+  }
+
+
+  protected void clearChanged() {
+    isChanged = false;
   }
 
 
   @Override
   public Collection<Property> getProperties() {
     return properties.values();
-  }
-
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public M setProperties(Collection<Property> newProperties) {
-    for (Property property : newProperties) {
-      properties.put(property.getName(), property);
-    }
-    return (M) this;
-  }
-
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public M setProperty(Property property) {
-    properties.put(property.getName(), property);
-    return (M) this;
   }
 
 
@@ -71,12 +62,49 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
   }
 
 
+  protected boolean isChanged() {
+    return isChanged;
+  }
+
+
+  @Override
+  public void notifyChanged(Property property) {
+    isChanged = true;
+  }
+
+
   @Override
   @SuppressWarnings("unchecked")
   public M removeProperty(String name) {
+    isChanged = true;
     if (name != null) {
-      properties.remove(name);
+      Property p = properties.remove(name);
+      if (p != null) {
+        p.setModel(null);
+      }
     }
+    return (M) this;
+  }
+
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public M setProperties(Collection<Property> newProperties) {
+    isChanged = true;
+    for (Property property : newProperties) {
+      properties.put(property.getName(), property);
+      property.setModel(this);
+    }
+    return (M) this;
+  }
+
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public M setProperty(Property property) {
+    isChanged = true;
+    properties.put(property.getName(), property);
+    property.setModel(this);
     return (M) this;
   }
 
