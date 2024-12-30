@@ -14,25 +14,6 @@ public interface Model<M extends Model<M>> {
   Collection<Property> getProperties();
 
   /**
-   * Add a collection of properties to this.
-   *
-   * @param properties properties to add
-   *
-   * @return this
-   */
-  M setProperties(Collection<Property> properties);
-
-
-  /**
-   * Add a property to this.
-   *
-   * @param property the property to add
-   *
-   * @return this
-   */
-  M setProperty(Property property);
-
-  /**
    * Get information about a specific property of the bean.
    *
    * @param name The name of the property to get information about.
@@ -41,10 +22,15 @@ public interface Model<M extends Model<M>> {
    */
   Property getProperty(String name);
 
-
   /** Get the names of all the properties. */
   Set<String> getPropertyNames();
 
+  /**
+   * Invoked when a property is changed.
+   *
+   * @param property the property that changed
+   */
+  void notifyChanged(Property property);
 
   /**
    * Remove a property from this.
@@ -54,5 +40,23 @@ public interface Model<M extends Model<M>> {
    * @return this
    */
   M removeProperty(String name);
+
+  /**
+   * Add a collection of properties to this. Does not remove existing properties unless the names clash.
+   *
+   * @param properties properties to add
+   *
+   * @return this
+   */
+  M setProperties(Collection<Property> properties);
+
+  /**
+   * Add a property to this.
+   *
+   * @param property the property to add
+   *
+   * @return this
+   */
+  M setProperty(Property property);
 
 }

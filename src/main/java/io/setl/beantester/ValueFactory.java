@@ -22,10 +22,10 @@ public class ValueFactory {
   /** A special factory for the "void" class. This factory only returns nulls. */
   public static final ValueFactory VOID_TYPE_FACTORY = new ValueFactory(void.class);
 
-  static final ThreadLocal<LinkedList<Class<?>>> STACK = ThreadLocal.withInitial(LinkedList::new);
+  static final ThreadLocal<LinkedList<Type>> STACK = ThreadLocal.withInitial(LinkedList::new);
 
 
-  static LinkedList<Class<?>> stack() {
+  static LinkedList<Type> stack() {
     return STACK.get();
   }
 
@@ -102,11 +102,16 @@ public class ValueFactory {
    * @return A new object of the specified type.
    */
   public Object create(ValueType type) {
-    return switch (type) {
-      case PRIMARY -> getPrimary();
-      case SECONDARY -> getSecondary();
-      default -> getRandom();
-    };
+    stack().push(this.type);
+    try {
+      return switch (type) {
+        case PRIMARY -> getPrimary();
+        case SECONDARY -> getSecondary();
+        default -> getRandom();
+      };
+    } finally {
+      stack().pop();
+    }
   }
 
 

@@ -15,6 +15,7 @@ import lombok.Setter;
 import io.setl.beantester.AssertionException;
 import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.TestContext;
+import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
 
@@ -110,6 +111,14 @@ public class BeanHolder {
     return newBean();
   }
 
+  public ValueFactory asFactory() {
+    return new ValueFactory(
+        description.getBeanClass(),
+        () -> create(ValueType.PRIMARY),
+        () -> create(ValueType.SECONDARY),
+        () -> create(ValueType.RANDOM)
+    );
+  }
 
   /**
    * Create a builder with the current property values. If the bean does not user a builder, returns an empty Optional.

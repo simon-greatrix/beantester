@@ -51,14 +51,7 @@ public class FactoryRepository {
    * @param description The bean description
    */
   public void addFactory(BeanDescription description) {
-    BeanHolder holder = description.createHolder();
-    ValueFactory valueFactory = new ValueFactory(
-        description.getBeanClass(),
-        () -> holder.create(ValueType.PRIMARY),
-        () -> holder.create(ValueType.SECONDARY),
-        () -> holder.create(ValueType.RANDOM)
-    );
-    addFactory(valueFactory);
+    addFactory(description.createHolder().asFactory());
   }
 
 

@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import lombok.Getter;
-import lombok.Setter;
 
 import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.mirror.Executables;
@@ -44,39 +43,35 @@ public class Property {
 
   /** Is this property completely ignored during testing?. */
   @Getter
-  @Setter
   private boolean ignored = false;
 
   /** Inferred type of this property. Can be overridden by an explicit type. */
   private Type inferredType = null;
 
+  private Model<?> model = null;
+
   /**
    * Can this property be null? If not set explicitly it is inferred from annotations on the getter or setter methods.
    */
   @Getter
-  @Setter
   private boolean notNull = false;
 
   /**
    * Behaviour when the property is set to null.
    */
   @Getter
-  @Setter
   private NullBehaviour nullBehaviour;
 
   /** Value if the property is set to null. Requires null-behaviour of "VALUE". */
   @Getter
-  @Setter
   private Object nullValue;
 
   /** Behaviour when the property is omitted. */
   @Getter
-  @Setter
   private NullBehaviour omittedBehaviour;
 
   /** Value if the property is set omitted. Requires omitted-behaviour of "VALUE", and a builder pattern. */
   @Getter
-  @Setter
   private Object omittedValue;
 
   /** Read function for this property. */
@@ -84,11 +79,9 @@ public class Property {
 
   /** Is this property significant for equals and hash-code testing?. */
   @Getter
-  @Setter
   private boolean significant = true;
 
   /** Explicit type of this property (null if not set). */
-  @Setter
   private Type type;
 
   /** Write function for this property. A writer that returns a value. */
@@ -250,6 +243,13 @@ public class Property {
   }
 
 
+  private void notifyChanged() {
+    if (model != null) {
+      model.notifyChanged(this);
+    }
+  }
+
+
   /**
    * Read the value of the property from a bean.
    *
@@ -282,6 +282,70 @@ public class Property {
   }
 
 
+  public Property setIgnored(boolean ignored) {
+    this.ignored = ignored;
+    notifyChanged();
+    return this;
+  }
+
+
+  void setModel(Model<?> newModel) {
+    if (model != null && newModel != null) {
+      throw new IllegalStateException("Model already set");
+    }
+    this.model = newModel;
+  }
+
+
+  public Property setNotNull(boolean notNull) {
+    this.notNull = notNull;
+    notifyChanged();
+    return this;
+  }
+
+
+  public Property setNullBehaviour(NullBehaviour nullBehaviour) {
+    this.nullBehaviour = nullBehaviour;
+    notifyChanged();
+    return this;
+  }
+
+
+  public Property setNullValue(Object nullValue) {
+    this.nullValue = nullValue;
+    notifyChanged();
+    return this;
+  }
+
+
+  public Property setOmittedBehaviour(NullBehaviour omittedBehaviour) {
+    this.omittedBehaviour = omittedBehaviour;
+    notifyChanged();
+    return this;
+  }
+
+
+  public Property setOmittedValue(Object omittedValue) {
+    this.omittedValue = omittedValue;
+    notifyChanged();
+    return this;
+  }
+
+
+  public Property setSignificant(boolean significant) {
+    this.significant = significant;
+    notifyChanged();
+    return this;
+  }
+
+
+  public Property setType(Type type) {
+    this.type = type;
+    notifyChanged();
+    return this;
+  }
+
+
   /**
    * Set the writer function for this property. The writer returns void.
    *
@@ -293,6 +357,7 @@ public class Property {
     this.writer1 = null;
     this.writer2 = writer;
     inferredType = null;
+    notifyChanged();
     return this;
   }
 
@@ -307,6 +372,7 @@ public class Property {
     this.writer1 = writer;
     this.writer2 = null;
     inferredType = null;
+    notifyChanged();
     return this;
   }
 

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.setl.beantester.NullBehaviour;
+import io.setl.beantester.info.specs.BeanBuilderImpl;
 import io.setl.beantester.info.specs.BeanConstructorFactory;
 import io.setl.beantester.info.specs.BeanMakerFactory;
 import io.setl.beantester.info.specs.Ignored;
@@ -91,6 +92,45 @@ public class Specs {
 
 
 
+  /**
+   * A specification that provides a customiser for the bean's description. The customiser will be called after all other specifications have been applied.
+   */
+  public interface DescriptionCustomiser extends Spec, Consumer<BeanDescription> {
+
+  }
+
+
+
+  /**
+   * Test if a method corresponds to the requirements to be a getter or setter.
+   */
+  public interface MethodFilterSpec extends Spec {
+
+    /**
+     * Test the method. If it should be accepted, return true.
+     *
+     * @param isOnBuilder   true if the method is on the builder, false if on the bean
+     * @param isSetter      true if the method is a setter, false if a getter
+     * @param prefix        the method's prefix
+     * @param methodName    the method's name
+     * @param returnType    the method's return type
+     * @param parameterType the method's parameter type
+     *
+     * @return true if the method is accepted
+     */
+    boolean accept(
+        boolean isOnBuilder,
+        boolean isSetter,
+        String prefix,
+        String methodName,
+        Class<?> returnType,
+        Class<?> parameterType
+    );
+
+  }
+
+
+
   /** Add a property. */
   public interface NewProperty extends Spec {
 
@@ -138,7 +178,7 @@ public class Specs {
      *
      * @return the resolved specifications
      */
-    Collection<Spec> resolve(Class<?> beanClass);
+    Collection<? extends Spec> resolve(Class<?> beanClass);
 
   }
 
@@ -194,6 +234,56 @@ public class Specs {
    */
   public static BeanMaker beanMaker(Class<?> factoryClass, String factoryName, Object... nameAndType) {
     return BeanMakerFactory.beanMaker(factoryClass, factoryName, nameAndType);
+  }
+
+
+  /** Enforce bean style method names. */
+  public static MethodFilterSpec beanStyle() {
+    return (isOnBuilder, isSetter, prefix, methodName, returnType, parameterType) -> {
+      if (isSetter) {
+        return "set".equals(prefix);
+      }
+
+      return "get".equals(prefix) || "is".equals(prefix);
+    };
+  }
+
+
+  /**
+   * Specify a builder for a bean. The builder requires a method that creates the bean and a static method that creates the builder.
+   *
+   * @param builderSupplier the static method that creates the builder
+   * @param buildFunction   the method that creates the bean from the builder
+   *
+   * @return the specification
+   */
+  public static BuilderMethods builder(
+      SerializableFunction0<Object> builderSupplier,
+      SerializableFunction1<Object, Object> buildFunction
+  ) {
+    return new BeanBuilderImpl(builderSupplier, buildFunction);
+  }
+
+
+  /**
+   * Specify a builder for a bean. The builder requires a method that creates the bean and a static method that creates the builder.
+   *
+   * @param buildFunction   the method that creates the bean from the builder
+   * @param builderSupplier the static method on the bean that creates the builder
+   *
+   * @return the specification
+   */
+  public static ResolvingSpec builder(
+      String builderSupplier,
+      String buildFunction
+  ) {
+    return (beanClass) -> List.of(BeanMakerFactory.specBuilder(beanClass, builderSupplier, buildFunction));
+  }
+
+
+  /** Enforce fluent style method names. */
+  public static MethodFilterSpec fluentStyle() {
+    return (isOnBuilder, isSetter, prefix, methodName, returnType, parameterType) -> "".equals(prefix);
   }
 
 
@@ -275,7 +365,7 @@ public class Specs {
    */
 
   public static PropertyCustomiser notNull(Collection<String> names) {
-    return new NotNull(names, true);
+    return new NotNull(names, true, true);
   }
 
 
@@ -336,7 +426,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser nullable(Collection<String> names) {
-    return new NotNull(names, false);
+    return new NotNull(names, true, false);
   }
 
 
