@@ -109,7 +109,7 @@ public class Specs {
     /**
      * Test the method. If it should be accepted, return true.
      *
-     * @param isOnBuilder   true if the method is on the builder, false if on the bean
+     * @param isOnBean      true if the method is on the bean, false if on the builder
      * @param isSetter      true if the method is a setter, false if a getter
      * @param prefix        the method's prefix
      * @param methodName    the method's name
@@ -119,7 +119,7 @@ public class Specs {
      * @return true if the method is accepted
      */
     boolean accept(
-        boolean isOnBuilder,
+        boolean isOnBean,
         boolean isSetter,
         String prefix,
         String methodName,
@@ -159,8 +159,11 @@ public class Specs {
   /** Remove a named property. */
   public interface RemoveProperty extends Spec {
 
-    /** Get the name of the property to remove. */
-    String get();
+    /**
+     * Test if a property should be removed.
+     * return true if the property should be removed
+     */
+    boolean remove(Property property, boolean onBean);
 
   }
 

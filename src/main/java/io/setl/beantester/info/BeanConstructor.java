@@ -52,7 +52,7 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
       throw new IllegalArgumentException("Constructor is not accessible: " + constructor);
     }
 
-    BeanDescriptionFactory factory = new BeanDescriptionFactory(beanClass, false);
+    BeanDescriptionFactory factory = new BeanDescriptionFactory(beanClass, true);
 
     for (int i = 0; i < names.size(); i++) {
       setProperty(

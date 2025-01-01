@@ -15,7 +15,6 @@ import io.setl.beantester.factories.net.NetFactories;
 import io.setl.beantester.factories.time.TimeFactories;
 import io.setl.beantester.factories.util.UtilFactories;
 import io.setl.beantester.info.BeanDescription;
-import io.setl.beantester.info.BeanHolder;
 import io.setl.beantester.info.Property;
 import io.setl.beantester.mirror.Executables;
 
@@ -30,7 +29,7 @@ public class FactoryRepository {
 
   private final HashMap<Class<?>, HashMap<String, ValueFactory>> overrides = new HashMap<>();
 
-  private BeanFactoryLookup beanFactoryLookup;
+  private BeanFactoryLookup beanFactoryLookup = new BeanFactoryLookup();
 
 
   /**
@@ -74,6 +73,13 @@ public class FactoryRepository {
    */
   public void addFactoryLookup(FactoryLookup factoryLookup) {
     factoryLookups.add(Objects.requireNonNull(factoryLookup));
+  }
+
+
+  public void copy(FactoryRepository factories) {
+    this.factories.putAll(factories.factories);
+    this.factoryLookups.addAll(factories.factoryLookups);
+    this.overrides.putAll(factories.overrides);
   }
 
 
@@ -156,7 +162,7 @@ public class FactoryRepository {
     TimeFactories.load(this);
     UtilFactories.load(this);
 
-    beanFactoryLookup = new BeanFactoryLookup();
+    addFactoryLookup(new ProtobufLookup());
   }
 
 }

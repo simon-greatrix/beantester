@@ -37,6 +37,15 @@ public class RandomIncreasingClock extends Clock {
   }
 
 
+  public RandomIncreasingClock(RandomIncreasingClock original, ZoneId zoneId) {
+    this.currentTimeMillis = original.currentTimeMillis;
+    this.fixedJump = original.fixedJump;
+    this.maxRandomJump = original.maxRandomJump;
+    this.minRandomJump = original.minRandomJump;
+    this.zoneId = zoneId;
+  }
+
+
   public long currentTimeMillis() {
     return currentTimeMillis;
   }
@@ -148,24 +157,7 @@ public class RandomIncreasingClock extends Clock {
 
   @Override
   public Clock withZone(ZoneId zone) {
-    return new Clock() {
-      @Override
-      public ZoneId getZone() {
-        return zone;
-      }
-
-
-      @Override
-      public Instant instant() {
-        return RandomIncreasingClock.this.instant();
-      }
-
-
-      @Override
-      public Clock withZone(ZoneId zone) {
-        return RandomIncreasingClock.this.withZone(zone);
-      }
-    };
+    return new RandomIncreasingClock(this, zoneId);
   }
 
 }

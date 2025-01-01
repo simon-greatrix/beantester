@@ -6,6 +6,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import io.setl.beantester.TestContext;
 import io.setl.beantester.factories.Sampler;
 
@@ -49,20 +52,26 @@ public class RandomClock extends Clock {
     MAX_MILLIS = MIN_MILLIS + 0x8000000000L;
   }
 
+  /** A delegate clock that replaces this clock when it is set. */
+  @Getter
+  @Setter
   private Clock delegate;
 
   private ZoneId zoneId;
 
-  private boolean zoneIdUnset = true;
+
+  public RandomClock() {
+    // do nothing
+  }
 
 
-  /**
-   * Get the delegate clock, if any. The delegate clock replaces this clock when it is set.
-   *
-   * @return the delegate clock, or null if there is none
-   */
-  public Clock delegate() {
-    return delegate;
+  public RandomClock(RandomClock original, ZoneId zoneId) {
+    if (original.delegate == null) {
+      this.delegate = null;
+    } else {
+      this.delegate = original.delegate.withZone(original.getZone());
+    }
+    this.zoneId = original.zoneId;
   }
 
 
@@ -73,9 +82,8 @@ public class RandomClock extends Clock {
       return d.getZone();
     }
 
-    if (zoneIdUnset) {
+    if (zoneId == null) {
       zoneId = randomZoneId();
-      zoneIdUnset = false;
     }
 
     return zoneId;
@@ -100,18 +108,12 @@ public class RandomClock extends Clock {
 
 
   /**
-   * Set the delegate clock. The delegate clock replaces this clock when it is set.
+   * Set the zone ID used by this clock
    *
-   * @param delegate the delegate clock (or null to remove)
+   * @param zoneId the zone ID
    *
-   * @return this clock
+   * @return this
    */
-  public RandomClock setDelegate(Clock delegate) {
-    this.delegate = delegate;
-    return this;
-  }
-
-
   public RandomClock setZoneId(ZoneId zoneId) {
     this.zoneId = zoneId;
     return this;
@@ -120,24 +122,7 @@ public class RandomClock extends Clock {
 
   @Override
   public Clock withZone(ZoneId zone) {
-    return new Clock() {
-      @Override
-      public ZoneId getZone() {
-        return zone;
-      }
-
-
-      @Override
-      public Instant instant() {
-        return RandomClock.this.instant();
-      }
-
-
-      @Override
-      public Clock withZone(ZoneId zone) {
-        return RandomClock.this.withZone(zone);
-      }
-    };
+    return new RandomClock(this, zone);
   }
 
 }

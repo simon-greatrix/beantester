@@ -159,7 +159,7 @@ class BeanDescriptionFactory {
   private final TreeMap<String, Property> beanProperties = new TreeMap<>();
 
   /** Are we currently analyzing a builder?. */
-  private final boolean isBuilder;
+  private final boolean onBean;
 
   /** Creator for the bean. */
   private BeanCreator<?> creator;
@@ -168,9 +168,9 @@ class BeanDescriptionFactory {
   private Spec[] specs;
 
 
-  BeanDescriptionFactory(Class<?> beanClass, boolean isBuilder) {
+  BeanDescriptionFactory(Class<?> beanClass, boolean onBean) {
     this.beanClass = beanClass;
-    this.isBuilder = isBuilder;
+    this.onBean = onBean;
 
     if (Modifier.isAbstract(beanClass.getModifiers()) && !beanClass.isInterface()) {
       throw new IllegalArgumentException("Cannot create a bean description for an abstract class: " + beanClass);
@@ -181,7 +181,7 @@ class BeanDescriptionFactory {
   private boolean acceptMethod(Method method, String prefix, boolean isSetter) {
     Class<?> paramType = isSetter ? method.getParameterTypes()[0] : null;
     for (MethodFilterSpec spec : specs(MethodFilterSpec.class, specs)) {
-      if (!spec.accept(isBuilder, isSetter, prefix, method.getName(), method.getReturnType(), paramType)) {
+      if (!spec.accept(onBean, isSetter, prefix, method.getName(), method.getReturnType(), paramType)) {
         return false;
       }
     }
@@ -199,7 +199,15 @@ class BeanDescriptionFactory {
   private void applyPropertyCustomisers(Model<?> model) {
     // remove props
     for (RemoveProperty spec : specs(RemoveProperty.class, specs)) {
-      model.removeProperty(spec.get());
+      ArrayList<String> toRemove = new ArrayList<>();
+      for (Property property : model.getProperties()) {
+        if (spec.remove(property, onBean)) {
+          toRemove.add(property.getName());
+        }
+      }
+      for (String name : toRemove) {
+        model.removeProperty(name);
+      }
     }
 
     // add props
