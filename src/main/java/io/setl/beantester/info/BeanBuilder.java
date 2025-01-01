@@ -46,7 +46,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       throw new IllegalStateException("Failed to create builder", e);
     }
 
-    Collection<Property> foundProperties = new BeanDescriptionFactory(builderClass, true).findWritableProperties();
+    Collection<Property> foundProperties = new BeanDescriptionFactory(builderClass, false).findWritableProperties();
 
     for (Property property : foundProperties) {
       setProperty(property);

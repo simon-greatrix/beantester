@@ -171,7 +171,7 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
    */
   public BeanProxy(Class<?> beanClass) {
     this.beanClass = beanClass;
-    for (Property property : new BeanDescriptionFactory(beanClass, false).findAllProperties()) {
+    for (Property property : new BeanDescriptionFactory(beanClass, true).findAllProperties()) {
       setProperty(property);
 
       // TODO - if the properties are customised, we will need to update this

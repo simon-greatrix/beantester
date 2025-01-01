@@ -1,7 +1,11 @@
 package io.setl.beantester.info;
 
+import java.util.Optional;
+
 import lombok.Getter;
 import lombok.Setter;
+
+import io.setl.beantester.TestContext;
 
 /**
  * Defines an object that provides information about a JavaBean.
@@ -13,7 +17,13 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
    * Create BeanInformation for a specified class.
    */
   public static BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
-    return new BeanDescriptionFactory(beanClass, false).create(specs);
+    Optional<BeanDescriptionLookup> lookup = TestContext.get().findBeanDescriptionLookup(beanClass, specs);
+    if (lookup.isPresent()) {
+      return lookup.get().getDescription(beanClass, specs);
+    }
+
+    // Use default factory
+    return new BeanDescriptionFactory(beanClass, true).create(specs);
   }
 
 
