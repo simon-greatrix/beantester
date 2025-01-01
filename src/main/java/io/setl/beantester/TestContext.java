@@ -17,7 +17,6 @@ import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.BeanDescriptionLookup;
 import io.setl.beantester.info.Specs;
 import io.setl.beantester.info.Specs.Spec;
-import io.setl.beantester.info.specs.ProtobufDescriptionLookup;
 
 /**
  * A class that holds the test context. This is to support multi-threading during testing.
@@ -78,7 +77,6 @@ public class TestContext {
     DEFAULT = new TestContext();
     CONTEXT.set(DEFAULT);
     DEFAULT.factories.loadDefaults();
-    DEFAULT.addDescriptionLookup(new ProtobufDescriptionLookup());
     CONTEXT.remove();
   }
 

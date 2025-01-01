@@ -1,6 +1,7 @@
 package io.setl.beantester.test;
 
 import java.util.List;
+import java.util.Set;
 
 import io.setl.beantester.AssertionException;
 import io.setl.beantester.NullBehaviour;
@@ -148,14 +149,14 @@ public class NullRules {
     BeanHolder holder = copyDescription.createHolder().setPreferWriters(false);
 
     // Loop over the original properties as we won't be changing the original.
-    List<Property> properties = List.copyOf(original.getBeanCreator().getProperties());
-    for (Property property : properties) {
+    Set<String> propertyNames = copyDescription.getBeanCreator().getPropertyNames();
+    for (String name : propertyNames) {
+      Property property = copyDescription.getBeanCreator().getProperty(name);
       if (property.isIgnored()) {
         continue;
       }
       NullBehaviour current = property.getOmittedBehaviour();
 
-      String name = property.getName();
       copyDescription.getBeanCreator().removeProperty(name);
       holder.reset();
 

@@ -14,6 +14,7 @@ import java.util.Optional;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
+import io.setl.beantester.info.Specs.Spec;
 
 
 /**
@@ -168,10 +169,11 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
    * New instance.
    *
    * @param beanClass the bean class
+   * @param specs     the specifications for the bean
    */
-  public BeanProxy(Class<?> beanClass) {
+  public BeanProxy(Class<?> beanClass, Spec... specs) {
     this.beanClass = beanClass;
-    for (Property property : new BeanDescriptionFactory(beanClass, true).findAllProperties()) {
+    for (Property property : new BeanDescriptionFactory(beanClass, specs, true).findAllProperties()) {
       setProperty(property);
 
       // TODO - if the properties are customised, we will need to update this

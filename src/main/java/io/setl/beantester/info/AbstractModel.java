@@ -58,7 +58,7 @@ public class AbstractModel<M extends AbstractModel<M> & Model<M>> implements Mod
 
   @Override
   public Set<String> getPropertyNames() {
-    return properties.keySet();
+    return Set.copyOf(properties.keySet());
   }
 
 

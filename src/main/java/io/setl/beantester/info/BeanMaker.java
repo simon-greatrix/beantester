@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.setl.beantester.AssertionException;
+import io.setl.beantester.info.Specs.Spec;
 
 /** A call to a bean's factory method which accepts a list of parameters and returns the bean. */
 public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<BeanMaker> {
@@ -34,8 +35,9 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
    * New instance.
    *
    * @param spec the specification for the maker
+   * @param specs     the specifications for the bean
    */
-  public BeanMaker(Specs.BeanMaker spec) {
+  public BeanMaker(Specs.BeanMaker spec, Spec... specs) {
     spec.validate();
     names = List.copyOf(Objects.requireNonNull(spec.getNames(), "parameterNames"));
     List<Class<?>> types = Objects.requireNonNull(spec.getTypes(), "parameterTypes");
@@ -55,7 +57,7 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
       throw new IllegalArgumentException("Method must be static: " + method);
     }
 
-    BeanDescriptionFactory factory = new BeanDescriptionFactory(method.getReturnType(), true);
+    BeanDescriptionFactory factory = new BeanDescriptionFactory(method.getReturnType(), specs, true);
 
     for (int i = 0; i < names.size(); i++) {
       setProperty(

@@ -1,5 +1,6 @@
 package io.setl.beantester.info;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class Specs {
   /** A specification that provides an explicit creator for a bean. */
   public interface BeanCreatorSpec extends Spec {
 
-    BeanCreator<?> getCreator();
+    BeanCreator<?> getCreator(Spec... specs);
 
   }
 
@@ -284,6 +285,27 @@ public class Specs {
   }
 
 
+  /**
+   * Find all the specs of a given type.
+   *
+   * @param type  the type spec
+   * @param specs the specs to search
+   *
+   * @return a list of specs of the given type
+   */
+  public static <S extends Spec> Optional<S> firstSpec(Class<S> type, Spec... specs) {
+    if (specs == null) {
+      return Optional.empty();
+    }
+    for (Spec s : specs) {
+      if (type.isInstance(s)) {
+        return Optional.of(type.cast(s));
+      }
+    }
+    return Optional.empty();
+  }
+
+
   /** Enforce fluent style method names. */
   public static MethodFilterSpec fluentStyle() {
     return (isOnBuilder, isSetter, prefix, methodName, returnType, parameterType) -> "".equals(prefix);
@@ -405,7 +427,7 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser notSignificant(Collection<String> names) {
-    return new Significance(names, false);
+    return new Significance(names, true, false);
   }
 
 
@@ -505,7 +527,45 @@ public class Specs {
    * @return the customiser
    */
   public static PropertyCustomiser significant(Collection<String> names) {
-    return new Significance(names, true);
+    return new Significance(names, true, true);
+  }
+
+
+  /**
+   * Find all the specs of a given type.
+   *
+   * @param type  the type spec
+   * @param specs the specs to search
+   *
+   * @return a list of specs of the given type
+   */
+  public static <S extends Spec> List<S> specs(Class<S> type, Collection<? extends Spec> specs) {
+    if (specs == null) {
+      return List.of();
+    }
+    List<S> list = new ArrayList<>();
+    for (Spec s : specs) {
+      if (type.isInstance(s)) {
+        list.add(type.cast(s));
+      }
+    }
+    return list;
+  }
+
+
+  /**
+   * Find all the specs of a given type.
+   *
+   * @param type  the type spec
+   * @param specs the specs to search
+   *
+   * @return a list of specs of the given type
+   */
+  public static <S extends Spec> List<S> specs(Class<S> type, Spec... specs) {
+    if (specs == null) {
+      return List.of();
+    }
+    return specs(type, List.of(specs));
   }
 
 
