@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.setl.beantester.AssertionException;
+import io.setl.beantester.info.Specs.Spec;
 
 /** A call to a bean's constructor. */
 public class BeanConstructor extends AbstractModel<BeanConstructor> implements BeanCreator<BeanConstructor> {
@@ -34,8 +35,9 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
    *
    * @param beanClass the class of the bean
    * @param spec      the specification for the constructor
+   * @param specs     the specifications for the bean
    */
-  public BeanConstructor(Class<?> beanClass, Specs.BeanConstructor spec) {
+  public BeanConstructor(Class<?> beanClass, Specs.BeanConstructor spec, Spec... specs) {
     spec.validate();
     names = List.copyOf(Objects.requireNonNull(spec.getNames(), "parameterNames"));
     List<Class<?>> types = Objects.requireNonNull(spec.getTypes(), "parameterTypes");
@@ -52,7 +54,7 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
       throw new IllegalArgumentException("Constructor is not accessible: " + constructor);
     }
 
-    BeanDescriptionFactory factory = new BeanDescriptionFactory(beanClass, true);
+    BeanDescriptionFactory factory = new BeanDescriptionFactory(beanClass, specs, true);
 
     for (int i = 0; i < names.size(); i++) {
       setProperty(

@@ -161,8 +161,6 @@ public class FactoryRepository {
     NetFactories.load(this);
     TimeFactories.load(this);
     UtilFactories.load(this);
-
-    addFactoryLookup(new ProtobufLookup());
   }
 
 }

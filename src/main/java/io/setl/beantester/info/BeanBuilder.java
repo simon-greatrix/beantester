@@ -15,6 +15,7 @@ import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.info.Specs.BuilderMethods;
+import io.setl.beantester.info.Specs.Spec;
 
 /**
  * Specification of a bean creator that uses a builder pattern.
@@ -31,10 +32,12 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
    *
    * @param beanClass      the class being built by the builder
    * @param builderMethods the methods to create the builder and the bean
+   * @param specs          the specifications for the bean
    */
   public BeanBuilder(
       Class<?> beanClass,
-      BuilderMethods builderMethods
+      BuilderMethods builderMethods,
+      Spec... specs
   ) {
     this.beanClass = beanClass;
     this.builderMethods = builderMethods;
@@ -46,7 +49,7 @@ public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreat
       throw new IllegalStateException("Failed to create builder", e);
     }
 
-    Collection<Property> foundProperties = new BeanDescriptionFactory(builderClass, false).findWritableProperties();
+    Collection<Property> foundProperties = new BeanDescriptionFactory(builderClass, specs, false).findWritableProperties();
 
     for (Property property : foundProperties) {
       setProperty(property);

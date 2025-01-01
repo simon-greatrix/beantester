@@ -10,7 +10,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
@@ -32,26 +31,6 @@ import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction2;
  * Defines an object that creates BeanInformation objects.
  */
 class BeanDescriptionFactory {
-
-  /**
-   * Find all the specs of a given type.
-   *
-   * @param type  the type spec
-   * @param specs the specs to search
-   *
-   * @return a list of specs of the given type
-   */
-  private static <S extends Specs.Spec> Optional<S> firstSpec(Class<S> type, Spec... specs) {
-    if (specs == null) {
-      return Optional.empty();
-    }
-    for (Spec s : specs) {
-      if (type.isInstance(s)) {
-        return Optional.of(type.cast(s));
-      }
-    }
-    return Optional.empty();
-  }
 
 
   /**
@@ -94,44 +73,6 @@ class BeanDescriptionFactory {
 
 
   /**
-   * Find all the specs of a given type.
-   *
-   * @param type  the type spec
-   * @param specs the specs to search
-   *
-   * @return a list of specs of the given type
-   */
-  private static <S extends Specs.Spec> List<S> specs(Class<S> type, Spec... specs) {
-    if (specs == null) {
-      return List.of();
-    }
-    return specs(type, List.of(specs));
-  }
-
-
-  /**
-   * Find all the specs of a given type.
-   *
-   * @param type  the type spec
-   * @param specs the specs to search
-   *
-   * @return a list of specs of the given type
-   */
-  private static <S extends Specs.Spec> List<S> specs(Class<S> type, Collection<? extends Spec> specs) {
-    if (specs == null) {
-      return List.of();
-    }
-    List<S> list = new ArrayList<>();
-    for (Spec s : specs) {
-      if (type.isInstance(s)) {
-        list.add(type.cast(s));
-      }
-    }
-    return list;
-  }
-
-
-  /**
    * Remove a prefix from a name. It is assumed the name actually has the prefix.
    *
    * @param name   the name
@@ -161,26 +102,27 @@ class BeanDescriptionFactory {
   /** Are we currently analyzing a builder?. */
   private final boolean onBean;
 
+  /** Specs used in creating the bean and property information. */
+  private final Spec[] specs;
+
   /** Creator for the bean. */
   private BeanCreator<?> creator;
 
-  /** Specs used in creating the bean and property information. */
-  private Spec[] specs;
 
-
-  BeanDescriptionFactory(Class<?> beanClass, boolean onBean) {
-    this.beanClass = beanClass;
-    this.onBean = onBean;
-
+  BeanDescriptionFactory(Class<?> beanClass, Spec[] specs, boolean onBean) {
     if (Modifier.isAbstract(beanClass.getModifiers()) && !beanClass.isInterface()) {
       throw new IllegalArgumentException("Cannot create a bean description for an abstract class: " + beanClass);
     }
+
+    this.beanClass = beanClass;
+    this.onBean = onBean;
+    this.specs = expandSpecs(specs);
   }
 
 
   private boolean acceptMethod(Method method, String prefix, boolean isSetter) {
     Class<?> paramType = isSetter ? method.getParameterTypes()[0] : null;
-    for (MethodFilterSpec spec : specs(MethodFilterSpec.class, specs)) {
+    for (MethodFilterSpec spec : Specs.specs(MethodFilterSpec.class, specs)) {
       if (!spec.accept(onBean, isSetter, prefix, method.getName(), method.getReturnType(), paramType)) {
         return false;
       }
@@ -190,7 +132,7 @@ class BeanDescriptionFactory {
 
 
   private void applyDescriptionCustomisers(BeanDescription information) {
-    for (DescriptionCustomiser customiser : specs(DescriptionCustomiser.class, specs)) {
+    for (DescriptionCustomiser customiser : Specs.specs(DescriptionCustomiser.class, specs)) {
       customiser.accept(information);
     }
   }
@@ -198,7 +140,7 @@ class BeanDescriptionFactory {
 
   private void applyPropertyCustomisers(Model<?> model) {
     // remove props
-    for (RemoveProperty spec : specs(RemoveProperty.class, specs)) {
+    for (RemoveProperty spec : Specs.specs(RemoveProperty.class, specs)) {
       ArrayList<String> toRemove = new ArrayList<>();
       for (Property property : model.getProperties()) {
         if (spec.remove(property, onBean)) {
@@ -212,13 +154,13 @@ class BeanDescriptionFactory {
 
     // add props
     boolean isCreator = model instanceof BeanCreator<?>;
-    for (NewProperty spec : specs(NewProperty.class, specs)) {
+    for (NewProperty spec : Specs.specs(NewProperty.class, specs)) {
       Optional<Property> optProperty = spec.get(isCreator);
       optProperty.ifPresent(model::setProperty);
     }
 
     // customise props
-    for (PropertyCustomiser spec : specs(PropertyCustomiser.class, specs)) {
+    for (PropertyCustomiser spec : Specs.specs(PropertyCustomiser.class, specs)) {
       for (Property info : model.getProperties()) {
         try {
           spec.accept(info);
@@ -238,25 +180,6 @@ class BeanDescriptionFactory {
    * @return the BeanInformation object
    */
   BeanDescription create(Spec... specs) {
-    ArrayList<Spec> specList = new ArrayList<>();
-    for (Spec spec : specs) {
-      if (spec instanceof Specs.ResolvingSpec) {
-        LinkedList<Spec> resolveList = new LinkedList<>();
-        resolveList.add(spec);
-        while (!resolveList.isEmpty()) {
-          Spec current = resolveList.removeFirst();
-          if (current instanceof Specs.ResolvingSpec resolving) {
-            resolveList.addAll(0, resolving.resolve(beanClass));
-          } else {
-            specList.add(current);
-          }
-        }
-      } else {
-        specList.add(spec);
-      }
-    }
-    this.specs = specList.toArray(Spec[]::new);
-
     beanProperties.clear();
 
     findCreator();
@@ -314,6 +237,28 @@ class BeanDescriptionFactory {
   }
 
 
+  private Spec[] expandSpecs(Spec[] specs) {
+    ArrayList<Spec> specList = new ArrayList<>();
+    for (Spec spec : specs) {
+      if (spec instanceof Specs.ResolvingSpec) {
+        LinkedList<Spec> resolveList = new LinkedList<>();
+        resolveList.add(spec);
+        while (!resolveList.isEmpty()) {
+          Spec current = resolveList.removeFirst();
+          if (current instanceof Specs.ResolvingSpec resolving) {
+            resolveList.addAll(0, resolving.resolve(beanClass));
+          } else {
+            specList.add(current);
+          }
+        }
+      } else {
+        specList.add(spec);
+      }
+    }
+    return specList.toArray(Spec[]::new);
+  }
+
+
   /**
    * Find the properties of a class. A property will have either a getter or a setter. Note that this will not find properties that
    * are set via the creator and do not have a getter on the bean.
@@ -321,7 +266,6 @@ class BeanDescriptionFactory {
    * @return a collection of properties
    */
   Collection<Property> findAllProperties() {
-    this.specs = new Spec[0];
     beanProperties.clear();
     findBeanProperties();
     return beanProperties.values();
@@ -357,50 +301,50 @@ class BeanDescriptionFactory {
 
   private void findCreator() {
     // Does the bean have a specific creator?
-    Optional<BeanCreatorSpec> optCreator = firstSpec(BeanCreatorSpec.class, specs);
+    Optional<BeanCreatorSpec> optCreator = Specs.firstSpec(BeanCreatorSpec.class, specs);
     if (optCreator.isPresent()) {
-      creator = optCreator.get().getCreator();
+      creator = optCreator.get().getCreator(specs);
       return;
     }
 
     // Does the bean have a maker specifier?
-    Optional<Specs.BeanMaker> optMaker = firstSpec(Specs.BeanMaker.class, specs);
+    Optional<Specs.BeanMaker> optMaker = Specs.firstSpec(Specs.BeanMaker.class, specs);
     if (optMaker.isPresent()) {
-      creator = new BeanMaker(optMaker.get());
+      creator = new BeanMaker(optMaker.get(), specs);
       return;
     }
 
     // Does the bean have a constructor specifier?
-    Optional<Specs.BeanConstructor> optConstructor = firstSpec(Specs.BeanConstructor.class, specs);
+    Optional<Specs.BeanConstructor> optConstructor = Specs.firstSpec(Specs.BeanConstructor.class, specs);
     if (optConstructor.isPresent()) {
-      creator = new BeanConstructor(beanClass, optConstructor.get());
+      creator = new BeanConstructor(beanClass, optConstructor.get(), specs);
       return;
     }
 
     // Does the bean have a builder specifier?
-    Optional<Specs.BuilderMethods> optBuilder = firstSpec(Specs.BuilderMethods.class, specs);
+    Optional<Specs.BuilderMethods> optBuilder = Specs.firstSpec(Specs.BuilderMethods.class, specs);
     if (optBuilder.isPresent()) {
-      creator = new BeanBuilder(beanClass, optBuilder.get());
+      creator = new BeanBuilder(beanClass, optBuilder.get(), specs);
       return;
     }
 
     // Interfaces need special handling
     if (beanClass.isInterface()) {
-      creator = new BeanProxy(beanClass);
+      creator = new BeanProxy(beanClass, specs);
       return;
     }
 
     // Look for paired "builder" and "build" methods
     optBuilder = findDefaultBuilder();
     if (optBuilder.isPresent()) {
-      creator = new BeanBuilder(beanClass, optBuilder.get());
+      creator = new BeanBuilder(beanClass, optBuilder.get(), specs);
       return;
     }
 
     // Look for a usable constructor
     optConstructor = findDefaultConstructor();
     if (optConstructor.isPresent()) {
-      creator = new BeanConstructor(beanClass, optConstructor.get());
+      creator = new BeanConstructor(beanClass, optConstructor.get(), specs);
       return;
     }
 
@@ -544,7 +488,6 @@ class BeanDescriptionFactory {
    * @return a collection of writable properties
    */
   Collection<Property> findWritableProperties() {
-    this.specs = new Spec[0];
     beanProperties.clear();
     findBeanProperties();
     beanProperties.values().removeIf(p -> !p.isWritable());

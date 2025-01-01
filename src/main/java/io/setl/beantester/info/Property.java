@@ -290,7 +290,7 @@ public class Property {
 
 
   void setModel(Model<?> newModel) {
-    if (model != null && newModel != null) {
+    if (model != null && newModel != null && model != newModel) {
       throw new IllegalStateException("Model already set");
     }
     this.model = newModel;

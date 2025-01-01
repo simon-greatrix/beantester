@@ -23,7 +23,7 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
     }
 
     // Use default factory
-    return new BeanDescriptionFactory(beanClass, true).create(specs);
+    return new BeanDescriptionFactory(beanClass, specs, true).create(specs);
   }
 
 

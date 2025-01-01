@@ -34,4 +34,3 @@ Ideas for the future:
     - Size
     - NotEmpty
 
-# Protobuf support
