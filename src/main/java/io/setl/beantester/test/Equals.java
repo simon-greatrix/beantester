@@ -93,7 +93,7 @@ public class Equals {
   private void testAllProperties() {
     // Test all combinations
     holder.reset();
-    holder.setAllProperties(ValueType.RANDOM, false);
+    holder.setAllProperties(ValueType.RANDOM);
 
     // Loop over each property
     for (String name : propertyNames) {
@@ -130,7 +130,7 @@ public class Equals {
   private void testRandom() {
     for (int i = 0; i < 5; i++) {
       for (String propertyName : propertyNames) {
-        holder.setAllProperties(ValueType.RANDOM, true);
+        holder.setAllProperties(ValueType.RANDOM);
         Object bean1 = holder.newBean();
         Object bean2 = holder.newBean();
         if (!bean1.equals(bean2)) {

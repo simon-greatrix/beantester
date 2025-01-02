@@ -34,14 +34,14 @@ public class NullRules {
     BeanHolder holder = original.createHolder()
         .setPreferWriters(false)
         .reset()
-        .setAllProperties(ValueType.PRIMARY, false);
+        .setAllProperties(ValueType.PRIMARY);
 
     inferNullBehaviour(original.getBeanCreator(), "Creator", holder);
 
     // Now the bean properties.
     holder.setPreferWriters(true)
         .reset()
-        .setAllProperties(ValueType.PRIMARY, true);
+        .setAllProperties(ValueType.PRIMARY);
 
     inferNullBehaviour(original, "Bean", holder);
   }

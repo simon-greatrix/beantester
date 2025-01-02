@@ -16,7 +16,9 @@ import io.setl.beantester.example.LedgerAccount2;
 import io.setl.beantester.example.LedgerManifest;
 import io.setl.beantester.example.LedgerTransfer;
 import io.setl.beantester.example.PetRecord;
+import io.setl.beantester.example.Recurse1;
 import io.setl.beantester.info.BeanDescription;
+import io.setl.beantester.info.BeanHolder;
 import io.setl.beantester.info.Specs;
 
 public class TestBeans {
@@ -103,4 +105,11 @@ public class TestBeans {
     BeanVerifier.verify(PetRecord.class);
   }
 
+  @Test
+  void recurse() {
+    TestContext.get().setStructureDepth(15);
+    BeanHolder holder = new BeanHolder(BeanDescription.create(Recurse1.class));
+    holder.setAllProperties(ValueType.RANDOM);
+    System.out.println(holder.newBean());
+  }
 }
