@@ -73,6 +73,16 @@ public class BeanHolder {
   }
 
 
+  public ValueFactory asFactory() {
+    return new ValueFactory(
+        description.getBeanClass(),
+        () -> create(ValueType.PRIMARY),
+        () -> create(ValueType.SECONDARY),
+        () -> create(ValueType.RANDOM)
+    );
+  }
+
+
   private void buildBean() {
     setCreatorData();
 
@@ -107,18 +117,10 @@ public class BeanHolder {
 
 
   public Object create(ValueType type) {
-    setAllProperties(type, true);
+    setAllProperties(type);
     return newBean();
   }
 
-  public ValueFactory asFactory() {
-    return new ValueFactory(
-        description.getBeanClass(),
-        () -> create(ValueType.PRIMARY),
-        () -> create(ValueType.SECONDARY),
-        () -> create(ValueType.RANDOM)
-    );
-  }
 
   /**
    * Create a builder with the current property values. If the bean does not user a builder, returns an empty Optional.
@@ -153,7 +155,7 @@ public class BeanHolder {
       info = this.description.getProperty(name);
     }
     if (info == null) {
-      throw new IllegalArgumentException("No property named " + name);
+      throw new IllegalArgumentException("Class " + getBeanClass() + " : No property named " + name);
     }
     return TestContext.get().getFactories().create(type, this.description.getBeanClass(), info);
   }
@@ -365,8 +367,30 @@ public class BeanHolder {
   /**
    * Set all properties to the same type of value.
    *
+   * @param type the value type
+   */
+  public BeanHolder setAllProperties(ValueType type) {
+    return setAllProperties(type, TestContext.get().getStructureDepth());
+  }
+
+
+  /**
+   * Set all properties to the same type of value.
+   *
+   * @param type  the value type
+   * @param depth the maximum number of times a class can occur in the stack
+   */
+  public BeanHolder setAllProperties(ValueType type, int depth) {
+    boolean useNulls = ValueFactory.getStructureDepth() >= depth;
+    return setAllProperties(type, useNulls);
+  }
+
+
+  /**
+   * Set all properties to the same type of value.
+   *
    * @param type     the value type
-   * @param useNulls true if nullable properties should be set to null
+   * @param useNulls if true, use nulls for all nullable properties
    */
   public BeanHolder setAllProperties(ValueType type, boolean useNulls) {
     for (String propertyName : getPropertyNames()) {

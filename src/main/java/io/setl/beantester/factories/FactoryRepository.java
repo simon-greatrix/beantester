@@ -29,7 +29,7 @@ public class FactoryRepository {
 
   private final HashMap<Class<?>, HashMap<String, ValueFactory>> overrides = new HashMap<>();
 
-  private BeanFactoryLookup beanFactoryLookup = new BeanFactoryLookup();
+  private final BeanFactoryLookup beanFactoryLookup = new BeanFactoryLookup();
 
 
   /**

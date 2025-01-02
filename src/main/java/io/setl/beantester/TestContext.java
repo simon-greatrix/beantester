@@ -43,15 +43,25 @@ public class TestContext {
 
   public static void close() {
     CONTEXT.remove();
-    ValueFactory.STACK.remove();
+    ValueFactory.DEPTH.remove();
   }
 
 
+  /**
+   * Get this thread's test context.
+   *
+   * @return the test context
+   */
   public static TestContext get() {
     return CONTEXT.get();
   }
 
 
+  /**
+   * Create a new random number generator.
+   *
+   * @return the new random number generator
+   */
   public static RandomGenerator newRandom() {
     return root.split();
   }
@@ -91,6 +101,11 @@ public class TestContext {
   /** Lookups for bean descriptions. */
   private final LinkedList<BeanDescriptionLookup> lookups = new LinkedList<>();
 
+  /** The maximum number of distinct instances to generate within one structure. */
+  @Getter
+  @Setter
+  private int maxDistinctValues = 5;
+
   /** If a property can be set either in the constructor or by a setter, which should be preferred. */
   @Getter
   @Setter
@@ -104,6 +119,13 @@ public class TestContext {
 
   /** A random seed for repeatable tests. */
   private long randomSeed = MAGIC_SEED_NOT_SET;
+
+  /** The recursion depth of the current test. */
+  @Getter
+  @Setter
+  private int structureDepth = 10;
+
+  private long structureId = 0;
 
 
   /** New instance. */
@@ -168,6 +190,11 @@ public class TestContext {
   }
 
 
+  long getStructureId() {
+    return structureId;
+  }
+
+
   /**
    * Find an explicit factory for the specified type description.
    *
@@ -205,6 +232,19 @@ public class TestContext {
   }
 
 
+  void beginStructure() {
+    structureId++;
+
+  }
+
+
+  /**
+   * Set the clock to be used for time and date related values.
+   *
+   * @param clock the clock to use
+   *
+   * @return this
+   */
   public TestContext setClock(Clock clock) {
     this.clock.setDelegate(clock);
     return this;
