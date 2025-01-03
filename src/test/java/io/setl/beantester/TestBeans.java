@@ -96,7 +96,7 @@ public class TestBeans {
 
   @Test
   void testLedgerTransfer() throws Throwable {
-    BeanVerifier.verify(LedgerTransfer.class);
+      BeanVerifier.verify(LedgerTransfer.class);
   }
 
 
@@ -107,9 +107,6 @@ public class TestBeans {
 
   @Test
   void recurse() {
-    TestContext.get().setStructureDepth(15);
-    BeanHolder holder = new BeanHolder(BeanDescription.create(Recurse1.class));
-    holder.setAllProperties(ValueType.RANDOM);
-    System.out.println(holder.newBean());
+    BeanVerifier.verify(Recurse1.class);
   }
 }

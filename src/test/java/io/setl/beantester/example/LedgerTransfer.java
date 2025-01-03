@@ -48,9 +48,9 @@ public final class LedgerTransfer {
   /** The database record ID. */
   private long id;
 
-  private Boolean isAccepted;
+  private Boolean accepted;
 
-  private boolean isFinalised;
+  private boolean finalised;
 
   /** The manifest's correlation ID. */
   private String manifestCorrelationId;

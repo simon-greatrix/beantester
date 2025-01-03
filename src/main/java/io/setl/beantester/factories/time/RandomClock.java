@@ -65,13 +65,19 @@ public class RandomClock extends Clock {
   }
 
 
+  /**
+   * Create a copy of a clock with a new zone ID.
+   *
+   * @param original the original clock
+   * @param zoneId   the new zone ID
+   */
   public RandomClock(RandomClock original, ZoneId zoneId) {
     if (original.delegate == null) {
       this.delegate = null;
     } else {
-      this.delegate = original.delegate.withZone(original.getZone());
+      this.delegate = original.delegate.withZone(getZone());
     }
-    this.zoneId = original.zoneId;
+    this.zoneId = zoneId;
   }
 
 
@@ -108,7 +114,7 @@ public class RandomClock extends Clock {
 
 
   /**
-   * Set the zone ID used by this clock
+   * Set the zone ID used by this clock.
    *
    * @param zoneId the zone ID
    *

@@ -37,6 +37,12 @@ public class RandomIncreasingClock extends Clock {
   }
 
 
+  /**
+   * Create a copy of a clock with a new zone ID.
+   *
+   * @param original the clock to copy
+   * @param zoneId   the new zone ID
+   */
   public RandomIncreasingClock(RandomIncreasingClock original, ZoneId zoneId) {
     this.currentTimeMillis = original.currentTimeMillis;
     this.fixedJump = original.fixedJump;

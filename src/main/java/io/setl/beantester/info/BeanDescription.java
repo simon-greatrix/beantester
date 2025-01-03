@@ -17,9 +17,9 @@ public class BeanDescription extends AbstractModel<BeanDescription> {
    * Create BeanInformation for a specified class.
    */
   public static BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
-    Optional<BeanDescriptionLookup> lookup = TestContext.get().findBeanDescriptionLookup(beanClass, specs);
+    Optional<BeanDescription> lookup = TestContext.get().findBeanDescriptionLookup(beanClass, specs);
     if (lookup.isPresent()) {
-      return lookup.get().getDescription(beanClass, specs);
+      return lookup.get();
     }
 
     // Use default factory

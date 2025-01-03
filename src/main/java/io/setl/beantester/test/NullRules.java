@@ -1,6 +1,5 @@
 package io.setl.beantester.test;
 
-import java.util.List;
 import java.util.Set;
 
 import io.setl.beantester.AssertionException;

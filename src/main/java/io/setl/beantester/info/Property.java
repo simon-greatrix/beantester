@@ -282,6 +282,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the property to be ignored during testing.
+   *
+   * @param ignored true if the property is ignored, false otherwise
+   *
+   * @return this
+   */
   public Property setIgnored(boolean ignored) {
     this.ignored = ignored;
     notifyChanged();
@@ -289,6 +296,11 @@ public class Property {
   }
 
 
+  /**
+   * Set the model for this property.
+   *
+   * @param newModel the new model
+   */
   void setModel(Model<?> newModel) {
     if (model != null && newModel != null && model != newModel) {
       throw new IllegalStateException("Model already set");
@@ -297,6 +309,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the property to be not null.
+   *
+   * @param notNull true if the property is not null, false otherwise
+   *
+   * @return this
+   */
   public Property setNotNull(boolean notNull) {
     this.notNull = notNull;
     notifyChanged();
@@ -304,6 +323,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the behaviour when the property is set to null.
+   *
+   * @param nullBehaviour the behaviour to use
+   *
+   * @return this
+   */
   public Property setNullBehaviour(NullBehaviour nullBehaviour) {
     this.nullBehaviour = nullBehaviour;
     notifyChanged();
@@ -311,6 +337,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the value to be used when the property is set to null.
+   *
+   * @param nullValue the value to use
+   *
+   * @return this
+   */
   public Property setNullValue(Object nullValue) {
     this.nullValue = nullValue;
     notifyChanged();
@@ -318,6 +351,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the behaviour when the property is omitted.
+   *
+   * @param omittedBehaviour the behaviour to use
+   *
+   * @return this
+   */
   public Property setOmittedBehaviour(NullBehaviour omittedBehaviour) {
     this.omittedBehaviour = omittedBehaviour;
     notifyChanged();
@@ -325,6 +365,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the value to be used when the property is omitted.
+   *
+   * @param omittedValue the value to use
+   *
+   * @return this
+   */
   public Property setOmittedValue(Object omittedValue) {
     this.omittedValue = omittedValue;
     notifyChanged();
@@ -332,6 +379,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the property to be significant for equals and hash-code testing.
+   *
+   * @param significant true if the property is significant, false otherwise
+   *
+   * @return this
+   */
   public Property setSignificant(boolean significant) {
     this.significant = significant;
     notifyChanged();
@@ -339,6 +393,13 @@ public class Property {
   }
 
 
+  /**
+   * Set the type of this property. If not set (or set to null) the type is inferred from the reader or writer methods.
+   *
+   * @param type the new type
+   *
+   * @return this
+   */
   public Property setType(Type type) {
     this.type = type;
     notifyChanged();

@@ -7,6 +7,7 @@ import java.util.TreeSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import io.setl.beantester.AssertionException;
+import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.info.BeanHolder;
 
@@ -128,7 +129,7 @@ public class Equals {
 
 
   private void testRandom() {
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < TestContext.get().getRuns(); i++) {
       for (String propertyName : propertyNames) {
         holder.setAllProperties(ValueType.RANDOM);
         Object bean1 = holder.newBean();
@@ -174,6 +175,8 @@ public class Equals {
 
     // A bean is always equal to a bean with the same property values
     if (!beanBefore.equals(otherBean)) {
+      System.getLogger(Equals.class.getName()).log(System.Logger.Level.INFO, "bean : " + beanBefore);
+      System.getLogger(Equals.class.getName()).log(System.Logger.Level.INFO, "other: " + otherBean);
       throw new AssertionException(holder.getBeanClass() + ".equals() is not reflexive");
     }
 

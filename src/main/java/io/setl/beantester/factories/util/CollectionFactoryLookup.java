@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
@@ -43,7 +44,6 @@ import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.factories.FactoryRepository;
-import io.setl.beantester.factories.NoSuchFactoryException;
 
 
 /**
@@ -151,10 +151,6 @@ public class CollectionFactoryLookup implements FactoryLookup {
     );
   }
 
-  @SuppressWarnings("unchecked")
-  private static <E extends Enum<E>> Class<E> enumType(Type type) {
-    return (Class<E>) type;
-  }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private <T> Supplier<T> findCollectionInstanceFactory(Type type, Class<?> rawType) {
@@ -194,15 +190,13 @@ public class CollectionFactoryLookup implements FactoryLookup {
 
 
   @Override
-  public ValueFactory getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
-    return createCollectionPopulatingFactory(typeToken);
-  }
+  public Optional<ValueFactory> getFactory(Type typeToken) {
+    Class<?> clazz = getRawType(typeToken);
+    if (clazz.equals(void.class) || !(Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz))) {
+      return Optional.empty();
+    }
 
-
-  @Override
-  public boolean hasFactory(Type type) {
-    Class<?> clazz = getRawType(type);
-    return !clazz.equals(void.class) && (Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz));
+    return Optional.of(createCollectionPopulatingFactory(typeToken));
   }
 
 

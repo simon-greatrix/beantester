@@ -2,6 +2,7 @@ package io.setl.beantester.factories.basic;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Type;
+import java.util.Optional;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
@@ -15,24 +16,18 @@ public class PrimitiveFactoryLookup implements FactoryLookup {
 
 
   @Override
-  public ValueFactory getFactory(Type type) throws NoSuchFactoryException {
+  public Optional<ValueFactory> getFactory(Type type) throws NoSuchFactoryException {
     if (!(type instanceof Class<?> clazz)) {
-      throw new NoSuchFactoryException("Type must be a class");
+      return Optional.empty();
     }
 
     // Need to convert from primitive to wrapper class. Java does not provide an obvious way to do this, so we use MethodType.
     MethodType methodType = MethodType.methodType(clazz);
     if (!methodType.hasPrimitives()) {
-      throw new NoSuchFactoryException("Type must be a primitive");
+      return Optional.empty();
     }
 
-    return TestContext.get().getFactories().getFactory(methodType.wrap().returnType());
-  }
-
-
-  @Override
-  public boolean hasFactory(Type type) throws IllegalArgumentException {
-    return type instanceof Class && ((Class<?>) type).isPrimitive();
+    return Optional.of(TestContext.get().getFactories().getFactory(methodType.wrap().returnType()));
   }
 
 }

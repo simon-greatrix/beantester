@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import io.setl.beantester.ValueFactory;
@@ -23,13 +24,13 @@ import io.setl.beantester.mirror.Executables;
  */
 public class FactoryRepository {
 
+  private final BeanFactoryLookup beanFactoryLookup = new BeanFactoryLookup();
+
   private final HashMap<Type, ValueFactory> factories = new HashMap<>();
 
   private final List<FactoryLookup> factoryLookups = new ArrayList<>();
 
   private final HashMap<Class<?>, HashMap<String, ValueFactory>> overrides = new HashMap<>();
-
-  private final BeanFactoryLookup beanFactoryLookup = new BeanFactoryLookup();
 
 
   /**
@@ -76,6 +77,11 @@ public class FactoryRepository {
   }
 
 
+  /**
+   * Copy the specified factories into this repository.
+   *
+   * @param factories the factories to copy
+   */
   public void copy(FactoryRepository factories) {
     this.factories.putAll(factories.factories);
     this.factoryLookups.addAll(factories.factoryLookups);
@@ -120,16 +126,19 @@ public class FactoryRepository {
     int p = factoryLookups.size();
     while (p-- > 0) {
       FactoryLookup lookup = factoryLookups.get(p);
-      if (lookup.hasFactory(type)) {
-        factory = lookup.getFactory(type);
+      Optional<ValueFactory> optionalFactory = lookup.getFactory(type);
+      if (optionalFactory.isPresent()) {
+        factory = optionalFactory.get();
         factories.put(type, factory);
         return factory;
       }
     }
 
+
     // Finally, try the bean factory lookup
-    if (beanFactoryLookup.hasFactory(type)) {
-      factory = beanFactoryLookup.getFactory(type);
+    Optional<ValueFactory> optionalFactory = beanFactoryLookup.getFactory(type);
+    if (optionalFactory.isPresent()) {
+      factory = optionalFactory.get();
       factories.put(type, factory);
       return factory;
     }
