@@ -101,11 +101,6 @@ public class TestContext {
   /** Lookups for bean descriptions. */
   private final LinkedList<BeanDescriptionLookup> lookups = new LinkedList<>();
 
-  /** The maximum number of distinct instances to generate within one structure. */
-  @Getter
-  @Setter
-  private int maxDistinctValues = 5;
-
   /** If a property can be set either in the constructor or by a setter, which should be preferred. */
   @Getter
   @Setter
@@ -120,10 +115,14 @@ public class TestContext {
   /** A random seed for repeatable tests. */
   private long randomSeed = MAGIC_SEED_NOT_SET;
 
+  @Getter
+  @Setter
+  private int runs = 5;
+
   /** The recursion depth of the current test. */
   @Getter
   @Setter
-  private int structureDepth = 10;
+  private int structureDepth = 3;
 
   private long structureId = 0;
 
@@ -177,6 +176,12 @@ public class TestContext {
   }
 
 
+  void beginStructure() {
+    structureId++;
+
+  }
+
+
   /**
    * Create a {@code BeanDescription} for the specified class.
    *
@@ -190,11 +195,6 @@ public class TestContext {
   }
 
 
-  long getStructureId() {
-    return structureId;
-  }
-
-
   /**
    * Find an explicit factory for the specified type description.
    *
@@ -203,13 +203,19 @@ public class TestContext {
    *
    * @return the factory if found
    */
-  public Optional<BeanDescriptionLookup> findBeanDescriptionLookup(Class<?> clazz, Spec... specs) {
+  public Optional<BeanDescription> findBeanDescriptionLookup(Class<?> clazz, Spec... specs) {
     for (BeanDescriptionLookup lookup : lookups) {
-      if (lookup.hasDescription(clazz, specs)) {
-        return Optional.of(lookup);
+      Optional<BeanDescription> description = lookup.getDescription(clazz, specs);
+      if (description.isPresent()) {
+        return description;
       }
     }
     return Optional.empty();
+  }
+
+
+  long getStructureId() {
+    return structureId;
   }
 
 
@@ -229,12 +235,6 @@ public class TestContext {
     factories.copy(DEFAULT.factories);
 
     lookups.addAll(DEFAULT.lookups);
-  }
-
-
-  void beginStructure() {
-    structureId++;
-
   }
 
 

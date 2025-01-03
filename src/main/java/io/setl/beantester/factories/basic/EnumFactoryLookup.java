@@ -1,11 +1,11 @@
 package io.setl.beantester.factories.basic;
 
 import java.lang.reflect.Type;
+import java.util.Optional;
 
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.FactoryLookup;
-import io.setl.beantester.factories.NoSuchFactoryException;
 
 /**
  * FactoryLookup for EnumFactory instances.
@@ -13,12 +13,12 @@ import io.setl.beantester.factories.NoSuchFactoryException;
 public class EnumFactoryLookup implements FactoryLookup {
 
   @Override
-  public ValueFactory getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException {
+  public Optional<ValueFactory> getFactory(Type type) {
     if (!(type instanceof Class<?> enumClass)) {
-      throw new NoSuchFactoryException("Cannot create EnumFactory for non-Class type: " + type);
+      return Optional.empty();
     }
     if (!enumClass.isEnum()) {
-      throw new NoSuchFactoryException("Cannot create EnumFactory for non-Enum class: " + enumClass);
+      return Optional.empty();
     }
 
     final Enum<?>[] enumConstants = (Enum<?>[]) enumClass.getEnumConstants();
@@ -27,14 +27,9 @@ public class EnumFactoryLookup implements FactoryLookup {
     }
     Enum<?> primary = enumConstants[0];
     Enum<?> secondary = enumConstants[Math.min(1, enumConstants.length - 1)];
-    return new ValueFactory(type, () -> primary, () -> secondary, () -> enumConstants[TestContext.get().getRandom().nextInt(enumConstants.length)]);
-  }
-
-
-  @SuppressWarnings("rawtypes")
-  @Override
-  public boolean hasFactory(Type type) throws IllegalArgumentException {
-    return type instanceof Class && ((Class) type).isEnum();
+    return Optional.of(new ValueFactory(type, () -> primary, () -> secondary,
+        () -> enumConstants[TestContext.get().getRandom().nextInt(enumConstants.length)]
+    ));
   }
 
 }

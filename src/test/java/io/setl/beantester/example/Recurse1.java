@@ -3,6 +3,7 @@ package io.setl.beantester.example;
 import java.util.concurrent.atomic.AtomicLong;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Builder
@@ -11,19 +12,10 @@ public class Recurse1 {
 
   static final AtomicLong ID_SRC = new AtomicLong(0);
 
-
-  static long source() {
-    long id = ID_SRC.getAndIncrement();
-    if (id > 20) {
-      Thread.dumpStack();
-    }
-    return id;
-  }
-
-
   int anInt;
 
-  final long id = source();
+  @EqualsAndHashCode.Exclude
+  final long id = ID_SRC.getAndIncrement();
 
   Recurse1 recurse1;
 

@@ -1,7 +1,6 @@
 package io.setl.beantester;
 
 import java.lang.reflect.Type;
-import java.util.LinkedList;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -49,12 +48,6 @@ public class ValueFactory {
   /** The type of object to create. */
   @Getter
   private final Type type;
-
-  /** Random values for re-use. */
-  private final LinkedList<Object> values = new LinkedList<>();
-
-  /** Structure ID the random values relate to. */
-  private long structureId = Long.MIN_VALUE;
 
 
   private ValueFactory(Class<?> type) {
@@ -144,7 +137,7 @@ public class ValueFactory {
       return switch (valueType) {
         case PRIMARY -> getPrimary();
         case SECONDARY -> getSecondary();
-        default -> selectRandom();
+        default -> getRandom();
       };
     } finally {
       DEPTH.get().decrementAndGet();
@@ -164,29 +157,6 @@ public class ValueFactory {
 
   protected Object getSecondary() {
     return secondary.get();
-  }
-
-
-  private Object selectRandom() {
-    if( type.getTypeName().contains("Recurse") ) {
-      System.out.println("Recurse "+System.identityHashCode(this)+" : "+values.size());
-    }
-    long currentId = TestContext.get().getStructureId();
-    if (currentId != structureId) {
-      structureId = currentId;
-      values.clear();
-    }
-
-    int max = TestContext.get().getMaxDistinctValues();
-    if (values.size() < max || values.isEmpty()) {
-      Object value = random.get();
-      values.add(value);
-      return value;
-    }
-
-    Object value = values.removeFirst();
-    values.addLast(value);
-    return value;
   }
 
 

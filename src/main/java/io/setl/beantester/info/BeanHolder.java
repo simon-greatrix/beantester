@@ -17,6 +17,7 @@ import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
+import io.setl.beantester.factories.BeanFactoryLookup;
 import io.setl.beantester.factories.FactoryRepository;
 
 /**
@@ -73,13 +74,13 @@ public class BeanHolder {
   }
 
 
+  /**
+   * Convert this to a value factory.
+   *
+   * @return the value factory
+   */
   public ValueFactory asFactory() {
-    return new ValueFactory(
-        description.getBeanClass(),
-        () -> create(ValueType.PRIMARY),
-        () -> create(ValueType.SECONDARY),
-        () -> create(ValueType.RANDOM)
-    );
+    return BeanFactoryLookup.toFactory(description);
   }
 
 

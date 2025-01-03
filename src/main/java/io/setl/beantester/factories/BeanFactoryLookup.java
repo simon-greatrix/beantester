@@ -1,7 +1,5 @@
 package io.setl.beantester.factories;
 
-import static io.setl.beantester.mirror.Executables.getRawType;
-
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -48,11 +46,33 @@ public class BeanFactoryLookup implements FactoryLookup {
   }
 
 
+  /**
+   * Convert a BeanDescription to a ValueFactory.
+   *
+   * @param description the description to convert
+   *
+   * @return the factory
+   */
+  public static ValueFactory toFactory(BeanDescription description) {
+    Suppliers suppliers = new Suppliers(description);
+    return new ValueFactory(
+        description.getBeanClass(),
+        false,
+        () -> suppliers.create(ValueType.PRIMARY),
+        () -> suppliers.create(ValueType.SECONDARY),
+        () -> suppliers.create(ValueType.RANDOM)
+    );
+  }
+
 
   private final Map<Class<?>, ValueFactory> knownFactories = new HashMap<>();
 
 
-  private Optional<ValueFactory> findFactory(Class<?> clazz, boolean logFailure) {
+  @Override
+  public Optional<ValueFactory> getFactory(Type type) {
+    if (!(type instanceof Class<?> clazz)) {
+      return Optional.empty();
+    }
     ValueFactory factory = knownFactories.get(clazz);
     if (factory != null) {
       return Optional.of(factory);
@@ -60,14 +80,7 @@ public class BeanFactoryLookup implements FactoryLookup {
 
     try {
       BeanDescription information = BeanDescription.create(clazz);
-      Suppliers suppliers = new Suppliers(information);
-      factory = new ValueFactory(
-          clazz,
-          false,
-          () -> suppliers.create(ValueType.PRIMARY),
-          () -> suppliers.create(ValueType.SECONDARY),
-          () -> suppliers.create(ValueType.RANDOM)
-      );
+      factory = toFactory(information);
 
       knownFactories.put(clazz, factory);
 
@@ -78,34 +91,18 @@ public class BeanFactoryLookup implements FactoryLookup {
       clazz.cast(holder.reset().newBean());
 
       // All types
-      for (ValueType type : ValueType.values()) {
+      for (ValueType vt : ValueType.values()) {
         // Type with nulls
-        holder.reset().setAllProperties(type, true);
+        holder.reset().setAllProperties(vt, true);
         clazz.cast(holder.newBean());
       }
 
       return Optional.of(factory);
     } catch (Throwable t) {
-      if (logFailure) {
-        System.getLogger(BeanFactoryLookup.class.getName()).log(Level.ERROR, "Failed to create factory for: " + clazz, t);
-      }
+      System.getLogger(BeanFactoryLookup.class.getName()).log(Level.INFO, "Failed to create factory for: " + clazz, t);
       return Optional.empty();
     }
 
-  }
-
-
-  @Override
-  public ValueFactory getFactory(Type type) throws IllegalArgumentException, NoSuchFactoryException {
-    return findFactory(getRawType(type), true)
-        .orElseThrow(() -> new NoSuchFactoryException("No factory available for: " + type));
-  }
-
-
-  @Override
-  public boolean hasFactory(Type type) throws IllegalArgumentException {
-    Class<?> clazz = getRawType(type);
-    return findFactory(clazz, false).isPresent();
   }
 
 }

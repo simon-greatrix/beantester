@@ -16,8 +16,8 @@ import java.util.OptionalLong;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.factories.FactoryLookup;
-import io.setl.beantester.factories.NoSuchFactoryException;
 import io.setl.beantester.factories.FactoryRepository;
+import io.setl.beantester.factories.NoSuchFactoryException;
 
 
 /**
@@ -35,12 +35,6 @@ public class OptionalFactoryLookup implements FactoryLookup {
     map.put(OptionalLong.class, Long.class);
     map.put(OptionalDouble.class, Double.class);
     return unmodifiableMap(map);
-  }
-
-
-  private ValueFactory createOptionalPopulatingFactory(Type typeToken) {
-    Class<?> rawType = getRawType(typeToken);
-    return findInstanceFactory(typeToken, rawType);
   }
 
 
@@ -89,15 +83,13 @@ public class OptionalFactoryLookup implements FactoryLookup {
 
 
   @Override
-  public ValueFactory getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
-    return createOptionalPopulatingFactory(typeToken);
-  }
+  public Optional<ValueFactory> getFactory(Type typeToken) throws IllegalArgumentException, NoSuchFactoryException {
+    Class<?> clazz = getRawType(typeToken);
+    if (clazz.equals(void.class) || !isAssignableToOptional(clazz)) {
+      return Optional.empty();
+    }
 
-
-  @Override
-  public boolean hasFactory(Type type) {
-    Class<?> clazz = getRawType(type);
-    return !clazz.equals(void.class) && isAssignableToOptional(clazz);
+    return Optional.of(findInstanceFactory(typeToken, clazz));
   }
 
 

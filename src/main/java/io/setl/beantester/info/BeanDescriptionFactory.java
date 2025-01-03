@@ -464,7 +464,7 @@ class BeanDescriptionFactory {
       return;
     }
 
-    String propertyName = getSetterName(method);
+    String propertyName = findSetterName(method);
     if (propertyName == null) {
       return;
     }
@@ -495,7 +495,7 @@ class BeanDescriptionFactory {
   }
 
 
-  private String getSetterName(Method method) {
+  private String findSetterName(Method method) {
     String methodName = method.getName();
 
     if (hasPrefix(methodName, "set") && acceptMethod(method, "set", true)) {
