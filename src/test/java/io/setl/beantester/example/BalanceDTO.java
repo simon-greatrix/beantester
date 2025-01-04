@@ -20,7 +20,7 @@ public class BalanceDTO implements BalanceTypeIdentifier {
    *
    * @return the new instance
    */
-  public static BalanceDTO of(String label, BigDecimal amount) {
+  public static BalanceDTO of(@Nonnull String label, BigDecimal amount) {
     if (label == null) {
       throw new IllegalArgumentException("Cannot build BalanceDTO, required attribute 'label' has not been set");
     }
@@ -36,7 +36,7 @@ public class BalanceDTO implements BalanceTypeIdentifier {
    *
    * @return the new instance
    */
-  public static BalanceDTO of(BalanceTypeIdentifier id, BigDecimal amount) {
+  public static BalanceDTO of(@Nonnull BalanceTypeIdentifier id, BigDecimal amount) {
     if (id == null) {
       throw new IllegalArgumentException("Cannot build BalanceDTO, required attribute 'id' has not been set");
     }

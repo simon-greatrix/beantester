@@ -1,5 +1,7 @@
 package io.setl.beantester.example;
 
-public record PetRecord(String cat, String dog, String fish) {
+import jakarta.annotation.Nonnull;
+
+public record PetRecord(@Nonnull @lombok.NonNull String cat, String dog, String fish) {
 
 }

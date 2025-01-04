@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import io.setl.beantester.example.AccountBalanceUpdate;
 import io.setl.beantester.example.ApproverAccount;
 import io.setl.beantester.example.ApproverLink;
 import io.setl.beantester.example.ApproverManifest;
@@ -72,7 +73,7 @@ public class TestBeans {
             BalanceDTO.class,
             Specs.beanMaker("of", String.class, BigDecimal.class)
         ));
-    BeanVerifier.verify(LedgerAccount.class);
+    BeanVerifier.verifyWithContext(LedgerAccount.class);
   }
 
 
@@ -84,7 +85,7 @@ public class TestBeans {
             BalanceDTO.class,
             Specs.beanMaker("of", String.class, BigDecimal.class)
         ));
-    BeanVerifier.verify(LedgerAccount2.class);
+    BeanVerifier.verifyWithContext(LedgerAccount2.class);
   }
 
 
@@ -106,7 +107,31 @@ public class TestBeans {
   }
 
   @Test
-  void recurse() {
+  void testRecurse() {
     BeanVerifier.verify(Recurse1.class);
   }
+
+  @Test
+  void testAccountBalanceUpdate() {
+    BeanVerifier.verify(AccountBalanceUpdate.class);
+  }
+
+
+  @Test
+  void testBalanceDTO1() {
+    BeanVerifier.verify(
+        BalanceDTO.class,
+        Specs.beanMaker("of", String.class, BigDecimal.class)
+    );
+  }
+
+
+  @Test
+  void testBalanceDTO2() {
+    BeanVerifier.verify(
+        BalanceDTO.class,
+        Specs.beanMaker("of", BalanceTypeIdentifier.class, BigDecimal.class)
+    );
+  }
+
 }

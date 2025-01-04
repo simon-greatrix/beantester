@@ -17,8 +17,8 @@ import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
-import io.setl.beantester.factories.BeanFactoryLookup;
 import io.setl.beantester.factories.FactoryRepository;
+import io.setl.beantester.factories.bean.BeanFactoryLookup;
 
 /**
  * The bean holder holds a bean and manages its creation.
@@ -49,6 +49,8 @@ public class BeanHolder {
   @Getter
   @Setter
   private boolean preferWriters = TestContext.get().isPreferWriters();
+
+  private int revision = -1;
 
 
   /**
@@ -101,14 +103,11 @@ public class BeanHolder {
         continue;
       }
 
-      Object value = entry.getValue();
-      Property info = this.description.getProperty(name);
-
+      Property info = description.getProperty(name);
       if (info != null && info.isWritable()) {
-        info.write(bean, value);
+        info.write(bean, entry.getValue());
       }
     }
-
   }
 
 
@@ -352,16 +351,22 @@ public class BeanHolder {
 
     // Set a value for all non-null values (including ignored ones)
     for (Property property : description.getBeanCreator().getProperties()) {
-      if (property.isNotNull()) {
-        initialValues.put(property.getName(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
+      NullBehaviour behaviour = property.getOmittedBehaviour();
+      if (behaviour == null || behaviour == NullBehaviour.NOT_READABLE || behaviour == NullBehaviour.ERROR) {
+        // Behaviour is either unknown, or known and requires a value. Can we pass null?
+
+        behaviour = property.getNullBehaviour();
+        if (behaviour == NullBehaviour.NULL || behaviour == NullBehaviour.VALUE || (behaviour == null && !property.isNotNull())) {
+          // We can pass null
+          initialValues.put(property.getName(), null);
+        } else {
+          // In these cases we need to set a value
+          initialValues.put(property.getName(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
+        }
       }
     }
 
-    for (Property property : description.getProperties()) {
-      if (property.isNotNull()) {
-        initialValues.put(property.getName(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
-      }
-    }
+    revision = description.getRevision();
   }
 
 
@@ -406,6 +411,10 @@ public class BeanHolder {
 
 
   private void setCreatorData() {
+    if (description.getRevision() != revision) {
+      resetInitialValues();
+    }
+
     LinkedHashMap<String, Object> creatorParams = new LinkedHashMap<>(initialValues);
 
     HashSet<String> creatorKeys = new HashSet<>();

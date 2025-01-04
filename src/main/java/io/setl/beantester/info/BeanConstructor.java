@@ -8,10 +8,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.setl.beantester.AssertionException;
+import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.info.Specs.Spec;
 
 /** A call to a bean's constructor. */
-public class BeanConstructor extends AbstractModel<BeanConstructor> implements BeanCreator<BeanConstructor> {
+public class BeanConstructor extends AbstractCreatorModel<BeanConstructor> {
 
   private final Constructor<?> constructor;
 
@@ -64,6 +65,7 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
                 // do nothing
               })
               .setNotNull(factory.parameterIsNotNull(constructor, i))
+              .setOmittedBehaviour(NullBehaviour.ERROR)
       );
     }
   }
@@ -71,14 +73,25 @@ public class BeanConstructor extends AbstractModel<BeanConstructor> implements B
 
   @Override
   public Object apply(Map<String, Object> params) {
+    if (isChanged()) {
+      for (String name : names) {
+        Property property = getProperty(name);
+        if (property == null) {
+          throw new AssertionException("Class " + constructor.getDeclaringClass() + " : Cannot create. Missing required property " + name);
+        }
+      }
+      clearChanged();
+    }
+
     Object[] args = new Object[names.size()];
     for (int i = 0; i < names.size(); i++) {
       args[i] = params.get(names.get(i));
     }
+
     try {
       return constructor.newInstance(args);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      throw new AssertionException("Failed to create bean via constructor: " + constructor, e);
+      throw new AssertionException("Class " + constructor.getDeclaringClass() + " : Failed to create bean via constructor: " + constructor, e);
     }
   }
 

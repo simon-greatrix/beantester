@@ -11,6 +11,7 @@ import java.util.Set;
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.basic.BasicFactories;
+import io.setl.beantester.factories.bean.BeanFactoryLookup;
 import io.setl.beantester.factories.io.FileFactories;
 import io.setl.beantester.factories.net.NetFactories;
 import io.setl.beantester.factories.time.TimeFactories;
@@ -51,7 +52,7 @@ public class FactoryRepository {
    * @param description The bean description
    */
   public void addFactory(BeanDescription description) {
-    addFactory(description.createHolder().asFactory());
+    addFactory(BeanFactoryLookup.toFactory(description));
   }
 
 
@@ -116,6 +117,15 @@ public class FactoryRepository {
    * @return the factory
    */
   public ValueFactory getFactory(Type type) {
+    ValueFactory factory = getFactoryInternal(type);
+    if (factory == null) {
+      throw new NoSuchFactoryException("No factory found for " + type);
+    }
+    return factory;
+  }
+
+
+  private ValueFactory getFactoryInternal(Type type) {
     // First check the factories map
     ValueFactory factory = factories.get(type);
     if (factory != null) {
@@ -134,7 +144,6 @@ public class FactoryRepository {
       }
     }
 
-
     // Finally, try the bean factory lookup
     Optional<ValueFactory> optionalFactory = beanFactoryLookup.getFactory(type);
     if (optionalFactory.isPresent()) {
@@ -147,7 +156,8 @@ public class FactoryRepository {
       return getFactory(Executables.getRawType(type));
     }
 
-    throw new NoSuchFactoryException("No factory found for " + type);
+    // not found
+    return null;
   }
 
 
@@ -170,6 +180,18 @@ public class FactoryRepository {
     NetFactories.load(this);
     TimeFactories.load(this);
     UtilFactories.load(this);
+  }
+
+
+  /**
+   * Try to get a factory for the specified type.
+   *
+   * @param type the type
+   *
+   * @return the factory, if found
+   */
+  public Optional<ValueFactory> tryGetFactory(Type type) {
+    return Optional.ofNullable(getFactoryInternal(type));
   }
 
 }

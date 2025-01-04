@@ -1,14 +1,14 @@
-package io.setl.beantester.factories;
+package io.setl.beantester.factories.bean;
 
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 
 import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
+import io.setl.beantester.factories.FactoryLookup;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.BeanHolder;
 
@@ -16,34 +16,6 @@ import io.setl.beantester.info.BeanHolder;
  * The bean factory lookup is special as it is a lookup of last resort. It will always be consulted last when looking for a factory.
  */
 public class BeanFactoryLookup implements FactoryLookup {
-
-  static class Suppliers {
-
-    private final BeanDescription description;
-
-    private final LinkedList<BeanHolder> holders = new LinkedList<>();
-
-
-    Suppliers(BeanDescription description) {
-      this.description = description;
-    }
-
-
-    Object create(ValueType type) {
-      BeanHolder holder;
-      if (holders.isEmpty()) {
-        holder = description.createHolder();
-      } else {
-        holder = holders.removeLast();
-      }
-      try {
-        return holder.create(type);
-      } finally {
-        holders.add(holder);
-      }
-    }
-
-  }
 
 
   /**
@@ -53,15 +25,9 @@ public class BeanFactoryLookup implements FactoryLookup {
    *
    * @return the factory
    */
-  public static ValueFactory toFactory(BeanDescription description) {
+  public static BeanValueFactory toFactory(BeanDescription description) {
     Suppliers suppliers = new Suppliers(description);
-    return new ValueFactory(
-        description.getBeanClass(),
-        false,
-        () -> suppliers.create(ValueType.PRIMARY),
-        () -> suppliers.create(ValueType.SECONDARY),
-        () -> suppliers.create(ValueType.RANDOM)
-    );
+    return new BeanValueFactory(suppliers);
   }
 
 
