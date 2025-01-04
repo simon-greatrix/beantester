@@ -20,7 +20,7 @@ import io.setl.beantester.info.Specs.Spec;
 /**
  * Specification of a bean creator that uses a builder pattern.
  */
-public class BeanBuilder extends AbstractModel<BeanBuilder> implements BeanCreator<BeanBuilder> {
+public class BeanBuilder extends AbstractCreatorModel<BeanBuilder> {
 
   private final Class<?> beanClass;
 

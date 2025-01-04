@@ -83,10 +83,15 @@ public class BeanConstructorFactory {
             .thenComparing(Constructor::toString)
     );
 
-    if (constructors.length == 0) {
-      return Optional.empty();
+    Optional<BeanConstructor> constructor;
+    for (Constructor<?> c : constructors) {
+      constructor = findParametersIfPossible(beanClass, c);
+      if (constructor.isPresent()) {
+        return constructor;
+      }
     }
-    return findParametersIfPossible(beanClass, constructors[0]);
+
+    return Optional.empty();
   }
 
 }

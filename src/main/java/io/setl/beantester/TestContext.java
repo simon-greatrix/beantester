@@ -171,7 +171,7 @@ public class TestContext {
    *
    * @param description a bean description from which a factory is created
    */
-  public void addFactory(BeanDescription description) {
+  public void addDescription(BeanDescription description) {
     getFactories().addFactory(description);
   }
 

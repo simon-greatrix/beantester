@@ -19,6 +19,13 @@ public interface BeanCreator<B extends BeanCreator<B> & Model<B>> extends
   BeanCreator<B> copy();
 
   /**
+   * Set the owner of this creator. If the properties are changed, the owner is notified.
+   *
+   * @param owner the owner of this creator
+   */
+  void setOwner(BeanDescription owner);
+
+  /**
    * Perform validation on the builder.
    *
    * @param beanDescription the bean description to validate. This will use the bean creator;

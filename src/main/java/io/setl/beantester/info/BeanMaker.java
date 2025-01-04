@@ -12,7 +12,7 @@ import io.setl.beantester.AssertionException;
 import io.setl.beantester.info.Specs.Spec;
 
 /** A call to a bean's factory method which accepts a list of parameters and returns the bean. */
-public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<BeanMaker> {
+public class BeanMaker extends AbstractCreatorModel<BeanMaker> {
 
   private final Method method;
 
@@ -74,6 +74,16 @@ public class BeanMaker extends AbstractModel<BeanMaker> implements BeanCreator<B
 
   @Override
   public Object apply(Map<String, Object> params) {
+    if (isChanged()) {
+      for (String name : names) {
+        Property property = getProperty(name);
+        if (property == null) {
+          throw new AssertionException("Class " + method.getReturnType() + " : Cannot create. Missing required property " + name);
+        }
+      }
+      clearChanged();
+    }
+
     Object[] args = new Object[names.size()];
     for (int i = 0; i < names.size(); i++) {
       args[i] = params.get(names.get(i));

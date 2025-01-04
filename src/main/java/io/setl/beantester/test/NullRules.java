@@ -104,9 +104,17 @@ public class NullRules {
     BeanHolder holder = original.createHolder();
     for (Property property : original.getProperties()) {
       String name = property.getName();
-      if (property.isIgnored() || holder.hasExpected(name)) {
-        // Either ignore or has an expected value, so was not omitted on bean creation.
+
+      // If ignored, just skip it
+      if (property.isIgnored()) {
         continue;
+      }
+
+      if (holder.hasExpected(name)) {
+        // Has an expected value, so was it omitted on bean creation?
+        if (original.getBeanCreator().getProperty(name) != null) {
+          continue;
+        }
       }
 
       // If the property is not readable then we cannot check further.

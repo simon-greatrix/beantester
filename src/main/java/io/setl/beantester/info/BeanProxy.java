@@ -6,11 +6,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.setl.beantester.NullBehaviour;
 import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
@@ -20,7 +21,7 @@ import io.setl.beantester.info.Specs.Spec;
 /**
  * Creator for interface beans.
  */
-public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<BeanProxy> {
+public class BeanProxy extends AbstractCreatorModel<BeanProxy> {
 
   /**
    * Interface invocation handler for the bean.
@@ -160,6 +161,8 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
 
   private final Class<?> beanClass;
 
+  private final Map<String, Object> defaultValues = new HashMap();
+
   private final Map<Method, String> readMethods = new HashMap<>();
 
   private final Map<Method, String> writeMethods = new HashMap<>();
@@ -173,14 +176,35 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
    */
   public BeanProxy(Class<?> beanClass, Spec... specs) {
     this.beanClass = beanClass;
+    FactoryRepository repository = TestContext.get().getFactories();
     for (Property property : new BeanDescriptionFactory(beanClass, specs, true).findAllProperties()) {
-      setProperty(property);
-
-      // TODO - if the properties are customised, we will need to update this
+      // Note actual readers and writers on the interface.
       Optional<Method> optional = property.getWriteMethod();
       optional.ifPresent(method -> writeMethods.put(method, property.getName()));
       optional = property.getReadMethod();
       optional.ifPresent(method -> readMethods.put(method, property.getName()));
+
+      // All properties are settable in the constructor.
+      if (!property.isWritable()) {
+        Type type = property.getType();
+        property.setWriter((a, b) -> {
+          Thread.dumpStack();
+        });
+        property.setType(type);
+      }
+
+      if (property.isNotNull()) {
+        Object value = repository.create(ValueType.PRIMARY, beanClass, property);
+        defaultValues.put(property.getName(), value);
+        property.setOmittedBehaviour(NullBehaviour.VALUE);
+        property.setNullBehaviour(NullBehaviour.ERROR);
+        property.setNullValue(value);
+      } else {
+        property.setOmittedBehaviour(NullBehaviour.NULL);
+        property.setNullBehaviour(NullBehaviour.NULL);
+      }
+
+      setProperty(property);
     }
   }
 
@@ -195,39 +219,25 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
     this.beanClass = proxy.beanClass;
     this.readMethods.putAll(proxy.readMethods);
     this.writeMethods.putAll(proxy.writeMethods);
+    this.defaultValues.putAll(proxy.defaultValues);
   }
 
 
   @Override
   public Object apply(Map<String, Object> values) {
     // Verify no unknown properties
-    for (var e : values.entrySet()) {
-      Property property = getProperty(e.getKey());
-      if (property == null) {
-        throw new IllegalArgumentException("Value specified for unknown property: " + e.getKey());
-      }
-      if (e.getValue() == null && property.isNotNull()) {
-        throw new IllegalArgumentException("Null value for " + e.getKey());
-      }
-    }
+    verifyNoUnknownProperties(values);
 
     // Verify all not-null are set to null
-    ArrayList<Property> notNullValues = new ArrayList<>();
-    for (Property property : getProperties()) {
-      if (property.isNotNull()) {
-        if (values.get(property.getName()) == null && values.containsKey(property.getName())) {
-          throw new IllegalArgumentException("Null value for " + property.getName());
-        }
-        notNullValues.add(property);
-      }
-    }
+    verifyNullValues(values);
 
     ProxyHandler handler = new ProxyHandler(values);
 
     // Add missing not-null values
-    FactoryRepository vfr = TestContext.get().getFactories();
-    for (Property property : notNullValues) {
-      handler.values.put(property.getName(), vfr.create(ValueType.PRIMARY, beanClass, property));
+    for (var e : defaultValues.entrySet()) {
+      if (!values.containsKey(e.getKey())) {
+        handler.values.put(e.getKey(), e.getValue());
+      }
     }
 
     return Proxy.newProxyInstance(beanClass.getClassLoader(), new Class<?>[]{beanClass}, handler);
@@ -237,6 +247,30 @@ public class BeanProxy extends AbstractModel<BeanProxy> implements BeanCreator<B
   @Override
   public BeanProxy copy() {
     return new BeanProxy(this);
+  }
+
+
+  private void verifyNoUnknownProperties(Map<String, Object> values) {
+    for (var e : values.entrySet()) {
+      Property property = getProperty(e.getKey());
+      if (property == null) {
+        throw new IllegalArgumentException("Value specified for unknown property: " + e.getKey());
+      }
+      if (e.getValue() == null && property.isNotNull()) {
+        throw new IllegalArgumentException("Null value for " + e.getKey());
+      }
+    }
+  }
+
+
+  void verifyNullValues(Map<String, Object> values) {
+    for (Property property : getProperties()) {
+      String name = property.getName();
+      if (defaultValues.containsKey(name) && values.get(property.getName()) == null && values.containsKey(property.getName())) {
+        // Actually specified a null for a not-null property
+        throw new IllegalArgumentException("Null value for " + property.getName());
+      }
+    }
   }
 
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import io.setl.beantester.TestContext;
 import io.setl.beantester.info.Specs.BeanConstructor;
 
 class Utility {
@@ -19,7 +20,8 @@ class Utility {
 
 
   static Optional<BeanConstructor> findParametersIfPossible(Class<?> beanClass, Executable executable) {
-    boolean namesAreKnown = true;
+    List<String> names = new ArrayList<>();
+    List<Class<?>> types = new ArrayList<>();
 
     for (Parameter parameter : executable.getParameters()) {
       if (!parameter.isNamePresent()) {
@@ -27,25 +29,22 @@ class Utility {
             Level.WARNING,
             "Parameter name not present in \"" + executable + "\" for \"" + beanClass + "\". Remember to compile with \"-parameters\" enabled."
         );
-        namesAreKnown = false;
-        break;
+        return Optional.empty();
       }
+      names.add(parameter.getName());
+
+      Class<?> type = parameter.getType();
+      if (TestContext.get().getFactories().tryGetFactory(type).isEmpty()) {
+        System.getLogger("io.setl.beantester").log(
+            Level.DEBUG,
+            "No factory found for type \"" + type + "\" in \"" + executable + "\" for \"" + beanClass + "\"."
+        );
+        return Optional.empty();
+      }
+      types.add(type);
     }
 
-    if (namesAreKnown) {
-      // found it
-      List<String> names = new ArrayList<>();
-      List<Class<?>> types = new ArrayList<>();
-
-      for (Parameter parameter : executable.getParameters()) {
-        names.add(parameter.getName());
-        types.add(parameter.getType());
-      }
-
-      return Optional.of(new BeanConstructorImpl(names, types));
-    }
-
-    return Optional.empty();
+    return Optional.of(new BeanConstructorImpl(names, types));
   }
 
 
