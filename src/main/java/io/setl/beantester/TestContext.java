@@ -15,7 +15,6 @@ import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.factories.time.RandomClock;
 import io.setl.beantester.info.BeanDescription;
 import io.setl.beantester.info.BeanDescriptionLookup;
-import io.setl.beantester.info.Specs;
 import io.setl.beantester.info.Specs.Spec;
 
 /**
@@ -119,6 +118,9 @@ public class TestContext {
   @Setter
   private int runs = 5;
 
+  @Getter
+  private String specSuffix = "$SpecFilter";
+
   /** The recursion depth of the current test. */
   @Getter
   @Setter
@@ -131,6 +133,27 @@ public class TestContext {
   private TestContext() {
     random = newRandom();
     factories = new FactoryRepository();
+  }
+
+
+  /**
+   * Convenience method to add a factory to the repository.
+   *
+   * @param type  the bean's class
+   * @param specs additional specifiers for the bean
+   */
+  public void addDescription(Class<?> type, Spec... specs) {
+    getFactories().addFactory(BeanDescription.create(type, specs));
+  }
+
+
+  /**
+   * Convenience method to add a factory to the repository.
+   *
+   * @param description a bean description from which a factory is created
+   */
+  public void addDescription(BeanDescription description) {
+    getFactories().addFactory(description);
   }
 
 
@@ -166,32 +189,32 @@ public class TestContext {
   }
 
 
-  /**
-   * Convenience method to add a factory to the repository.
-   *
-   * @param description a bean description from which a factory is created
-   */
-  public void addDescription(BeanDescription description) {
-    getFactories().addFactory(description);
-  }
-
-
   void beginStructure() {
     structureId++;
-
   }
 
 
   /**
-   * Create a {@code BeanDescription} for the specified class.
+   * Create a bean for the specified class.
    *
    * @param beanClass the bean's class
-   * @param specs     additional specifiers for the bean
    *
-   * @return the bean description
+   * @return the bean instance
    */
-  public BeanDescription create(Class<?> beanClass, Specs.Spec... specs) {
-    return BeanDescription.create(beanClass, specs);
+  public <T> T create(Class<T> beanClass) {
+    return create(beanClass, ValueType.RANDOM);
+  }
+
+
+  /**
+   * Create an instance the specified class.
+   *
+   * @param beanClass the bean's class
+   *
+   * @return the bean instance
+   */
+  public <T> T create(Class<T> beanClass, ValueType valueType) {
+    return beanClass.cast(getFactories().getFactory(beanClass).create(valueType));
   }
 
 
@@ -230,6 +253,8 @@ public class TestContext {
       clock.setDelegate(delegateClock.withZone(delegateClock.getZone()));
     }
 
+    specSuffix = DEFAULT.specSuffix;
+
     preferWriters = DEFAULT.preferWriters;
 
     factories.copy(DEFAULT.factories);
@@ -264,6 +289,29 @@ public class TestContext {
     }
     randomSeed = seed;
     random = randomFactory.create(seed);
+    return this;
+  }
+
+
+  /**
+   * Set the specifier suffix for finding bean specification filters. This is used to find the class that holds the filter by appending this suffix to the class
+   * name. This feature may be disabled by specifying null or an empty string. The suffix can only contain valid Java identifier characters.
+   *
+   * @param newSpecSuffix the new suffix
+   *
+   * @return this
+   */
+  public TestContext setSpecSuffix(String newSpecSuffix) {
+    if (newSpecSuffix != null) {
+      for (char ch : newSpecSuffix.toCharArray()) {
+        if (!Character.isJavaIdentifierPart(ch)) {
+          throw new IllegalArgumentException("Spec suffix must be a valid Java identifier");
+        }
+      }
+    } else {
+      newSpecSuffix = "";
+    }
+    specSuffix = newSpecSuffix;
     return this;
   }
 
