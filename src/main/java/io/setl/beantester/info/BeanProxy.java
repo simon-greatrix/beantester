@@ -16,6 +16,7 @@ import io.setl.beantester.TestContext;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.info.Specs.Spec;
+import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer2;
 
 
 /**
@@ -187,8 +188,9 @@ public class BeanProxy extends AbstractCreatorModel<BeanProxy> {
       // All properties are settable in the constructor.
       if (!property.isWritable()) {
         Type type = property.getType();
-        property.setWriter((a, b) -> {
-          Thread.dumpStack();
+        property.setWriter((SerializableConsumer2<Object, Object>) (a, b) -> {
+          // Should never be called.
+          throw new UnsupportedOperationException("Property is not directly writable. Use proxy : " + property.getName());
         });
         property.setType(type);
       }

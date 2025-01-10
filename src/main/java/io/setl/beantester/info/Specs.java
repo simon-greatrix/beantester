@@ -31,7 +31,7 @@ public class Specs {
   /**
    * Specifies a constructor. The bean's class must have a public constructor with matching argument types.
    */
-  public interface BeanConstructor extends Spec {
+  public interface BeanConstructor extends BeanCreatorSpec {
 
     /** The constructor's parameter names. The parameter names must be unique and equal in number to the parameters. */
     List<String> getNames();
@@ -57,9 +57,23 @@ public class Specs {
 
 
   /** A specification that provides an explicit creator for a bean. */
-  public interface BeanCreatorSpec extends Spec {
+  public interface BeanCreator extends BeanCreatorSpec {
 
-    BeanCreator<?> getCreator(Spec... specs);
+    /**
+     * Create a BeanCreator instance from the specification.
+     *
+     * @param specs the specifications for the creator
+     *
+     * @return the bean creator
+     */
+    io.setl.beantester.info.BeanCreator<?> getCreator(Spec... specs);
+
+  }
+
+
+
+  /** A marker interface for all specifications that create beans. */
+  public interface BeanCreatorSpec extends Spec {
 
   }
 
@@ -81,7 +95,7 @@ public class Specs {
   /**
    * A method that can be used to create the builder for a bean.
    */
-  public interface BuilderMethods extends Spec {
+  public interface BuilderMethods extends BeanCreatorSpec {
 
     /** The method invoked on the builder to create the bean. */
     SerializableFunction1<Object, Object> getBuildFunction();
@@ -579,6 +593,25 @@ public class Specs {
    */
   public static PropertyCustomiser type(String name, Class<?> type) {
     return new TypeSetter(name, type);
+  }
+
+
+  /**
+   * Specify a subclass to use as the bean implementation.
+   *
+   * @param type  the implementation type
+   * @param specs specs for creating the implementation
+   *
+   * @return A BeanCreator specification that creates the implementation
+   */
+  public static ResolvingSpec useImplementation(Class<?> type, Spec... specs) {
+    return (beanClass) -> {
+      if (!beanClass.isAssignableFrom(type)) {
+        throw new IllegalArgumentException("The implementation class " + type + " is not a subclass of " + beanClass);
+      }
+      BeanDescription description = BeanDescription.create(type, specs);
+      return List.of((BeanCreator) ignoredSpecs -> description.getBeanCreator().copy());
+    };
   }
 
 }

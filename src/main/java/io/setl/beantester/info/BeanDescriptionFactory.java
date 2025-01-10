@@ -5,15 +5,19 @@ import static io.setl.beantester.info.specs.BeanConstructorFactory.beanConstruct
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import io.setl.beantester.info.Specs.BeanCreatorSpec;
+import io.setl.beantester.TestContext;
+import io.setl.beantester.info.Specs.BeanCreator;
 import io.setl.beantester.info.Specs.BuilderMethods;
 import io.setl.beantester.info.Specs.DescriptionCustomiser;
 import io.setl.beantester.info.Specs.MethodFilterSpec;
@@ -21,6 +25,7 @@ import io.setl.beantester.info.Specs.NewProperty;
 import io.setl.beantester.info.Specs.PropertyCustomiser;
 import io.setl.beantester.info.Specs.RemoveProperty;
 import io.setl.beantester.info.Specs.Spec;
+import io.setl.beantester.info.specs.SpecFilter;
 import io.setl.beantester.mirror.SerializableLambdas;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableConsumer2;
 import io.setl.beantester.mirror.SerializableLambdas.SerializableFunction0;
@@ -106,7 +111,7 @@ class BeanDescriptionFactory {
   private final Spec[] specs;
 
   /** Creator for the bean. */
-  private BeanCreator<?> creator;
+  private io.setl.beantester.info.BeanCreator<?> creator;
 
 
   BeanDescriptionFactory(Class<?> beanClass, Spec[] specs, boolean onBean) {
@@ -116,7 +121,27 @@ class BeanDescriptionFactory {
 
     this.beanClass = beanClass;
     this.onBean = onBean;
-    this.specs = expandSpecs(specs);
+    Spec[] expanded = expandSpecs(specs);
+
+    try {
+      String suffix = TestContext.get().getSpecSuffix();
+      if (!suffix.isEmpty()) {
+        Class<?> specClass = Class.forName(beanClass.getName() + suffix);
+        if (SpecFilter.class.isAssignableFrom(specClass)) {
+          SpecFilter filer = (SpecFilter) specClass.getConstructor().newInstance();
+          List<Spec> specIn = new ArrayList<>(List.of(expanded));
+          List<Spec> specOut = filer.filter(specIn);
+          specOut.removeIf(Objects::isNull);
+          expanded = specOut.toArray(Spec[]::new);
+        }
+
+        expanded = expandSpecs(expanded);
+      }
+    } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      // ignore
+    }
+
+    this.specs = expanded;
   }
 
 
@@ -153,7 +178,7 @@ class BeanDescriptionFactory {
     }
 
     // add props
-    boolean isCreator = model instanceof BeanCreator<?>;
+    boolean isCreator = model instanceof io.setl.beantester.info.BeanCreator<?>;
     for (NewProperty spec : Specs.specs(NewProperty.class, specs)) {
       Optional<Property> optProperty = spec.get(isCreator);
       optProperty.ifPresent(model::setProperty);
@@ -175,11 +200,9 @@ class BeanDescriptionFactory {
   /**
    * Create a BeanInformation object.
    *
-   * @param specs the specs to use
-   *
    * @return the BeanInformation object
    */
-  BeanDescription create(Spec... specs) {
+  BeanDescription create() {
     beanProperties.clear();
 
     findCreator();
@@ -301,7 +324,7 @@ class BeanDescriptionFactory {
 
   private void findCreator() {
     // Does the bean have a specific creator?
-    Optional<BeanCreatorSpec> optCreator = Specs.firstSpec(BeanCreatorSpec.class, specs);
+    Optional<BeanCreator> optCreator = Specs.firstSpec(BeanCreator.class, specs);
     if (optCreator.isPresent()) {
       creator = optCreator.get().getCreator(specs);
       return;
@@ -482,6 +505,17 @@ class BeanDescriptionFactory {
   }
 
 
+  private String findSetterName(Method method) {
+    String methodName = method.getName();
+
+    if (hasPrefix(methodName, "set") && acceptMethod(method, "set", true)) {
+      return stripPrefix(methodName, "set");
+    }
+
+    return acceptMethod(method, "", true) ? methodName : null;
+  }
+
+
   /**
    * Find the writable properties of a class.
    *
@@ -492,17 +526,6 @@ class BeanDescriptionFactory {
     findBeanProperties();
     beanProperties.values().removeIf(p -> !p.isWritable());
     return beanProperties.values();
-  }
-
-
-  private String findSetterName(Method method) {
-    String methodName = method.getName();
-
-    if (hasPrefix(methodName, "set") && acceptMethod(method, "set", true)) {
-      return stripPrefix(methodName, "set");
-    }
-
-    return acceptMethod(method, "", true) ? methodName : null;
   }
 
 
