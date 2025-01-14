@@ -162,7 +162,7 @@ public class BeanProxy extends AbstractCreatorModel<BeanProxy> {
 
   private final Class<?> beanClass;
 
-  private final Map<String, Object> defaultValues = new HashMap();
+  private final Map<String, Object> defaultValues = new HashMap<>();
 
   private final Map<Method, String> readMethods = new HashMap<>();
 
@@ -196,7 +196,7 @@ public class BeanProxy extends AbstractCreatorModel<BeanProxy> {
       }
 
       if (property.isNotNull()) {
-        Object value = repository.create(ValueType.PRIMARY, beanClass, property);
+        Object value = repository.create(beanClass, property, ValueType.PRIMARY);
         defaultValues.put(property.getName(), value);
         property.setOmittedBehaviour(NullBehaviour.VALUE);
         property.setNullBehaviour(NullBehaviour.ERROR);

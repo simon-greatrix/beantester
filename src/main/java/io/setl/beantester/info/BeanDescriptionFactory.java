@@ -131,8 +131,11 @@ class BeanDescriptionFactory {
           SpecFilter filer = (SpecFilter) specClass.getConstructor().newInstance();
           List<Spec> specIn = new ArrayList<>(List.of(expanded));
           List<Spec> specOut = filer.filter(specIn);
-          specOut.removeIf(Objects::isNull);
-          expanded = specOut.toArray(Spec[]::new);
+          if (specOut == null) {
+            expanded = new Spec[0];
+          } else {
+            expanded = specOut.stream().filter(Objects::nonNull).toArray(Spec[]::new);
+          }
         }
 
         expanded = expandSpecs(expanded);

@@ -14,6 +14,7 @@ import io.setl.beantester.factories.basic.BasicFactories;
 import io.setl.beantester.factories.bean.BeanFactoryLookup;
 import io.setl.beantester.factories.io.FileFactories;
 import io.setl.beantester.factories.net.NetFactories;
+import io.setl.beantester.factories.protobuf.ProtobufMessageLookup;
 import io.setl.beantester.factories.time.TimeFactories;
 import io.setl.beantester.factories.util.UtilFactories;
 import io.setl.beantester.info.BeanDescription;
@@ -61,12 +62,12 @@ public class FactoryRepository {
    * registered Factory will be
    * replaced with the Factory you specify here.
    *
-   * @param clazz        The bean class.
+   * @param beanClass    The bean class.
    * @param propertyName the property name
    * @param valueFactory The Factory to add to the repository.
    */
-  public void addFactory(Class<?> clazz, String propertyName, ValueFactory valueFactory) {
-    overrides.computeIfAbsent(clazz, k -> new HashMap<>()).put(propertyName, valueFactory);
+  public void addFactory(Class<?> beanClass, String propertyName, ValueFactory valueFactory) {
+    overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).put(propertyName, valueFactory);
   }
 
 
@@ -99,7 +100,7 @@ public class FactoryRepository {
    *
    * @return the candidate value
    */
-  public Object create(ValueType type, Class<?> beanClass, Property property) {
+  public Object create(Class<?> beanClass, Property property, ValueType type) {
     String propertyName = property.getName();
     ValueFactory factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
     if (factory == null) {
@@ -120,6 +121,24 @@ public class FactoryRepository {
     ValueFactory factory = getFactoryInternal(type);
     if (factory == null) {
       throw new NoSuchFactoryException("No factory found for " + type);
+    }
+    return factory;
+  }
+
+
+  /**
+   * Get a value factory of the specified type.
+   *
+   * @param beanClass    the class that has the property
+   * @param propertyName the name of the property
+   * @param type         the property's type.
+   *
+   * @return the factory
+   */
+  public ValueFactory getFactory(Class<?> beanClass, String propertyName, Type type) {
+    ValueFactory factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
+    if (factory == null) {
+      factory = getFactory(type);
     }
     return factory;
   }
@@ -180,6 +199,7 @@ public class FactoryRepository {
     NetFactories.load(this);
     TimeFactories.load(this);
     UtilFactories.load(this);
+    ProtobufMessageLookup.load(this);
   }
 
 
@@ -192,6 +212,19 @@ public class FactoryRepository {
    */
   public Optional<ValueFactory> tryGetFactory(Type type) {
     return Optional.ofNullable(getFactoryInternal(type));
+  }
+
+
+  /**
+   * Try and get the factory for the specified property, if it has been overridden.
+   *
+   * @param beanClass    the class that has the property
+   * @param propertyName the property's name
+   *
+   * @return the factory, if found
+   */
+  public Optional<ValueFactory> tryGetOverride(Class<?> beanClass, String propertyName) {
+    return Optional.ofNullable(overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName));
   }
 
 }
