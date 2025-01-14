@@ -147,8 +147,8 @@ public class BeanBuilder extends AbstractCreatorModel<BeanBuilder> {
     Map<String, Object> secondaryValues = new HashMap<>();
     for (String name : namesToTest) {
       Property property = getProperty(name);
-      primaryValues.put(name, factories.create(ValueType.PRIMARY, beanClass, property));
-      secondaryValues.put(name, factories.create(ValueType.SECONDARY, beanClass, property));
+      primaryValues.put(name, factories.create(beanClass, property, ValueType.PRIMARY));
+      secondaryValues.put(name, factories.create(beanClass, property, ValueType.SECONDARY));
     }
 
     // Do tests

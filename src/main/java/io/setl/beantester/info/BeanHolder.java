@@ -157,7 +157,7 @@ public class BeanHolder {
     if (info == null) {
       throw new IllegalArgumentException("Class " + getBeanClass() + " : No property named " + name);
     }
-    return TestContext.get().getFactories().create(type, this.description.getBeanClass(), info);
+    return TestContext.get().getFactories().create(this.description.getBeanClass(), info, type);
   }
 
 
@@ -361,7 +361,7 @@ public class BeanHolder {
           initialValues.put(property.getName(), null);
         } else {
           // In these cases we need to set a value
-          initialValues.put(property.getName(), vfr.create(ValueType.PRIMARY, getBeanClass(), property));
+          initialValues.put(property.getName(), vfr.create(getBeanClass(), property, ValueType.PRIMARY));
         }
       }
     }

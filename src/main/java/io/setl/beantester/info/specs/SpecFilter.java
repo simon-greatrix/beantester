@@ -8,7 +8,7 @@ import io.setl.beantester.info.Specs.Spec;
  * An interface for filtering specs. The description factory will look for a class that implements this interface with the bean class name suffixed with
  * "$SpecFilter" (configurable in TestContext).
  *
- * <p>A SpecFilter class must have a zero-argument public constructor.</code></p>
+ * <p>A SpecFilter class must have a zero-argument public constructor.</p>
  */
 public interface SpecFilter {
 
