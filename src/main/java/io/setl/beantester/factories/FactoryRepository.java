@@ -87,7 +87,10 @@ public class FactoryRepository {
   public void copy(FactoryRepository factories) {
     this.factories.putAll(factories.factories);
     this.factoryLookups.addAll(factories.factoryLookups);
-    this.overrides.putAll(factories.overrides);
+
+    for (var e : factories.overrides.entrySet()) {
+      this.overrides.computeIfAbsent(e.getKey(), k -> new HashMap<>()).putAll(e.getValue());
+    }
   }
 
 
@@ -101,11 +104,7 @@ public class FactoryRepository {
    * @return the candidate value
    */
   public Object create(Class<?> beanClass, Property property, ValueType type) {
-    String propertyName = property.getName();
-    ValueFactory factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
-    if (factory == null) {
-      factory = getFactory(property.getType());
-    }
+    ValueFactory factory = getFactory(beanClass, property.getName(), property.getType());
     return factory.create(type);
   }
 
@@ -136,11 +135,8 @@ public class FactoryRepository {
    * @return the factory
    */
   public ValueFactory getFactory(Class<?> beanClass, String propertyName, Type type) {
-    ValueFactory factory = overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName);
-    if (factory == null) {
-      factory = getFactory(type);
-    }
-    return factory;
+    Optional<ValueFactory> optionalFactory = tryGetOverride(beanClass, propertyName, type);
+    return optionalFactory.orElseGet(() -> getFactory(type));
   }
 
 
@@ -220,11 +216,30 @@ public class FactoryRepository {
    *
    * @param beanClass    the class that has the property
    * @param propertyName the property's name
+   * @param propertyType the property's type
    *
    * @return the factory, if found
    */
-  public Optional<ValueFactory> tryGetOverride(Class<?> beanClass, String propertyName) {
-    return Optional.ofNullable(overrides.computeIfAbsent(beanClass, k -> new HashMap<>()).get(propertyName));
+  public Optional<ValueFactory> tryGetOverride(Class<?> beanClass, String propertyName, Type propertyType) {
+    HashMap<String, ValueFactory> map = overrides.computeIfAbsent(beanClass, k -> new HashMap<>());
+
+    // Try known overrides
+    ValueFactory factory = map.get(propertyName);
+    if (factory != null) {
+      return Optional.of(factory);
+    }
+
+    // Try the factory lookups
+    for (FactoryLookup lookup : factoryLookups) {
+      Optional<ValueFactory> optionalFactory = lookup.getFactory(beanClass, propertyName, propertyType);
+      if (optionalFactory.isPresent()) {
+        map.put(propertyName, optionalFactory.get());
+        return optionalFactory;
+      }
+    }
+
+    // No override
+    return Optional.empty();
   }
 
 }

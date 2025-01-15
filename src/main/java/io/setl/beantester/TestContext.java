@@ -1,5 +1,6 @@
 package io.setl.beantester;
 
+import java.lang.System.Logger.Level;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -22,20 +23,14 @@ import io.setl.beantester.info.Specs.Spec;
  */
 public class TestContext {
 
+  private static final ThreadLocal<LinkedList<TestContext>> CONTEXT;
+
   private static final TestContext DEFAULT;
 
   /** A magic value that indicates the seed has not been set. The value is the digits of the 3*sqrt(5). */
   private static final long MAGIC_SEED_NOT_SET = 2236067977499789696L * 3;
 
   private static final RandomGeneratorFactory<?> randomFactory;
-
-  private static final ThreadLocal<TestContext> CONTEXT = ThreadLocal.withInitial(
-      () -> {
-        TestContext context = new TestContext();
-        context.loadDefaults();
-        return context;
-      }
-  );
 
   private static final SplittableGenerator root;
 
@@ -52,7 +47,7 @@ public class TestContext {
    * @return the test context
    */
   public static TestContext get() {
-    return CONTEXT.get();
+    return CONTEXT.get().getLast();
   }
 
 
@@ -66,6 +61,36 @@ public class TestContext {
   }
 
 
+  /**
+   * Remove the current context (which must have been pushed), and return the previous context.
+   *
+   * @return the previous test context
+   */
+  public static TestContext pop() {
+    LinkedList<TestContext> list = CONTEXT.get();
+    if (list.size() <= 1) {
+      throw new IllegalStateException("Cannot pop the last context");
+    }
+    CONTEXT.get().removeLast();
+    return CONTEXT.get().getLast();
+  }
+
+
+  /**
+   * Create a new context, push it onto the stack, and return the new context.
+   *
+   * @return the test context
+   */
+  public static TestContext push() {
+    LinkedList<TestContext> list = CONTEXT.get();
+    TestContext current = list.getLast();
+    TestContext context = new TestContext();
+    context.inheritFrom(current);
+    list.addLast(context);
+    return context;
+  }
+
+
   static {
     RandomGeneratorFactory<?> factory;
     try {
@@ -74,6 +99,8 @@ public class TestContext {
     } catch (IllegalArgumentException e) {
       // L64X128MixRandom is not supported, use the one with the most state bits
       // SecureRandom has MAX_VALUE stateBits.
+      System.getLogger(TestContext.class.getName())
+          .log(Level.WARNING, "L64X128MixRandom not found, using alternative. Repeatable random tests may not be repeatable.");
       factory = RandomGeneratorFactory.all()
           .filter(rgf -> !rgf.name().equals("SecureRandom")) // SecureRandom has MAX_VALUE stateBits.
           .filter(RandomGeneratorFactory::isSplittable)
@@ -84,7 +111,20 @@ public class TestContext {
     root = (SplittableGenerator) randomFactory.create();
 
     DEFAULT = new TestContext();
-    CONTEXT.set(DEFAULT);
+
+    CONTEXT = ThreadLocal.withInitial(
+        () -> {
+          LinkedList<TestContext> list = new LinkedList<>();
+          TestContext context = new TestContext();
+          context.inheritFrom(DEFAULT);
+          list.add(context);
+          return list;
+        }
+    );
+
+    LinkedList<TestContext> list = new LinkedList<>();
+    list.add(DEFAULT);
+    CONTEXT.set(list);
     DEFAULT.factories.loadDefaults();
     CONTEXT.remove();
   }
@@ -142,8 +182,9 @@ public class TestContext {
    * @param type  the bean's class
    * @param specs additional specifiers for the bean
    */
-  public void addDescription(Class<?> type, Spec... specs) {
+  public TestContext addDescription(Class<?> type, Spec... specs) {
     getFactories().addFactory(BeanDescription.create(type, specs));
+    return this;
   }
 
 
@@ -152,8 +193,9 @@ public class TestContext {
    *
    * @param description a bean description from which a factory is created
    */
-  public void addDescription(BeanDescription description) {
+  public TestContext addDescription(BeanDescription description) {
     getFactories().addFactory(description);
+    return this;
   }
 
 
@@ -162,8 +204,9 @@ public class TestContext {
    *
    * @param lookup the lookup to add
    */
-  public void addDescriptionLookup(BeanDescriptionLookup lookup) {
+  public TestContext addDescriptionLookup(BeanDescriptionLookup lookup) {
     lookups.add(lookup);
+    return this;
   }
 
 
@@ -172,8 +215,9 @@ public class TestContext {
    *
    * @param valueFactory the factory
    */
-  public void addFactory(ValueFactory valueFactory) {
+  public TestContext addFactory(ValueFactory valueFactory) {
     getFactories().addFactory(valueFactory);
+    return this;
   }
 
 
@@ -184,8 +228,9 @@ public class TestContext {
    * @param propertyName the property's name
    * @param valueFactory the factory to use for just this property
    */
-  public void addFactory(Class<?> clazz, String propertyName, ValueFactory valueFactory) {
+  public TestContext addFactory(Class<?> clazz, String propertyName, ValueFactory valueFactory) {
     getFactories().addFactory(clazz, propertyName, valueFactory);
+    return this;
   }
 
 
@@ -242,24 +287,24 @@ public class TestContext {
   }
 
 
-  private void loadDefaults() {
-    if (DEFAULT.randomSeed != MAGIC_SEED_NOT_SET) {
-      setRepeatable(DEFAULT.randomSeed);
+  private void inheritFrom(TestContext source) {
+    if (source.randomSeed != MAGIC_SEED_NOT_SET) {
+      setRepeatable(source.randomSeed);
     }
 
-    Clock delegateClock = DEFAULT.clock.getDelegate();
+    Clock delegateClock = source.clock.getDelegate();
     if (delegateClock != null) {
       // We call "withZone" like this to create a new instance of the clock.
       clock.setDelegate(delegateClock.withZone(delegateClock.getZone()));
     }
 
-    specSuffix = DEFAULT.specSuffix;
+    specSuffix = source.specSuffix;
 
-    preferWriters = DEFAULT.preferWriters;
+    preferWriters = source.preferWriters;
 
-    factories.copy(DEFAULT.factories);
+    factories.copy(source.factories);
 
-    lookups.addAll(DEFAULT.lookups);
+    lookups.addAll(source.lookups);
   }
 
 

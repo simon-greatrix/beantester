@@ -16,10 +16,9 @@ public class ConvertingFactory extends ValueFactory {
    * @param type      the type of object to create.
    * @param source    the source factory.
    * @param converter the converter function.
-   * @param <T>       the type of object to create.
    */
-  public <T> ConvertingFactory(Class<T> type, ValueFactory source, Function<Object, T> converter) {
-    super(type, (t) -> converter.apply(source.create(t)));
+  public ConvertingFactory(Class<?> type, ValueFactory source, Function<Object, Object> converter) {
+    super(type, (t) -> converter.apply(source.createFlat(t)));
   }
 
 
@@ -29,10 +28,9 @@ public class ConvertingFactory extends ValueFactory {
    * @param type      the type of object to create.
    * @param source    the source type.
    * @param converter the converter function.
-   * @param <T>       the type of object to create.
    */
-  public <T> ConvertingFactory(Class<T> type, Class<?> source, Function<Object, T> converter) {
-    super(type, (t) -> converter.apply(TestContext.get().create(source, t)));
+  public ConvertingFactory(Class<?> type, Class<?> source, Function<Object, Object> converter) {
+    this(type, TestContext.get().getFactories().getFactory(source), converter);
   }
 
 }

@@ -94,7 +94,7 @@ public class ProtobufBuilderFactory {
    */
   public ValueFactory asMessageFactory() {
     return new ValueFactory(
-        builderClass,
+        messageClass,
         false,
         () -> build(ValueType.PRIMARY).build(),
         () -> build(ValueType.SECONDARY).build(),
@@ -119,7 +119,7 @@ public class ProtobufBuilderFactory {
     }
 
     for (OneofDescriptor oneof : oneOfFields) {
-      populateOneof(random, oneof, builder, valueType);
+      populateOneOf(random, oneof, builder, valueType);
     }
 
     return builder;
@@ -141,7 +141,7 @@ public class ProtobufBuilderFactory {
       return () -> {
         Builder mapBuilder = builder.newBuilderForField(field);
         for (FieldDescriptor subField : field.getMessageType().getFields()) {
-          populateField(random, subField, builder.newBuilderForField(field), valueType);
+          populateField(random, subField, mapBuilder, valueType);
         }
         return mapBuilder.build();
       };
@@ -155,7 +155,7 @@ public class ProtobufBuilderFactory {
     }
 
     if (javaType == JavaType.ENUM) {
-      Optional<ValueFactory> opt = TestContext.get().getFactories().tryGetOverride(messageClass, field.getName());
+      Optional<ValueFactory> opt = TestContext.get().getFactories().tryGetOverride(messageClass, field.getName(), Enum.class);
       if (opt.isPresent()) {
         ValueFactory vf = opt.get();
         return () -> vf.create(valueType);
@@ -177,7 +177,11 @@ public class ProtobufBuilderFactory {
     Supplier<Object> valueMaker = createValueMaker(random, field, builder, valueType);
 
     if (field.isRepeated()) {
-      int collectionSize = 1 + random.nextInt(4);
+      int collectionSize = switch (valueType) {
+        case PRIMARY -> 1;
+        case SECONDARY -> 2;
+        default -> 1 + random.nextInt(4);
+      };
       for (int i = 0; i < collectionSize; i++) {
         builder.addRepeatedField(field, valueMaker.get());
       }
@@ -187,10 +191,14 @@ public class ProtobufBuilderFactory {
   }
 
 
-  private void populateOneof(RandomGenerator random, OneofDescriptor oneofDescriptor, Builder builder, ValueType valueType) {
-    int fieldCount = oneofDescriptor.getFieldCount();
-    int oneofCase = random.nextInt(fieldCount);
-    FieldDescriptor selectedCase = oneofDescriptor.getField(oneofCase);
+  private void populateOneOf(RandomGenerator random, OneofDescriptor descriptor, Builder builder, ValueType valueType) {
+    int fieldCount = descriptor.getFieldCount();
+    int oneofCase = switch (valueType) {
+      case PRIMARY -> 0;
+      case SECONDARY -> Math.min(2, fieldCount) - 1;
+      default -> random.nextInt(fieldCount);
+    };
+    FieldDescriptor selectedCase = descriptor.getField(oneofCase);
     populateField(random, selectedCase, builder, valueType);
   }
 

@@ -5,7 +5,6 @@ import static io.setl.beantester.info.specs.BeanConstructorFactory.beanConstruct
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import io.setl.beantester.TestContext;
 import io.setl.beantester.info.Specs.BeanCreator;
 import io.setl.beantester.info.Specs.BuilderMethods;
 import io.setl.beantester.info.Specs.DescriptionCustomiser;
@@ -123,26 +121,16 @@ class BeanDescriptionFactory {
     this.onBean = onBean;
     Spec[] expanded = expandSpecs(specs);
 
-    try {
-      String suffix = TestContext.get().getSpecSuffix();
-      if (!suffix.isEmpty()) {
-        Class<?> specClass = Class.forName(beanClass.getName() + suffix);
-        if (SpecFilter.class.isAssignableFrom(specClass)) {
-          SpecFilter filer = (SpecFilter) specClass.getConstructor().newInstance();
-          List<Spec> specIn = new ArrayList<>(List.of(expanded));
-          List<Spec> specOut = filer.filter(specIn);
-          if (specOut == null) {
-            expanded = new Spec[0];
-          } else {
-            expanded = specOut.stream().filter(Objects::nonNull).toArray(Spec[]::new);
-          }
-        }
-
-        expanded = expandSpecs(expanded);
-      }
-    } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      // ignore
+    SpecFilter filer = SpecFilter.getSpecFilter(beanClass);
+    List<Spec> specIn = new ArrayList<>(List.of(expanded));
+    List<Spec> specOut = filer.filter(specIn);
+    if (specOut == null) {
+      expanded = new Spec[0];
+    } else {
+      expanded = specOut.stream().filter(Objects::nonNull).toArray(Spec[]::new);
     }
+
+    expanded = expandSpecs(expanded);
 
     this.specs = expanded;
   }
