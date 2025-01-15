@@ -9,6 +9,7 @@ import java.util.random.RandomGenerator;
 
 import lombok.Getter;
 
+import io.setl.beantester.info.specs.SpecFilter;
 import io.setl.beantester.mirror.Executables;
 
 /**
@@ -45,6 +46,9 @@ public class ValueFactory {
   /** The standard secondary value. */
   private final Supplier<Object> secondary;
 
+  /** Filter for pre-create and post-create. */
+  private final SpecFilter specFilter;
+
   /** The type of object to create. */
   @Getter
   private final Type type;
@@ -52,6 +56,7 @@ public class ValueFactory {
 
   private ValueFactory(Class<?> type) {
     this.type = type;
+    specFilter = SpecFilter.DO_NOTHING;
     primary = () -> null;
     secondary = () -> null;
     random = () -> null;
@@ -73,18 +78,25 @@ public class ValueFactory {
     this.secondary = secondary;
     this.random = random;
 
+    if (type instanceof Class<?> clazz) {
+      specFilter = SpecFilter.getSpecFilter(clazz);
+    } else {
+      specFilter = SpecFilter.DO_NOTHING;
+    }
+    specFilter.beforeAll();
+
     // Ensure types are correct and can be created.
     if (doTest) {
       Class<?> rawType = Executables.getRawType(type);
-      if (!rawType.isInstance(create(ValueType.PRIMARY))) {
+      if (!rawType.isInstance(createFlat(ValueType.PRIMARY))) {
         throw new IllegalArgumentException("Primary value must be of the declared type: " + type);
       }
 
-      if (!rawType.isInstance(create(ValueType.SECONDARY))) {
+      if (!rawType.isInstance(createFlat(ValueType.SECONDARY))) {
         throw new IllegalArgumentException("Secondary value must be of the declared type: " + type);
       }
 
-      if (!rawType.isInstance(create(ValueType.RANDOM))) {
+      if (!rawType.isInstance(createFlat(ValueType.RANDOM))) {
         throw new IllegalArgumentException("Random value must be of the declared type: " + type);
       }
     }
@@ -134,13 +146,30 @@ public class ValueFactory {
     }
 
     try {
-      return switch (valueType) {
-        case PRIMARY -> getPrimary();
-        case SECONDARY -> getSecondary();
-        default -> getRandom();
-      };
+      return createFlat(valueType);
     } finally {
       DEPTH.get().decrementAndGet();
+    }
+  }
+
+
+  /**
+   * Create a value without starting a new structure nor increasing the depth.
+   *
+   * @param valueType the value type
+   *
+   * @return the value
+   */
+  public Object createFlat(ValueType valueType) {
+    specFilter.preCreate();
+    try {
+      return switch (valueType) {
+        case PRIMARY -> primary.get();
+        case SECONDARY -> secondary.get();
+        default -> random.get();
+      };
+    } finally {
+      specFilter.postCreate();
     }
   }
 

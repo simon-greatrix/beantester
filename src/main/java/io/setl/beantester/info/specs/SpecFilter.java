@@ -1,7 +1,9 @@
 package io.setl.beantester.info.specs;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
+import io.setl.beantester.TestContext;
 import io.setl.beantester.info.Specs.Spec;
 
 /**
@@ -11,6 +13,45 @@ import io.setl.beantester.info.Specs.Spec;
  * <p>A SpecFilter class must have a zero-argument public constructor.</p>
  */
 public interface SpecFilter {
+
+  /** A default SpecFilter that does nothing. */
+  SpecFilter DO_NOTHING = new SpecFilter() {
+  };
+
+  /** Known filters. */
+  ConcurrentHashMap<Class<?>, SpecFilter> FILTERS = new ConcurrentHashMap<>();
+
+  /**
+   * Get the SpecFilter applicable to the given bean class.
+   *
+   * @param beanClass the bean class
+   *
+   * @return the SpecFilter
+   */
+  static SpecFilter getSpecFilter(Class<?> beanClass) {
+    return FILTERS.computeIfAbsent(beanClass, SpecFilter::getSpecFilterInternal);
+  }
+
+  private static SpecFilter getSpecFilterInternal(Class<?> beanClass) {
+    String suffix = TestContext.get().getSpecSuffix();
+    if (suffix.isEmpty()) {
+      return DO_NOTHING;
+    }
+
+    Class<?> testClass = beanClass;
+    while (testClass != null) {
+      try {
+        Class<?> specClass = Class.forName(testClass.getName() + suffix);
+        if (SpecFilter.class.isAssignableFrom(specClass)) {
+          return (SpecFilter) specClass.getConstructor().newInstance();
+        }
+      } catch (ReflectiveOperationException e) {
+        // do nothing
+      }
+      testClass = testClass.getSuperclass();
+    }
+    return DO_NOTHING;
+  }
 
   /**
    * Test if the list of specifications contains a specific type of spec.
@@ -36,6 +77,12 @@ public interface SpecFilter {
     return specs.removeIf(type::isInstance);
   }
 
+  /**
+   * Invoked once when a ValueFactory is created that creates objects of the type this SpecFilter is associated with.
+   */
+  default void beforeAll() {
+    // do nothing
+  }
 
   /**
    * Filter the list of specs.
@@ -44,6 +91,16 @@ public interface SpecFilter {
    *
    * @return the filtered list of specs
    */
-  List<Spec> filter(List<Spec> specs);
+  default List<Spec> filter(List<Spec> specs) {
+    return specs;
+  }
+
+  default void postCreate() {
+    // do nothing
+  }
+
+  default void preCreate() {
+    // do nothing
+  }
 
 }

@@ -4,8 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.factories.basic.StringValueFactory;
-import io.setl.ls.proto.Envelope;
-import io.setl.ls.proto.Participant;
+import io.setl.ls.proto.Info;
 import io.setl.ls.proto.ProposeTransferSet;
 
 public class TestProtobuf {
@@ -18,6 +17,8 @@ public class TestProtobuf {
     ProposeTransferSet set = TestContext.get().create(ProposeTransferSet.class, ValueType.RANDOM);
     System.out.println(set);
 
+    Info info = TestContext.get().create(Info.class, ValueType.RANDOM);
+    System.out.println(info);
   }
 
 }
