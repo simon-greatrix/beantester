@@ -19,6 +19,7 @@ import io.setl.beantester.ValueFactory;
 import io.setl.beantester.ValueType;
 import io.setl.beantester.factories.FactoryRepository;
 import io.setl.beantester.factories.bean.BeanFactoryLookup;
+import io.setl.beantester.test.Equals;
 
 /**
  * The bean holder holds a bean and manages its creation.
@@ -451,7 +452,7 @@ public class BeanHolder {
    */
   public boolean setProperty(String name, Object value) {
     if (value != null) {
-      if (Objects.equals(readExpected(name), value)) {
+      if (Equals.equals(readExpected(name), value)) {
         // Non-null value is the same as the expected value - so no change
         return false;
       }
@@ -481,7 +482,7 @@ public class BeanHolder {
   public void verify(String propertyName) {
     Object actual = readActual(propertyName);
     Object expected = readExpected(propertyName);
-    if (!Objects.equals(actual, expected)) {
+    if (!Equals.equals(actual, expected)) {
       // Expected does not equal actual, but it could be a result of null or omitted handling. In either case, expected will be null.
       if (expected != null) {
         // Different values and not a special case, so failure.
@@ -533,7 +534,7 @@ public class BeanHolder {
     if (behaviour == NullBehaviour.VALUE) {
       // Could be OK
       Object expected = property.getNullValue();
-      if (!Objects.equals(expected, actual)) {
+      if (!Equals.equals(expected, actual)) {
         // Sadly, not OK
         throw new AssertionException("Class " + description.getBeanClass() + ": Property \"" + propertyName + "\" was set to null and has on-null behaviour of "
             + behaviour + " but actual value was: " + actual + " expected: " + expected);
@@ -578,7 +579,7 @@ public class BeanHolder {
     if (behaviour == NullBehaviour.VALUE) {
       // Could be OK
       Object expected = property.getOmittedValue();
-      if (!Objects.equals(expected, actual)) {
+      if (!Equals.equals(expected, actual)) {
         // Sadly, not OK
         throw new AssertionException("Class " + description.getBeanClass() + ": Property \"" + propertyName + "\" was omitted and has on-omitted behaviour of "
             + behaviour + " but actual value was: " + actual + " expected: " + expected);
