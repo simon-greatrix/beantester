@@ -211,18 +211,6 @@ public class Specs {
 
 
   /**
-   * Specify to construct a bean using the public constructor with the lowest number of arguments for which the parameter names are known.
-   *
-   * @param beanClass the bean's class
-   *
-   * @return the specification
-   */
-  public static BeanConstructor beanConstructor(Class<?> beanClass) {
-    return BeanConstructorFactory.beanConstructor(beanClass);
-  }
-
-
-  /**
    * Specify to construct a bean using the public constructor with the specified parameter types. The parameters must alternate between names and classes.
    *
    * @param nameAndType pairs of parameter names and types
@@ -296,6 +284,16 @@ public class Specs {
       String buildFunction
   ) {
     return (beanClass) -> List.of(BeanMakerFactory.specBuilder(beanClass, builderSupplier, buildFunction));
+  }
+
+
+  /**
+   * Specify to construct a bean using the public constructor with the lowest number of arguments for which the parameter names are known.
+   *
+   * @return the specification
+   */
+  public static ResolvingSpec defaultBeanConstructor() {
+    return beanClass -> List.of(BeanConstructorFactory.beanConstructor(beanClass));
   }
 
 

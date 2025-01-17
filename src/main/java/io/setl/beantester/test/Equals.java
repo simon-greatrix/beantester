@@ -1,8 +1,10 @@
 package io.setl.beantester.test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.function.BiPredicate;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -21,6 +23,58 @@ public class Equals {
     }
   };
 
+  private static final Map<Class<?>, BiPredicate<Object, Object>> PRIMITIVE_ARRAY_COMPARATORS = Map.of(
+      boolean[].class, (a, b) -> Arrays.equals((boolean[]) a, (boolean[]) b),
+      byte[].class, (a, b) -> Arrays.equals((byte[]) a, (byte[]) b),
+      char[].class, (a, b) -> Arrays.equals((char[]) a, (char[]) b),
+      double[].class, (a, b) -> Arrays.equals((double[]) a, (double[]) b),
+      float[].class, (a, b) -> Arrays.equals((float[]) a, (float[]) b),
+      int[].class, (a, b) -> Arrays.equals((int[]) a, (int[]) b),
+      long[].class, (a, b) -> Arrays.equals((long[]) a, (long[]) b),
+      short[].class, (a, b) -> Arrays.equals((short[]) a, (short[]) b)
+  );
+
+
+  /**
+   * Compare two objects for equality.
+   *
+   * @param a an object
+   * @param b an object
+   *
+   * @return true if {@code a} equals {@code b}
+   */
+  public static boolean equals(Object a, Object b) {
+    // If they are the same object, they are equal
+    if (a == b) {
+      return true;
+    }
+
+    // if one of them is null, they are not equal
+    if (a == null || b == null) {
+      return false;
+    }
+
+    // Try the equals method
+    if (a.equals(b)) {
+      return true;
+    }
+
+    // Probably not equal, but could be two identical arrays.
+    if (a instanceof Object[] a1 && b instanceof Object[] b1) {
+      return Arrays.deepEquals(a1, b1);
+    }
+
+    // Could be a primitive array
+    Class<?> aClass = a.getClass();
+    if (aClass.equals(b.getClass())) {
+      BiPredicate<Object, Object> predicate = PRIMITIVE_ARRAY_COMPARATORS.get(aClass);
+      if (predicate != null) {
+        return predicate.test(a, b);
+      }
+    }
+
+    return false;
+  }
 
   private final BeanHolder holder;
 
