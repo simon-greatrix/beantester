@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package beantest;
+option java_package = "com.pippsford.beantester.protobuf";
+option java_multiple_files = true;
+
+message AllTypes {
+  double double_value = 1;
+  float float_value = 2;
+  int32 int32_value = 3;
+  int64 int64_value = 4;
+  uint32 uint32_value = 5;
+  uint64 uint64_value = 6;
+  sint32 sint32_value = 7;
+  sint64 sint64_value = 8;
+  fixed32 fixed32_value = 9;
+  fixed64 fixed64_value = 10;
+  sfixed32 sfixed32_value = 11;
+  sfixed64 sfixed64_value = 12;
+  bool bool_value = 13;
+  string string_value = 14;
+  bytes bytes_value = 15;
+
+  DayOfTheWeek day_of_the_week = 16;
+  MessageWithOneOf message_with_one_of = 17;
+
+  map<string, int32> map_value = 18;
+  map<int32, string> map_value2 = 19;
+
+  repeated bool repeated_bool_value = 20;
+  repeated int32 repeated_int_value = 21;
+}
+
+
+enum DayOfTheWeek {
+  UNSPECIFIED = 0;
+  MONDAY = 1;
+  TUESDAY = 2;
+  WEDNESDAY = 3;
+  THURSDAY = 4;
+  FRIDAY = 5;
+  SATURDAY = 6;
+  SUNDAY = 7;
+}
+
+message MessageWithOneOf {
+  oneof nature {
+    string label = 1;
+    string name = 2;
+    string type = 3;
+    string kind = 4;
+  }
+}
+
+message NestedMessage {
+  int32 value = 1;
+  optional NestedMessage nested = 2;
+}

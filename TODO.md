@@ -1,6 +1,5 @@
 Ideas for the future:
 
-# Allow limited recursive loops for nested objects
 
 # Jakarta annotations
   - Numeric (except double and float)
@@ -28,8 +27,10 @@ Ideas for the future:
     - Email
   - Array
     - Size
+    - Not Empty
   - Collection
     - Size
+    - Not Empty
   - Map
     - Size
     - NotEmpty
