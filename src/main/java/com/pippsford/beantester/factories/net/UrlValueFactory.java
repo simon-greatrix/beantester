@@ -1,6 +1,7 @@
 package com.pippsford.beantester.factories.net;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +35,7 @@ public class UrlValueFactory extends ValueFactory {
     }
     String url = scheme + domain + tld + path;
     try {
-      return new URL(url);
+      return URI.create(url).toURL();
     } catch (MalformedURLException e) {
       throw new IllegalStateException(url, e);
     }
@@ -67,8 +68,8 @@ public class UrlValueFactory extends ValueFactory {
 
   static {
     try {
-      PRIMARY = new URL("http://localhost/primary");
-      SECONDARY = new URL("http://localhost/secondary");
+      PRIMARY = URI.create("http://localhost/primary").toURL();
+      SECONDARY = URI.create("http://localhost/secondary").toURL();
     } catch (MalformedURLException e) {
       throw new ExceptionInInitializerError(e);
     }

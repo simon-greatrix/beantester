@@ -46,7 +46,7 @@ public class ArrayFactoryLookup implements FactoryLookup {
 
 
   /**
-   * Get the factory to create the elements of the array
+   * Get the factory to create the elements of the array.
    *
    * @param clazz the member type of the array
    *
