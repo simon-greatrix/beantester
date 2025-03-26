@@ -125,6 +125,7 @@ javadoc {
 
 compileJava {
   options.compilerArgs << '-parameters'
+  options.compilerArgs << '-Xlint:deprecation'
 }
 
 compileTestJava {
@@ -132,7 +133,7 @@ compileTestJava {
 }
 
 tasks.register('writeBuildProperties', WriteProperties) {
-  destinationFile = layout.buildDirectory.file("$build.properties")
+  destinationFile = layout.buildDirectory.file("build.properties")
   property("project.name", project.name)
   property("project.group", project.group)
   property("project.version", project.version)
@@ -151,7 +152,7 @@ tasks.register('writeBuildProperties', WriteProperties) {
 
 jar {
   dependsOn writeBuildProperties
-  from(layout.buildDirectory.file("$build.properties")) {
+  from(layout.buildDirectory.file("build.properties")) {
     include "build.properties"
     into "META-INF"
   }
