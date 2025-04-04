@@ -95,12 +95,30 @@ public interface SpecFilter {
     return specs;
   }
 
+  /**
+   * Invoked after a bean has been created.
+   */
   default void postCreate() {
     // do nothing
   }
 
+  /**
+   * Invoked before a bean is created.
+   */
   default void preCreate() {
     // do nothing
+  }
+
+  /**
+   * Invoked with a newly created bean.
+   *
+   * @param object the bean that was created
+   * @param <T>    the bean type
+   *
+   * @return the bean that should be used.
+   */
+  default <T> T customise(T object) {
+    return object;
   }
 
 }

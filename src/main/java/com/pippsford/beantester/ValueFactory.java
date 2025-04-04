@@ -181,11 +181,11 @@ public class ValueFactory {
   public Object createFlat(ValueType valueType) {
     specFilter.preCreate();
     try {
-      return switch (valueType) {
+      return specFilter.customise(switch (valueType) {
         case PRIMARY -> primary.get();
         case SECONDARY -> secondary.get();
         default -> random.get();
-      };
+      });
     } finally {
       specFilter.postCreate();
     }
