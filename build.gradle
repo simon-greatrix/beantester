@@ -5,6 +5,7 @@ plugins {
   id 'java-library'
   id 'idea'
   id 'maven-publish'
+  id 'signing'
   id "com.palantir.git-version"
   id 'io.freefair.lombok'
 
@@ -169,22 +170,63 @@ idea {
   }
 }
 
+artifacts {
+  archives javadocJar, sourcesJar
+}
+
 publishing {
   publications {
     mavenJava(MavenPublication) {
       artifactId = project.name
-
       from components.java
+      pom {
+        name = 'BeanTester'
+        packaging = 'jar'
+        // optionally artifactId can be defined here
+        description = 'A utility for generating and testing Java Beans'
+        url = 'https://github.com/simon-greatrix/beantester.git'
+
+        scm {
+          connection = 'scm:git:https://github.com/simon-greatrix/beantester.git'
+          developerConnection = 'scm:git:https://github.com/simon-greatrix/beantester.git'
+          url = 'https://github.com/simon-greatrix/beantester.git'
+        }
+
+        licenses {
+          license {
+            name = 'The Apache License, Version 2.0'
+            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'simon-greatrix'
+            name = 'Simon Greatrix'
+            email = 'simon@pippsford.com'
+            organization = ''
+            organizationUrl = ''
+          }
+        }
+      }
     }
   }
   repositories {
     maven {
-      name = 'github'
-      url = 'https://maven.pkg.github.com/ledger-swarm/maven-repo'
-      credentials {
-        username = "$githubUser"
-        password = "$githubToken"
-      }
+      name = 'file'
+      url = layout.buildDirectory.dir('repository')
     }
   }
+}
+
+signing {
+  useGpgCmd()
+  sign publishing.publications.mavenJava
+}
+
+tasks.register("createCentralZip", Zip) {
+  dependsOn tasks.named("publishMavenJavaPublicationToFileRepository")
+  from layout.buildDirectory.dir("repository")
+  destinationDirectory = layout.buildDirectory.dir("publications")
+  archiveFileName = "central.zip"
 }
