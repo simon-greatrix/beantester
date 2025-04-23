@@ -226,12 +226,12 @@ public class NullRules {
       Object value = holder.readActual(name);
       if (value == null) {
         // Record behaviour when property is set to omitted and becomes null.
-        check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.NULL);
+        check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.NULL, NullBehaviour.VARIABLE_NULLABLE);
         original.getBeanCreator().getProperty(name).setOmittedBehaviour(NullBehaviour.NULL);
       } else {
         // Record behaviour when property is omitted and takes a non-null value.
         // This could also be a VARIABLE, or VARIABLE_NULLABLE.
-        check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.VALUE);
+        check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.VALUE, NullBehaviour.VARIABLE, NullBehaviour.VARIABLE_NULLABLE);
         original.getBeanCreator().getProperty(name)
             .setOmittedBehaviour(NullBehaviour.VALUE)
             .setOmittedValue(value);

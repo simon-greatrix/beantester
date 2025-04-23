@@ -3,11 +3,21 @@ package com.pippsford.beantester;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.pippsford.beantester.info.Specs;
+import com.pippsford.beantester.sample.beans.ErrorResponse;
 import com.pippsford.beantester.sample.beans.Unpredictable;
 import com.pippsford.beantester.sample.beans.Unpredictable2;
 import org.junit.jupiter.api.Test;
 
 class BeanVerifierTest {
+
+  @Test
+  void testErrorResponse() {
+    BeanVerifier.verify(ErrorResponse.class,
+        Specs.notNull("parameters"),
+        Specs.onOmitted(NullBehaviour.VARIABLE, "timestamp")
+    );
+  }
+
 
   @Test
   void testUnpredictable() {
