@@ -15,10 +15,34 @@ import com.pippsford.beantester.info.Property;
  */
 public class NullRules {
 
-  private static void check(Class<?> clazz, String type, String name, String op, NullBehaviour expected, NullBehaviour actual) {
-    if (expected != null && actual != expected) {
+  private static void check(Class<?> clazz, String type, String name, String op, NullBehaviour expected, NullBehaviour... actual) {
+    if (expected == null) {
+      return;
+    }
+    boolean found = false;
+    for (NullBehaviour behaviour : actual) {
+      if (behaviour == expected) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      String actualText;
+      if (actual.length == 1) {
+        actualText = actual[0].toString();
+      } else {
+        StringBuilder sb = new StringBuilder();
+        sb.append("one of ");
+        for (NullBehaviour behaviour : actual) {
+          if (sb.length() > 7) {
+            sb.append(", ");
+          }
+          sb.append(behaviour);
+        }
+        actualText = sb.toString();
+      }
       throw new AssertionException("Class " + clazz + " : " + type + " property \"" + name + "\" has behaviour when " + op
-          + " of " + actual + " but behaved as " + expected);
+          + " of " + expected + " but behaved as " + actualText);
     }
   }
 
@@ -81,14 +105,18 @@ public class NullRules {
         Object value = holder.readActual(name);
         if (value == null) {
           // Property was set to null.
-          check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.NULL);
-          modelProperty.setNullBehaviour(NullBehaviour.NULL);
+          check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.NULL, NullBehaviour.VARIABLE_NULLABLE);
+          if (current == null) {
+            modelProperty.setNullBehaviour(NullBehaviour.NULL);
+          }
         } else {
-          // Property was set to a non-null value.
-          check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.VALUE);
-          modelProperty
-              .setNullBehaviour(NullBehaviour.VALUE)
-              .setNullValue(value);
+          // Property was set to a non-null value. This could also be a VARIABLE, or VARIABLE_NULLABLE.
+          check(holder.getBeanClass(), type, name, "set to null", current, NullBehaviour.VALUE, NullBehaviour.VARIABLE, NullBehaviour.VARIABLE_NULLABLE);
+          if (current == null) {
+            modelProperty
+                .setNullBehaviour(NullBehaviour.VALUE)
+                .setNullValue(value);
+          }
         }
 
       } finally {
@@ -131,6 +159,7 @@ public class NullRules {
         property.setOmittedBehaviour(NullBehaviour.NULL);
       } else {
         // Record behaviour when property is omitted and takes a non-null value.
+        // This could also be a VARIABLE, or VARIABLE_NULLABLE.
         check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.VALUE);
         property.setOmittedBehaviour(NullBehaviour.VALUE)
             .setOmittedValue(value);
@@ -194,6 +223,7 @@ public class NullRules {
         original.getBeanCreator().getProperty(name).setOmittedBehaviour(NullBehaviour.NULL);
       } else {
         // Record behaviour when property is omitted and takes a non-null value.
+        // This could also be a VARIABLE, or VARIABLE_NULLABLE.
         check(holder.getBeanClass(), "Creator", name, "omitted", current, NullBehaviour.VALUE);
         original.getBeanCreator().getProperty(name)
             .setOmittedBehaviour(NullBehaviour.VALUE)

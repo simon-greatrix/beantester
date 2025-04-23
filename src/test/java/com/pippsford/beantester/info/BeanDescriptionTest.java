@@ -2,6 +2,7 @@ package com.pippsford.beantester.info;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.pippsford.beantester.sample.beans.Unpredictable;
 import org.junit.jupiter.api.Test;
 
 import com.pippsford.beantester.sample.beans.ApproverManifest;
@@ -14,5 +15,6 @@ class BeanDescriptionTest {
     System.out.println(info.toString());
     assertNotNull(info);
   }
+
 
 }

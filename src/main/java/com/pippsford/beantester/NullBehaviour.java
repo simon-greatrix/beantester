@@ -12,6 +12,12 @@ public enum NullBehaviour {
   /** The property is set to a standard non-null value. */
   VALUE,
 
+  /** The property is set an unpredictable non-null value. */
+  VARIABLE,
+
+  /** The property is set an unpredictable value that could be null. */
+  VARIABLE_NULLABLE,
+
   /** An exception is thrown. This is the assumed behaviour for any property that <b>does</b> declare a not-null or non-null annotation. */
   ERROR,
 

@@ -1,11 +1,13 @@
 package com.pippsford.beantester;
 
+import java.util.EnumSet;
 import java.util.Optional;
 
 import com.pippsford.beantester.factories.bean.BeanValueFactory;
 import com.pippsford.beantester.info.BeanDescription;
 import com.pippsford.beantester.info.BeanHolder;
 import com.pippsford.beantester.info.Specs;
+import com.pippsford.beantester.info.Specs.SkipTest;
 import com.pippsford.beantester.test.Equals;
 import com.pippsford.beantester.test.NullRules;
 import com.pippsford.beantester.test.ReadWrite;
@@ -14,6 +16,18 @@ import com.pippsford.beantester.test.ReadWrite;
  * Verify beans.
  */
 public class BeanVerifier {
+
+  /** Available tests. */
+  public enum Tests {
+    /** Test the equals and hash-code methods. */
+    EQUALS,
+
+    /** Test the read/write methods. */
+    READ_WRITE,
+
+    /** Test the null rules. */
+    NULL_RULES
+  }
 
 
   /**
@@ -51,17 +65,30 @@ public class BeanVerifier {
 
     info.getBeanCreator().validate(info);
 
-    NullRules.inferNullBehaviour(info);
-    NullRules.inferOmittedBehaviour(info);
-    NullRules.validate(info);
+    EnumSet<Tests> tests = EnumSet.allOf(Tests.class);
+    for (Specs.Spec spec : specs) {
+      if (spec instanceof SkipTest) {
+        tests.removeAll(((SkipTest) spec).getTestsToSkip());
+      }
+    }
+
+    if (tests.contains(Tests.NULL_RULES)) {
+      NullRules.inferNullBehaviour(info);
+      NullRules.inferOmittedBehaviour(info);
+      NullRules.validate(info);
+    }
 
     BeanHolder h = info.createHolder();
 
-    ReadWrite readWrite = new ReadWrite(h);
-    readWrite.test();
+    if (tests.contains(Tests.READ_WRITE)) {
+      ReadWrite readWrite = new ReadWrite(h);
+      readWrite.test();
+    }
 
-    Equals equals = new Equals(h);
-    equals.test();
+    if (tests.contains(Tests.EQUALS)) {
+      Equals equals = new Equals(h);
+      equals.test();
+    }
   }
 
 }

@@ -6,12 +6,13 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.BiPredicate;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.pippsford.beantester.AssertionException;
+import com.pippsford.beantester.NullBehaviour;
 import com.pippsford.beantester.TestContext;
 import com.pippsford.beantester.ValueType;
 import com.pippsford.beantester.info.BeanHolder;
+import com.pippsford.beantester.info.Property;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /** Test the {@code equals()} and {@code hashCode()} methods of a bean. */
 public class Equals {
@@ -76,6 +77,7 @@ public class Equals {
     return false;
   }
 
+
   private final BeanHolder holder;
 
   private final String[] propertyNames;
@@ -106,7 +108,13 @@ public class Equals {
         valueArray[i] = holder.createValue(ValueType.RANDOM, name);
       }
 
-      if (holder.isNullable(name)) {
+      Property property = holder.getDescription().getProperty(name);
+      if (
+          holder.isNullable(name)
+              && property != null
+              && property.getNullBehaviour() != NullBehaviour.VARIABLE
+              && property.getNullBehaviour() != NullBehaviour.VARIABLE_NULLABLE
+      ) {
         valueArray[2] = null;
       }
 

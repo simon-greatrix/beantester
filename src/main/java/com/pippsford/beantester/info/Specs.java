@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.pippsford.beantester.BeanVerifier;
 import com.pippsford.beantester.NullBehaviour;
 import com.pippsford.beantester.info.specs.BeanBuilderImpl;
 import com.pippsford.beantester.info.specs.BeanConstructorFactory;
@@ -200,6 +201,14 @@ public class Specs {
 
   }
 
+
+
+  /** Specify to skip one or more tests. */
+  public interface SkipTest extends Spec {
+
+    Collection<BeanVerifier.Tests> getTestsToSkip();
+
+  }
 
 
   /**
@@ -540,6 +549,23 @@ public class Specs {
    */
   public static PropertyCustomiser significant(Collection<String> names) {
     return new Significance(names, true, true);
+  }
+
+
+  /**
+   * Specify to skip one or more tests.
+   *
+   * @param tests the tests to skip
+   *
+   * @return the specification
+   */
+  public static SkipTest skipTests(BeanVerifier.Tests... tests) {
+    return new SkipTest() {
+      @Override
+      public Collection<BeanVerifier.Tests> getTestsToSkip() {
+        return Arrays.asList(tests);
+      }
+    };
   }
 
 

@@ -8,9 +8,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import com.pippsford.beantester.AssertionException;
 import com.pippsford.beantester.NullBehaviour;
 import com.pippsford.beantester.TestContext;
@@ -19,6 +16,8 @@ import com.pippsford.beantester.ValueType;
 import com.pippsford.beantester.factories.FactoryRepository;
 import com.pippsford.beantester.factories.bean.BeanFactoryLookup;
 import com.pippsford.beantester.test.Equals;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * The bean holder holds a bean and manages its creation.
@@ -356,7 +355,7 @@ public class BeanHolder {
         // Behaviour is either unknown, or known and requires a value. Can we pass null?
 
         behaviour = property.getNullBehaviour();
-        if (behaviour == NullBehaviour.NULL || behaviour == NullBehaviour.VALUE || (behaviour == null && !property.isNotNull())) {
+        if ((behaviour != null && behaviour != NullBehaviour.ERROR) || (behaviour == null && !property.isNotNull())) {
           // We can pass null
           initialValues.put(property.getName(), null);
         } else {
@@ -400,7 +399,14 @@ public class BeanHolder {
    */
   public BeanHolder setAllProperties(ValueType type, boolean useNulls) {
     for (String propertyName : getPropertyNames()) {
-      if (useNulls && isNullable(propertyName)) {
+      // Can we set to null?
+      boolean canSetNull = useNulls && isNullable(propertyName);
+      if (canSetNull) {
+        // If the property behaviour is VARIABLE, then we do not set to null as it is unpredictable
+        NullBehaviour behaviour = description.getProperty(propertyName).getNullBehaviour();
+        canSetNull = behaviour != NullBehaviour.VARIABLE_NULLABLE && behaviour != NullBehaviour.VARIABLE;
+      }
+      if (canSetNull) {
         setProperty(propertyName, null);
       } else {
         setProperty(propertyName, createValue(type, propertyName));
@@ -518,7 +524,17 @@ public class BeanHolder {
     }
 
     // Does the behaviour match the property?
+    verifyExpectedNullBehaviour(property, actual);
+  }
+
+
+  private void verifyExpectedNullBehaviour(Property property, Object actual) {
     NullBehaviour behaviour = property.getNullBehaviour();
+    String propertyName = property.getName();
+    // This behaviour could produce any value, so we can't check.
+    if (behaviour == NullBehaviour.VARIABLE_NULLABLE || behaviour == NullBehaviour.VARIABLE) {
+      return;
+    }
 
     if (behaviour == NullBehaviour.NULL) {
       throw new AssertionException("Class " + description.getBeanClass() + ": Property \"" + propertyName + "\" was set to null and has on-null behaviour of "
@@ -563,7 +579,18 @@ public class BeanHolder {
       return;
     }
 
+    verifyOmittedBehaviour(property, actual);
+  }
+
+
+  private void verifyOmittedBehaviour(Property property, Object actual) {
     NullBehaviour behaviour = property.getOmittedBehaviour();
+    String propertyName = property.getName();
+
+    if (behaviour == NullBehaviour.VARIABLE || behaviour == NullBehaviour.VARIABLE_NULLABLE) {
+      // This behaviour could produce any value, so we can't check.
+      return;
+    }
 
     if (behaviour == NullBehaviour.NULL) {
       throw new AssertionException("Class " + description.getBeanClass() + ": Property \"" + propertyName + "\" was omitted and has on-omitted behaviour of "
