@@ -7,7 +7,7 @@ import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode
-public class Unpredictable {
+public class Unpredictable2 {
 
   public static AtomicInteger counter = new AtomicInteger(0);
 
@@ -16,6 +16,14 @@ public class Unpredictable {
   private Integer thing;
 
 
+  public Unpredictable2() {
+    id = counter.incrementAndGet();
+    if (id % 3 == 0) {
+      id = null;
+    }
+    thing = counter.incrementAndGet();
+  }
+
 
   public Integer getId() {
     return id;
@@ -23,25 +31,16 @@ public class Unpredictable {
 
 
   public void setId(Integer id) {
-    if (id == null) {
-      id = counter.incrementAndGet();
-      if (id % 3 == 0) {
-        id = null;
-      }
-    }
     this.id = id;
   }
 
 
   public void setThing(Integer thing) {
-    if (thing == null) {
-      thing = counter.incrementAndGet();
-    }
     this.thing = thing;
   }
 
 
-  public Integer thing() {
+  public Integer getThing() {
     return thing;
   }
 

@@ -26,24 +26,27 @@ public class NullRules {
         break;
       }
     }
-    if (!found) {
-      String actualText;
-      if (actual.length == 1) {
-        actualText = actual[0].toString();
-      } else {
-        StringBuilder sb = new StringBuilder();
-        sb.append("one of ");
-        for (NullBehaviour behaviour : actual) {
-          if (sb.length() > 7) {
-            sb.append(", ");
-          }
-          sb.append(behaviour);
-        }
-        actualText = sb.toString();
-      }
-      throw new AssertionException("Class " + clazz + " : " + type + " property \"" + name + "\" has behaviour when " + op
-          + " of " + expected + " but behaved as " + actualText);
+    if (found) {
+      return;
     }
+
+    String actualText;
+    if (actual.length == 1) {
+      actualText = actual[0].toString();
+    } else {
+      StringBuilder sb = new StringBuilder();
+      sb.append("one of ");
+      for (NullBehaviour behaviour : actual) {
+        if (sb.length() > 7) {
+          sb.append(", ");
+        }
+        sb.append(behaviour);
+      }
+      actualText = sb.toString();
+    }
+
+    throw new AssertionException("Class " + clazz + " : " + type + " property \"" + name + "\" has behaviour when " + op
+        + " of " + expected + " but behaved as " + actualText);
   }
 
 
@@ -155,14 +158,18 @@ public class NullRules {
       Object value = holder.readActual(name);
       if (value == null) {
         // Record behaviour when property is set to omitted and becomes null.
-        check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.NULL);
-        property.setOmittedBehaviour(NullBehaviour.NULL);
+        check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.NULL, NullBehaviour.VARIABLE_NULLABLE);
+        if (current == null) {
+          property.setOmittedBehaviour(NullBehaviour.NULL);
+        }
       } else {
         // Record behaviour when property is omitted and takes a non-null value.
         // This could also be a VARIABLE, or VARIABLE_NULLABLE.
-        check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.VALUE);
-        property.setOmittedBehaviour(NullBehaviour.VALUE)
-            .setOmittedValue(value);
+        check(holder.getBeanClass(), "Bean", name, "omitted", current, NullBehaviour.VALUE, NullBehaviour.VARIABLE, NullBehaviour.VARIABLE_NULLABLE);
+        if (current == null) {
+          property.setOmittedBehaviour(NullBehaviour.VALUE)
+              .setOmittedValue(value);
+        }
       }
     }
   }

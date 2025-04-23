@@ -34,16 +34,20 @@ public class ReadWrite {
 
     for (String name : propertyNames) {
       if (holder.isNullable(name)) {
-        values.put(name, new Object[]{
-            holder.createValue(ValueType.PRIMARY, name),
-            holder.createValue(ValueType.SECONDARY, name),
-            null
-        });
+        values.put(
+            name, new Object[]{
+                holder.createValue(ValueType.PRIMARY, name),
+                holder.createValue(ValueType.SECONDARY, name),
+                null
+            }
+        );
       } else {
-        values.put(name, new Object[]{
-            holder.createValue(ValueType.PRIMARY, name),
-            holder.createValue(ValueType.SECONDARY, name)
-        });
+        values.put(
+            name, new Object[]{
+                holder.createValue(ValueType.PRIMARY, name),
+                holder.createValue(ValueType.SECONDARY, name)
+            }
+        );
       }
     }
   }
@@ -73,8 +77,9 @@ public class ReadWrite {
             holder.setProperty(name1, value1);
             holder.setProperty(name2, value2);
 
-            holder.verify(name1);
-            holder.verify(name2);
+            for (String name3 : propertyNames) {
+              holder.verify(name3);
+            }
           }
         }
       }
