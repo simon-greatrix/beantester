@@ -1,11 +1,12 @@
 package com.pippsford.beantester.factories.json;
 
 import com.pippsford.beantester.ValueFactory;
-import com.pippsford.beantester.factories.basic.FactoryHolder;
 import com.pippsford.beantester.factories.basic.StringValueFactory;
+import com.pippsford.beantester.factories.util.FactoryHolder;
 import jakarta.json.Json;
 import jakarta.json.JsonString;
 
+/** Factory for JSON strings. */
 public class JsonStringFactory extends ValueFactory {
 
   final FactoryHolder factoryHolder;

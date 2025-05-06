@@ -1,28 +1,43 @@
 package com.pippsford.beantester.factories.basic;
 
-import java.util.random.RandomGenerator;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 import com.pippsford.beantester.TestContext;
 import com.pippsford.beantester.ValueFactory;
 
+/** Factory for Numbers. */
 public class NumberValueFactory extends ValueFactory {
 
+  private static final Map<Class<? extends Number>, Supplier<? extends Number>> factories = Map.of(
+      BigDecimal.class, BigDecimalValueFactory::createRandom,
+      BigInteger.class, BigDecimalValueFactory::createRandom,
+      Byte.class, () -> (byte) TestContext.get().getRandom().nextInt(256),
+      Short.class, () -> (short) TestContext.get().getRandom().nextInt(65536),
+      Integer.class, () -> TestContext.get().getRandom().nextInt(),
+      Long.class, () -> TestContext.get().getRandom().nextLong(),
+      Double.class, () -> TestContext.get().getRandom().nextGaussian(),
+      Float.class, () -> (float) TestContext.get().getRandom().nextExponential()
+  );
+
+
+  private static Number forClasses(List<Class<? extends Number>> classes) {
+    int choice = TestContext.get().getRandom().nextInt(classes.size());
+    return factories.get(classes.get(choice)).get();
+  }
+
+
+  /** New instance. */
   public NumberValueFactory() {
-    super(
-        Number.class, false, () -> 1, () -> 2, () -> {
-          RandomGenerator rg = TestContext.get().getRandom();
-          return switch (rg.nextInt(8)) {
-            case 0 -> BigDecimalValueFactory.createRandom();
-            case 1 -> BigIntegerValueFactory.createRandom();
-            case 2 -> (byte) rg.nextInt(256);
-            case 3 -> rg.nextGaussian();
-            case 4 -> (float) rg.nextDouble();
-            case 5 -> rg.nextLong();
-            case 6 -> (short) rg.nextInt(65536);
-            default -> rg.nextInt();
-          };
-        }
-    );
+    this(List.copyOf(factories.keySet()), 1, 2);
+  }
+
+
+  public NumberValueFactory(List<Class<? extends Number>> classes, Number primary, Number secondary) {
+    super(Number.class, () -> primary, () -> secondary, () -> forClasses(classes));
   }
 
 }

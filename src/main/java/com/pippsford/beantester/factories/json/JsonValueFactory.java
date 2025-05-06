@@ -5,8 +5,12 @@ import com.pippsford.beantester.ValueFactory;
 import com.pippsford.beantester.ValueType;
 import jakarta.json.JsonValue;
 
+/**
+ * Factory for JSON values.
+ */
 public class JsonValueFactory extends ValueFactory {
 
+  /** New instance. */
   public JsonValueFactory(
       JsonArrayFactory arrayFactory,
       JsonObjectFactory objectFactory,

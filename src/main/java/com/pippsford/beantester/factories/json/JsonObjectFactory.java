@@ -4,14 +4,15 @@ import static com.pippsford.beantester.ValueType.RANDOM;
 
 import com.pippsford.beantester.TestContext;
 import com.pippsford.beantester.ValueFactory;
-import com.pippsford.beantester.factories.basic.FactoryHolder;
-import com.pippsford.beantester.factories.basic.SizeHolder;
+import com.pippsford.beantester.factories.util.FactoryHolder;
+import com.pippsford.beantester.factories.util.SizeHolder;
 import com.pippsford.beantester.factories.basic.StringValueFactory;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
+/** Factory for JSON Objects. */
 public class JsonObjectFactory extends ValueFactory {
 
   static JsonObject random(SizeHolder size, FactoryHolder holder) {

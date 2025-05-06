@@ -2,6 +2,7 @@ package com.pippsford.beantester.factories.json;
 
 import com.pippsford.beantester.factories.FactoryRepository;
 
+/** Loader for JSON factories. */
 public class JsonFactories {
 
   /**
@@ -31,7 +32,7 @@ public class JsonFactories {
     repository.addFactory(objectFactory);
     repository.addFactory(numberFactory);
     repository.addFactory(stringFactory);
-    repository.addFactory(singletonFactory);
+    repository.addFactory(valueFactory);
 
   }
 
