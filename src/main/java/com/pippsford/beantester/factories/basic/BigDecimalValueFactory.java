@@ -24,7 +24,7 @@ public class BigDecimalValueFactory extends ValueFactory {
    *
    * @return A new BigDecimal object.
    */
-  protected static BigDecimal createRandom() {
+  public static BigDecimal createRandom() {
     // We create a 12 byte random number and use that as the unscaled value, and then scale it randomly.
     // 12 bytes ensures that the number is too large to fit in a long or double, so we will be able to spot narrowing conversions.
     byte[] bytes = new byte[12];

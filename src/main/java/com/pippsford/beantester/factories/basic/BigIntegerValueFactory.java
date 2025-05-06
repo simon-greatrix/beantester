@@ -11,7 +11,7 @@ import com.pippsford.beantester.ValueFactory;
 public class BigIntegerValueFactory extends ValueFactory {
 
   /** Create a random BigInteger value. */
-  protected static BigInteger createRandom() {
+  public static BigInteger createRandom() {
     // We create a 12 byte random number and use that as the unscaled value. This is too big to fit in a long so we will be able to trap narrowing conversions.
     byte[] bytes = new byte[12];
     TestContext.get().getRandom().nextBytes(bytes);

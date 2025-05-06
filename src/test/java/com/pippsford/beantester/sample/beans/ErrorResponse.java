@@ -18,7 +18,7 @@ import lombok.extern.jackson.Jacksonized;
 public class ErrorResponse {
 
   /** Prefix for the URI specifying the error type. */
-  public static final String TYPE_ERROR_PREFIX = "urn:eeze:";
+  public static final String TYPE_ERROR_PREFIX = "urn:company:";
 
   /** Human-readable explanation specific to this occurrence of the problem. */
   String detail;

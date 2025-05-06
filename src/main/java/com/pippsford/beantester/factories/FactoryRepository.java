@@ -13,6 +13,7 @@ import com.pippsford.beantester.ValueType;
 import com.pippsford.beantester.factories.basic.BasicFactories;
 import com.pippsford.beantester.factories.bean.BeanFactoryLookup;
 import com.pippsford.beantester.factories.io.FileFactories;
+import com.pippsford.beantester.factories.json.JsonFactories;
 import com.pippsford.beantester.factories.net.NetFactories;
 import com.pippsford.beantester.factories.protobuf.ProtobufMessageLookup;
 import com.pippsford.beantester.factories.time.TimeFactories;
@@ -196,6 +197,7 @@ public class FactoryRepository {
     TimeFactories.load(this);
     UtilFactories.load(this);
     ProtobufMessageLookup.load(this);
+    JsonFactories.load(this);
   }
 
 

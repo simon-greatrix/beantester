@@ -23,6 +23,7 @@ public class BasicFactories {
     repository.addFactory(new LongValueFactory());
     repository.addFactory(new ShortValueFactory());
     repository.addFactory(new StringValueFactory());
+    repository.addFactory(new NumberValueFactory());
     repository.addFactory(ValueFactory.VOID_CLASS_FACTORY);
 
     repository.addFactory(ValueFactory.VOID_TYPE_FACTORY);
